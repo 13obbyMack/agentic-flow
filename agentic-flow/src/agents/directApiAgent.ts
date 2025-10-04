@@ -5,9 +5,31 @@ import { withRetry } from '../utils/retry.js';
 import { AgentDefinition } from '../utils/agentLoader.js';
 import { execSync } from 'child_process';
 
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY
-});
+// Lazy initialize Anthropic client to allow runtime API key validation
+let anthropic: Anthropic | null = null;
+
+function getAnthropicClient(): Anthropic {
+  if (!anthropic) {
+    const apiKey = process.env.ANTHROPIC_API_KEY;
+
+    // Validate API key format
+    if (!apiKey) {
+      throw new Error('ANTHROPIC_API_KEY is required but not set');
+    }
+
+    if (!apiKey.startsWith('sk-ant-')) {
+      throw new Error(
+        `Invalid ANTHROPIC_API_KEY format. Expected format: sk-ant-...\n` +
+        `Got: ${apiKey.substring(0, 10)}...\n\n` +
+        `Please check your API key at: https://console.anthropic.com/settings/keys`
+      );
+    }
+
+    anthropic = new Anthropic({ apiKey });
+  }
+
+  return anthropic;
+}
 
 // Define claude-flow tools as native Anthropic tool definitions
 const claudeFlowTools: Anthropic.Tool[] = [
@@ -199,13 +221,36 @@ export async function directApiAgent(
     while (toolUseCount < maxToolUses) {
       logger.debug('API call iteration', { toolUseCount, messagesLength: messages.length });
 
-      const response = await anthropic.messages.create({
-        model: 'claude-sonnet-4-5-20250929',
-        max_tokens: 8192,
-        system: agent.systemPrompt || 'You are a helpful AI assistant.',
-        messages,
-        tools: claudeFlowTools
-      });
+      const client = getAnthropicClient();
+
+      let response;
+      try {
+        response = await client.messages.create({
+          model: 'claude-sonnet-4-5-20250929',
+          max_tokens: 8192,
+          system: agent.systemPrompt || 'You are a helpful AI assistant.',
+          messages,
+          tools: claudeFlowTools
+        });
+      } catch (error: any) {
+        // Enhance authentication errors with helpful guidance
+        if (error?.status === 401) {
+          const apiKey = process.env.ANTHROPIC_API_KEY;
+          throw new Error(
+            `❌ Anthropic API authentication failed (401)\n\n` +
+            `Your API key is invalid, expired, or lacks permissions.\n` +
+            `Current key: ${apiKey?.substring(0, 15)}...\n\n` +
+            `Please:\n` +
+            `  1. Check your key at: https://console.anthropic.com/settings/keys\n` +
+            `  2. Verify it's not expired\n` +
+            `  3. Ensure it has proper permissions\n` +
+            `  4. Update your .env file with: ANTHROPIC_API_KEY=sk-ant-...\n\n` +
+            `Alternative: Use OpenRouter instead (--model "meta-llama/llama-3.1-8b-instruct")\n` +
+            `Or use local ONNX (--provider onnx)`
+          );
+        }
+        throw error;
+      }
 
       logger.debug('API response', {
         stopReason: response.stop_reason,

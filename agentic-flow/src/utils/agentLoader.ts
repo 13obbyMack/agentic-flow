@@ -1,7 +1,14 @@
 // Agent loader for .claude/agents integration
-import { readFileSync, readdirSync, statSync } from 'fs';
-import { join, extname } from 'path';
+import { readFileSync, readdirSync, statSync, existsSync } from 'fs';
+import { join, extname, dirname } from 'path';
+import { fileURLToPath } from 'url';
 import { logger } from './logger.js';
+
+// Get the package root directory
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+const packageRoot = join(__dirname, '../..');
+const defaultAgentsDir = join(packageRoot, '.claude/agents');
 
 export interface AgentDefinition {
   name: string;
@@ -99,12 +106,17 @@ function findAgentFiles(dir: string): string[] {
 /**
  * Load all agents from .claude/agents directory
  */
-export function loadAgents(agentsDir: string = process.env.AGENTS_DIR || '/app/.claude/agents'): Map<string, AgentDefinition> {
+export function loadAgents(agentsDir?: string): Map<string, AgentDefinition> {
   const agents = new Map<string, AgentDefinition>();
 
-  logger.info('Loading agents from directory', { agentsDir });
+  // Priority: explicit parameter > env var > package default > current working directory
+  const targetDir = agentsDir
+    || process.env.AGENTS_DIR
+    || (existsSync(defaultAgentsDir) ? defaultAgentsDir : join(process.cwd(), '.claude/agents'));
 
-  const agentFiles = findAgentFiles(agentsDir);
+  logger.info('Loading agents from directory', { agentsDir: targetDir });
+
+  const agentFiles = findAgentFiles(targetDir);
   logger.debug('Found agent files', { count: agentFiles.length });
 
   for (const filePath of agentFiles) {

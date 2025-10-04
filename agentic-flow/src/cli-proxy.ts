@@ -10,7 +10,16 @@ import { logger } from "./utils/logger.js";
 import { parseArgs } from "./utils/cli.js";
 import { getAgent, listAgents } from "./utils/agentLoader.js";
 import { claudeAgent } from "./agents/claudeAgent.js";
+import { directApiAgent } from "./agents/directApiAgent.js";
 import { handleMCPCommand } from "./utils/mcpCommands.js";
+import { readFileSync } from 'fs';
+import { resolve, dirname } from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+const packageJson = JSON.parse(readFileSync(resolve(__dirname, '../package.json'), 'utf-8'));
+const VERSION = packageJson.version;
 
 class AgenticFlowCLI {
   private proxyServer: any = null;
@@ -30,8 +39,27 @@ class AgenticFlowCLI {
     }
 
     if (options.mode === 'mcp') {
-      await handleMCPCommand(options.mcpCommand || 'start', options.mcpServer || 'all');
-      process.exit(0);
+      // Run standalone MCP server directly
+      const { spawn } = await import('child_process');
+      const { resolve, dirname } = await import('path');
+      const { fileURLToPath } = await import('url');
+
+      const __filename = fileURLToPath(import.meta.url);
+      const __dirname = dirname(__filename);
+      const serverPath = resolve(__dirname, './mcp/standalone-stdio.js');
+
+      const proc = spawn('node', [serverPath], {
+        stdio: 'inherit'
+      });
+
+      proc.on('exit', (code) => {
+        process.exit(code || 0);
+      });
+
+      // Handle termination signals
+      process.on('SIGINT', () => proc.kill('SIGINT'));
+      process.on('SIGTERM', () => proc.kill('SIGTERM'));
+      return;
     }
 
     // Determine if we should use OpenRouter
@@ -137,6 +165,28 @@ class AgenticFlowCLI {
       process.exit(1);
     }
 
+    // Check for API key (unless using ONNX)
+    const isOnnx = options.provider === 'onnx' || process.env.USE_ONNX === 'true' || process.env.PROVIDER === 'onnx';
+    if (!isOnnx && !useOpenRouter && !process.env.ANTHROPIC_API_KEY) {
+      console.error('\n❌ Error: ANTHROPIC_API_KEY is required\n');
+      console.error('Please set your API key:');
+      console.error('  export ANTHROPIC_API_KEY=sk-ant-xxxxx\n');
+      console.error('Or use alternative providers:');
+      console.error('  --provider openrouter  (requires OPENROUTER_API_KEY)');
+      console.error('  --provider onnx        (free local inference)\n');
+      process.exit(1);
+    }
+
+    if (!isOnnx && useOpenRouter && !process.env.OPENROUTER_API_KEY) {
+      console.error('\n❌ Error: OPENROUTER_API_KEY is required for OpenRouter\n');
+      console.error('Please set your API key:');
+      console.error('  export OPENROUTER_API_KEY=sk-or-v1-xxxxx\n');
+      console.error('Or use alternative providers:');
+      console.error('  --provider anthropic  (requires ANTHROPIC_API_KEY)');
+      console.error('  --provider onnx       (free local inference)\n');
+      process.exit(1);
+    }
+
     const agent = getAgent(agentName);
     if (!agent) {
       const available = listAgents();
@@ -171,9 +221,9 @@ class AgenticFlowCLI {
     console.log('⏳ Running...\n');
 
     const streamHandler = options.stream ? (chunk: string) => process.stdout.write(chunk) : undefined;
-    const modelOverride = useOpenRouter ? (options.model || process.env.COMPLETION_MODEL) : undefined;
 
-    const result = await claudeAgent(agent, task, streamHandler, modelOverride);
+    // Use directApiAgent (works without Claude Code installed) instead of claudeAgent (requires Claude Code)
+    const result = await directApiAgent(agent, task, streamHandler);
 
     if (!options.stream) {
       console.log('\n✅ Completed!\n');
@@ -218,7 +268,7 @@ class AgenticFlowCLI {
 
   private printHelp(): void {
     console.log(`
-🤖 Agentic Flow - AI Agent Orchestration with OpenRouter Support
+🤖 Agentic Flow v${VERSION} - AI Agent Orchestration with OpenRouter Support
 
 USAGE:
   npx agentic-flow [COMMAND] [OPTIONS]
