@@ -12,6 +12,7 @@ import { getAgent, listAgents } from "./utils/agentLoader.js";
 import { claudeAgent } from "./agents/claudeAgent.js";
 import { directApiAgent } from "./agents/directApiAgent.js";
 import { handleMCPCommand } from "./utils/mcpCommands.js";
+import { handleConfigCommand } from "./cli/config-wizard.js";
 import { readFileSync } from 'fs';
 import { resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';
@@ -35,6 +36,13 @@ class AgenticFlowCLI {
 
     if (options.mode === 'list') {
       this.listAgents();
+      process.exit(0);
+    }
+
+    if (options.mode === 'config') {
+      // Handle config wizard
+      const configArgs = process.argv.slice(3); // Skip 'node', 'cli-proxy.js', 'config'
+      await handleConfigCommand(configArgs);
       process.exit(0);
     }
 
@@ -274,9 +282,18 @@ USAGE:
   npx agentic-flow [COMMAND] [OPTIONS]
 
 COMMANDS:
+  config [subcommand]     Manage environment configuration (interactive wizard)
   mcp <command> [server]  Manage MCP servers (start, stop, status, list)
   --list, -l              List all available agents
   --agent, -a <name>      Run specific agent mode
+
+CONFIG COMMANDS:
+  npx agentic-flow config              # Interactive wizard
+  npx agentic-flow config set KEY VAL  # Set configuration value
+  npx agentic-flow config get KEY      # Get configuration value
+  npx agentic-flow config list         # List all configuration
+  npx agentic-flow config delete KEY   # Delete configuration value
+  npx agentic-flow config reset        # Reset to defaults
 
 MCP COMMANDS:
   npx agentic-flow mcp start [server]    Start MCP server(s)

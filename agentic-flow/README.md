@@ -40,7 +40,7 @@ Traditional AI frameworks require persistent infrastructure and complex orchestr
 
 ## 🚀 Quick Start
 
-### Local Installation (Recommended for Development)
+### Installation
 
 ```bash
 # Global installation
@@ -48,10 +48,28 @@ npm install -g agentic-flow
 
 # Or use directly with npx (no installation)
 npx agentic-flow --help
-
-# Set your API key
-export ANTHROPIC_API_KEY=sk-ant-...
 ```
+
+### Configuration Wizard (Interactive Setup)
+
+```bash
+# Launch interactive configuration wizard
+npx agentic-flow config
+
+# Or use direct commands
+npx agentic-flow config set ANTHROPIC_API_KEY sk-ant-xxxxx
+npx agentic-flow config set PROVIDER anthropic
+npx agentic-flow config list
+```
+
+The wizard helps you configure:
+- **API Keys** - Anthropic, OpenRouter with validation
+- **Provider Settings** - Choose default provider (anthropic/openrouter/onnx)
+- **Model Selection** - Set default models
+- **Custom Paths** - Configure agents directory
+- **Advanced Options** - Proxy port, feature flags
+
+All configuration is saved to `.env` with helpful comments.
 
 ### Your First Agent (Local Execution)
 
@@ -429,6 +447,40 @@ Docker: Infrastructure costs (AWS/GCP/Azure) + Claude API costs.*
 
 ## 📋 Commands
 
+### Configuration Management
+
+```bash
+# Interactive configuration wizard
+npx agentic-flow config
+
+# Direct configuration commands
+npx agentic-flow config set ANTHROPIC_API_KEY sk-ant-xxxxx
+npx agentic-flow config set OPENROUTER_API_KEY sk-or-v1-xxxxx
+npx agentic-flow config set PROVIDER openrouter
+npx agentic-flow config set COMPLETION_MODEL meta-llama/llama-3.1-8b-instruct
+
+# View configuration
+npx agentic-flow config list
+npx agentic-flow config get PROVIDER
+
+# Manage configuration
+npx agentic-flow config delete OPENROUTER_API_KEY
+npx agentic-flow config reset
+
+# Get help
+npx agentic-flow config help
+```
+
+**Available Configuration Keys:**
+- `ANTHROPIC_API_KEY` - Anthropic API key (validated: must start with `sk-ant-`)
+- `OPENROUTER_API_KEY` - OpenRouter API key (validated: must start with `sk-or-`)
+- `COMPLETION_MODEL` - Default model name
+- `PROVIDER` - Default provider (anthropic, openrouter, onnx)
+- `AGENTS_DIR` - Custom agents directory path
+- `PROXY_PORT` - Proxy server port (default: 3000)
+- `USE_OPENROUTER` - Force OpenRouter usage (true/false)
+- `USE_ONNX` - Use ONNX local inference (true/false)
+
 ### Basic Operations (Works Locally, Docker, Cloud)
 
 ```bash
@@ -445,11 +497,14 @@ npx agentic-flow --agent coder --task "Build API" --stream
 npx agentic-flow  # Requires TOPIC, DIFF, DATASET env vars
 ```
 
-### Environment Configuration
+### Environment Configuration (Alternative to Config Wizard)
 
 ```bash
-# Required
+# Required (use config wizard instead for better UX)
 export ANTHROPIC_API_KEY=sk-ant-...
+
+# Or use OpenRouter
+export OPENROUTER_API_KEY=sk-or-v1-...
 
 # Agent mode (optional)
 export AGENT=researcher

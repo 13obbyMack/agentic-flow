@@ -3,11 +3,6 @@
 import { FastMCP } from 'fastmcp';
 import { z } from 'zod';
 import { execSync } from 'child_process';
-import { resolve, dirname } from 'path';
-import { fileURLToPath } from 'url';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
 
 // Suppress FastMCP internal warnings for cleaner output
 const originalConsoleWarn = console.warn;
@@ -27,7 +22,7 @@ console.error('📦 Local agentic-flow tools available');
 
 const server = new FastMCP({
   name: 'agentic-flow',
-  version: '1.0.3'
+  version: '1.0.6'
 });
 
 // Tool: Run agentic-flow agent
@@ -41,12 +36,12 @@ server.addTool({
   }),
   execute: async ({ agent, task, stream }) => {
     try {
-      const cliPath = resolve(__dirname, '../../cli-proxy.js');
-      const cmd = `node "${cliPath}" --agent "${agent}" --task "${task}"${stream ? ' --stream' : ''}`;
+      // Use npx to run agentic-flow from npm registry
+      const cmd = `npx --yes agentic-flow --agent "${agent}" --task "${task}"${stream ? ' --stream' : ''}`;
       const result = execSync(cmd, {
         encoding: 'utf-8',
         maxBuffer: 10 * 1024 * 1024,
-        cwd: resolve(__dirname, '../..')
+        timeout: 300000 // 5 minute timeout
       });
 
       return JSON.stringify({
@@ -68,11 +63,12 @@ server.addTool({
   parameters: z.object({}),
   execute: async () => {
     try {
-      const cliPath = resolve(__dirname, '../../cli-proxy.js');
-      const cmd = `node "${cliPath}" --mode list`;
+      // Use npx to run agentic-flow from npm registry
+      const cmd = `npx --yes agentic-flow --list`;
       const result = execSync(cmd, {
         encoding: 'utf-8',
-        cwd: resolve(__dirname, '../..')
+        maxBuffer: 5 * 1024 * 1024,
+        timeout: 30000
       });
 
       return JSON.stringify({

@@ -1,7 +1,7 @@
 // CLI argument parsing and help utilities
 
 export interface CliOptions {
-  mode: 'agent' | 'parallel' | 'list' | 'mcp';
+  mode: 'agent' | 'parallel' | 'list' | 'mcp' | 'config';
   agent?: string;
   task?: string;
   model?: string;
@@ -23,6 +23,12 @@ export function parseArgs(): CliOptions {
     options.mode = 'mcp';
     options.mcpCommand = args[1] || 'start'; // default to start
     options.mcpServer = args[2] || 'all'; // default to all servers
+    return options;
+  }
+
+  // Check for config command
+  if (args[0] === 'config') {
+    options.mode = 'config';
     return options;
   }
 
