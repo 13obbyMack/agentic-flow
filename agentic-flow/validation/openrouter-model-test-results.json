@@ -1,0 +1,32 @@
+[
+  {
+    "model": "meta-llama/llama-3.1-8b-instruct",
+    "success": true,
+    "toolUsesDetected": 1,
+    "fileCreated": true
+  },
+  {
+    "model": "google/gemini-flash-1.5",
+    "success": false,
+    "toolUsesDetected": 0,
+    "error": "HTTP 404"
+  },
+  {
+    "model": "mistralai/mistral-7b-instruct",
+    "success": true,
+    "toolUsesDetected": 1,
+    "fileCreated": true
+  },
+  {
+    "model": "meta-llama/llama-3.1-70b-instruct",
+    "success": true,
+    "toolUsesDetected": 1,
+    "fileCreated": true
+  },
+  {
+    "model": "qwen/qwen-2.5-7b-instruct",
+    "success": true,
+    "toolUsesDetected": 1,
+    "fileCreated": true
+  }
+]

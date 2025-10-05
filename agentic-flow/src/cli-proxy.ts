@@ -34,7 +34,6 @@ import { logger } from "./utils/logger.js";
 import { parseArgs } from "./utils/cli.js";
 import { getAgent, listAgents } from "./utils/agentLoader.js";
 import { claudeAgent } from "./agents/claudeAgent.js";
-import { directApiAgent } from "./agents/directApiAgent.js";
 import { handleMCPCommand } from "./utils/mcpCommands.js";
 import { handleConfigCommand } from "./cli/config-wizard.js";
 import { handleAgentCommand } from "./cli/agent-manager.js";
@@ -346,8 +345,8 @@ class AgenticFlowCLI {
 
     const streamHandler = options.stream ? (chunk: string) => process.stdout.write(chunk) : undefined;
 
-    // Use directApiAgent (works without Claude Code installed) instead of claudeAgent (requires Claude Code)
-    const result = await directApiAgent(agent, task, streamHandler);
+    // Use claudeAgent with Claude Agent SDK - handles multi-provider routing
+    const result = await claudeAgent(agent, task, streamHandler);
 
     if (!options.stream) {
       console.log('\n✅ Completed!\n');

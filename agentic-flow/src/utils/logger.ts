@@ -17,6 +17,11 @@ class Logger {
   }
 
   private log(level: LogLevel, message: string, data?: LogContext) {
+    // Skip all logs if QUIET mode is enabled (unless it's an error)
+    if (process.env.QUIET === 'true' && level !== 'error') {
+      return;
+    }
+
     const timestamp = new Date().toISOString();
     const logEntry = {
       timestamp,
@@ -48,10 +53,18 @@ class Logger {
   }
 
   info(message: string, data?: LogContext) {
+    // Skip info logs unless VERBOSE is set
+    if (!process.env.DEBUG && !process.env.VERBOSE) {
+      return;
+    }
     this.log('info', message, data);
   }
 
   warn(message: string, data?: LogContext) {
+    // Skip warnings unless VERBOSE is set
+    if (!process.env.DEBUG && !process.env.VERBOSE) {
+      return;
+    }
     this.log('warn', message, data);
   }
 

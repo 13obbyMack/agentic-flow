@@ -1,6 +1,6 @@
 {
   "name": "agentic-flow",
-  "version": "1.1.4",
+  "version": "1.1.7",
   "description": "Production-ready AI agent orchestration platform with 66 specialized agents, 111 MCP tools, and autonomous multi-agent swarms. Built by @ruvnet with Claude Agent SDK, neural networks, memory persistence, GitHub integration, and distributed consensus protocols.",
   "type": "module",
   "main": "dist/index.js",
@@ -16,6 +16,7 @@
     "test:retry": "tsx validation/quick-wins/test-retry.ts",
     "test:logging": "tsx validation/quick-wins/test-logging.ts",
     "validate": "tsx validation/quick-wins/validate-all.ts",
+    "validate:sdk": "tsx validation/sdk-validation.ts",
     "validate:health": "bash validation/quick-wins/test-health.sh",
     "validate:claude-flow": "npm run test:memory && npm run test:coordination && npm run test:hybrid",
     "test:memory": "tsx validation/claude-flow/test-memory.ts",

@@ -3,6 +3,7 @@
 import express, { Request, Response, NextFunction } from 'express';
 import { createProxyMiddleware, Options } from 'http-proxy-middleware';
 import { logger } from '../utils/logger.js';
+import { getInstructionsForModel, formatInstructions } from './provider-instructions.js';
 
 interface AnthropicMessage {
   role: 'user' | 'assistant';
@@ -85,7 +86,9 @@ export class AnthropicToOpenRouterProxy {
         logger.info('Converting Anthropic request to OpenRouter', {
           anthropicModel: anthropicReq.model,
           openaiModel: openaiReq.model,
-          messageCount: openaiReq.messages.length
+          messageCount: openaiReq.messages.length,
+          apiKeyPresent: !!this.openrouterApiKey,
+          apiKeyPrefix: this.openrouterApiKey?.substring(0, 10)
         });
 
         // Forward to OpenRouter
@@ -172,13 +175,22 @@ export class AnthropicToOpenRouterProxy {
   private convertAnthropicToOpenAI(anthropicReq: AnthropicRequest): OpenAIRequest {
     const messages: OpenAIMessage[] = [];
 
-    // Add system message if present
+    // Get model-specific tool instructions
+    const modelId = anthropicReq.model || this.defaultModel;
+    const provider = this.extractProvider(modelId);
+    const instructions = getInstructionsForModel(modelId, provider);
+    const toolInstructions = formatInstructions(instructions);
+
+    // Add system message with optimized tool instructions
+    let systemContent = toolInstructions;
     if (anthropicReq.system) {
-      messages.push({
-        role: 'system',
-        content: anthropicReq.system
-      });
+      systemContent += '\n\n' + anthropicReq.system;
     }
+
+    messages.push({
+      role: 'system',
+      content: systemContent
+    });
 
     // Override model - if request has a Claude model, use defaultModel instead
     const requestedModel = anthropicReq.model || '';
@@ -216,21 +228,93 @@ export class AnthropicToOpenRouterProxy {
     };
   }
 
+  private parseStructuredCommands(text: string): {
+    cleanText: string;
+    toolUses: any[]
+  } {
+    const toolUses: any[] = [];
+    let cleanText = text;
+
+    // Parse file_write commands
+    const fileWriteRegex = /<file_write path="([^"]+)">([\s\S]*?)<\/file_write>/g;
+    let match;
+    while ((match = fileWriteRegex.exec(text)) !== null) {
+      toolUses.push({
+        type: 'tool_use',
+        id: `tool_${Date.now()}_${toolUses.length}`,
+        name: 'Write',
+        input: {
+          file_path: match[1],
+          content: match[2].trim()
+        }
+      });
+      cleanText = cleanText.replace(match[0], `[File written: ${match[1]}]`);
+    }
+
+    // Parse file_read commands
+    const fileReadRegex = /<file_read path="([^"]+)"\/>/g;
+    while ((match = fileReadRegex.exec(text)) !== null) {
+      toolUses.push({
+        type: 'tool_use',
+        id: `tool_${Date.now()}_${toolUses.length}`,
+        name: 'Read',
+        input: {
+          file_path: match[1]
+        }
+      });
+      cleanText = cleanText.replace(match[0], `[Reading file: ${match[1]}]`);
+    }
+
+    // Parse bash commands
+    const bashRegex = /<bash_command>([\s\S]*?)<\/bash_command>/g;
+    while ((match = bashRegex.exec(text)) !== null) {
+      toolUses.push({
+        type: 'tool_use',
+        id: `tool_${Date.now()}_${toolUses.length}`,
+        name: 'Bash',
+        input: {
+          command: match[1].trim()
+        }
+      });
+      cleanText = cleanText.replace(match[0], `[Executing: ${match[1].trim()}]`);
+    }
+
+    return { cleanText: cleanText.trim(), toolUses };
+  }
+
   private convertOpenAIToAnthropic(openaiRes: any): any {
     const choice = openaiRes.choices?.[0];
     if (!choice) {
       throw new Error('No choices in OpenAI response');
     }
 
+    const rawText = choice.message?.content || choice.text || '';
+
+    // Parse structured commands from model's response
+    const { cleanText, toolUses } = this.parseStructuredCommands(rawText);
+
+    // Build content array with text and tool uses
+    const contentBlocks: any[] = [];
+
+    if (cleanText) {
+      contentBlocks.push({
+        type: 'text',
+        text: cleanText
+      });
+    }
+
+    // Add tool uses
+    contentBlocks.push(...toolUses);
+
     return {
       id: openaiRes.id || `msg_${Date.now()}`,
       type: 'message',
       role: 'assistant',
       model: openaiRes.model,
-      content: [
+      content: contentBlocks.length > 0 ? contentBlocks : [
         {
           type: 'text',
-          text: choice.message?.content || choice.text || ''
+          text: rawText
         }
       ],
       stop_reason: this.mapFinishReason(choice.finish_reason),
@@ -273,6 +357,12 @@ export class AnthropicToOpenRouterProxy {
     }
 
     return anthropicChunks.join('');
+  }
+
+  private extractProvider(modelId: string): string {
+    // Extract provider from model ID (e.g., "openai/gpt-4" -> "openai")
+    const parts = modelId.split('/');
+    return parts.length > 1 ? parts[0] : '';
   }
 
   private mapFinishReason(reason?: string): string {

@@ -22,6 +22,7 @@ export interface ChatParams {
   toolChoice?: 'auto' | 'any' | 'none' | { type: 'tool'; name: string };
   stream?: boolean;
   metadata?: Record<string, any>;
+  provider?: string; // Force specific provider (gemini, openrouter, anthropic, etc.)
 }
 
 export interface Message {

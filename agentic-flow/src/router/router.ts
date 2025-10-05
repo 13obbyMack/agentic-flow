@@ -224,6 +224,15 @@ export class ModelRouter {
   }
 
   private async selectProvider(params: ChatParams, agentType?: string): Promise<LLMProvider> {
+    // If provider is explicitly specified in params, use it
+    if (params.provider) {
+      const forcedProvider = this.providers.get(params.provider as ProviderType);
+      if (forcedProvider) {
+        return forcedProvider;
+      }
+      console.warn(`⚠️  Requested provider '${params.provider}' not available, falling back to routing logic`);
+    }
+
     const routingMode = this.config.routing?.mode || 'manual';
 
     switch (routingMode) {

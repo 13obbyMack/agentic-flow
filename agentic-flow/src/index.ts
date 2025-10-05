@@ -3,7 +3,6 @@ import { webResearchAgent } from "./agents/webResearchAgent.js";
 import { codeReviewAgent } from "./agents/codeReviewAgent.js";
 import { dataAgent } from "./agents/dataAgent.js";
 import { claudeAgent } from "./agents/claudeAgent.js";
-import { directApiAgent } from "./agents/directApiAgent.js";
 import { logger } from "./utils/logger.js";
 import { startHealthServer } from "./health.js";
 import { parseArgs, printHelp, validateOptions } from "./utils/cli.js";
