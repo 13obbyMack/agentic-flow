@@ -40,6 +40,10 @@ class Logger {
   }
 
   debug(message: string, data?: LogContext) {
+    // Skip debug logs unless DEBUG or VERBOSE environment variable is set
+    if (!process.env.DEBUG && !process.env.VERBOSE) {
+      return;
+    }
     this.log('debug', message, data);
   }
 
