@@ -1,0 +1,271 @@
+[2025-10-04T23:06:27.460Z] INFO: Starting integrated OpenRouter proxy
+🔗 Proxy Mode: OpenRouter
+🔧 Proxy URL: http://localhost:3000
+🤖 Default Model: meta-llama/llama-3.1-8b-instruct
+
+[2025-10-04T23:06:27.465Z] INFO: Anthropic to OpenRouter proxy started {"port":3000,"openrouterBaseUrl":"https://openrouter.ai/api/v1","defaultModel":"meta-llama/llama-3.1-8b-instruct"}
+
+✅ Anthropic Proxy running at http://localhost:3000
+   OpenRouter Base URL: https://openrouter.ai/api/v1
+   Default Model: meta-llama/llama-3.1-8b-instruct
+
+[2025-10-04T23:06:28.967Z] INFO: Loading package agents {"agentsDir":"/home/codespace/.npm/_npx/208de6ef0e6833cc/node_modules/agentic-flow/.claude/agents"}
+[2025-10-04T23:06:28.969Z] DEBUG: Found package agent files {"count":76}
+[2025-10-04T23:06:28.970Z] DEBUG: Loaded package agent {"name":"Migration Summary","path":"MIGRATION_SUMMARY.md"}
+[2025-10-04T23:06:28.970Z] WARN: Agent file missing required metadata {"filePath":"/home/codespace/.npm/_npx/208de6ef0e6833cc/node_modules/agentic-flow/.claude/agents/analysis/code-analyzer.md"}
+[2025-10-04T23:06:28.970Z] WARN: Agent file missing required metadata {"filePath":"/home/codespace/.npm/_npx/208de6ef0e6833cc/node_modules/agentic-flow/.claude/agents/analysis/code-review/analyze-code-quality.md"}
+[2025-10-04T23:06:28.970Z] WARN: Agent file missing required metadata {"filePath":"/home/codespace/.npm/_npx/208de6ef0e6833cc/node_modules/agentic-flow/.claude/agents/architecture/system-design/arch-system-design.md"}
+[2025-10-04T23:06:28.970Z] DEBUG: Loaded package agent {"name":"base-template-generator","path":"base-template-generator.md"}
+[2025-10-04T23:06:28.970Z] DEBUG: Loaded package agent {"name":"byzantine-coordinator","path":"consensus/byzantine-coordinator.md"}
+[2025-10-04T23:06:28.971Z] DEBUG: Loaded package agent {"name":"crdt-synchronizer","path":"consensus/crdt-synchronizer.md"}
+[2025-10-04T23:06:28.971Z] DEBUG: Loaded package agent {"name":"gossip-coordinator","path":"consensus/gossip-coordinator.md"}
+[2025-10-04T23:06:28.971Z] DEBUG: Loaded package agent {"name":"performance-benchmarker","path":"consensus/performance-benchmarker.md"}
+[2025-10-04T23:06:28.971Z] DEBUG: Loaded package agent {"name":"quorum-manager","path":"consensus/quorum-manager.md"}
+[2025-10-04T23:06:28.971Z] DEBUG: Loaded package agent {"name":"raft-manager","path":"consensus/raft-manager.md"}
+[2025-10-04T23:06:28.971Z] DEBUG: Loaded package agent {"name":"security-manager","path":"consensus/security-manager.md"}
+[2025-10-04T23:06:28.971Z] DEBUG: Loaded package agent {"name":"coder","path":"core/coder.md"}
+[2025-10-04T23:06:28.971Z] DEBUG: Loaded package agent {"name":"planner","path":"core/planner.md"}
+[2025-10-04T23:06:28.971Z] DEBUG: Loaded package agent {"name":"researcher","path":"core/researcher.md"}
+[2025-10-04T23:06:28.972Z] DEBUG: Loaded package agent {"name":"reviewer","path":"core/reviewer.md"}
+[2025-10-04T23:06:28.972Z] DEBUG: Loaded package agent {"name":"tester","path":"core/tester.md"}
+[2025-10-04T23:06:28.972Z] WARN: Agent file missing required metadata {"filePath":"/home/codespace/.npm/_npx/208de6ef0e6833cc/node_modules/agentic-flow/.claude/agents/data/ml/data-ml-model.md"}
+[2025-10-04T23:06:28.972Z] WARN: Agent file missing required metadata {"filePath":"/home/codespace/.npm/_npx/208de6ef0e6833cc/node_modules/agentic-flow/.claude/agents/development/backend/dev-backend-api.md"}
+[2025-10-04T23:06:28.972Z] WARN: Agent file missing required metadata {"filePath":"/home/codespace/.npm/_npx/208de6ef0e6833cc/node_modules/agentic-flow/.claude/agents/devops/ci-cd/ops-cicd-github.md"}
+[2025-10-04T23:06:28.972Z] WARN: Agent file missing required metadata {"filePath":"/home/codespace/.npm/_npx/208de6ef0e6833cc/node_modules/agentic-flow/.claude/agents/documentation/api-docs/docs-api-openapi.md"}
+[2025-10-04T23:06:28.972Z] DEBUG: Loaded package agent {"name":"flow-nexus-app-store","path":"flow-nexus/app-store.md"}
+[2025-10-04T23:06:28.972Z] DEBUG: Loaded package agent {"name":"flow-nexus-auth","path":"flow-nexus/authentication.md"}
+[2025-10-04T23:06:28.972Z] DEBUG: Loaded package agent {"name":"flow-nexus-challenges","path":"flow-nexus/challenges.md"}
+[2025-10-04T23:06:28.972Z] DEBUG: Loaded package agent {"name":"flow-nexus-neural","path":"flow-nexus/neural-network.md"}
+[2025-10-04T23:06:28.972Z] DEBUG: Loaded package agent {"name":"flow-nexus-payments","path":"flow-nexus/payments.md"}
+[2025-10-04T23:06:28.972Z] DEBUG: Loaded package agent {"name":"flow-nexus-sandbox","path":"flow-nexus/sandbox.md"}
+[2025-10-04T23:06:28.972Z] DEBUG: Loaded package agent {"name":"flow-nexus-swarm","path":"flow-nexus/swarm.md"}
+[2025-10-04T23:06:28.973Z] DEBUG: Loaded package agent {"name":"flow-nexus-user-tools","path":"flow-nexus/user-tools.md"}
+[2025-10-04T23:06:28.973Z] DEBUG: Loaded package agent {"name":"flow-nexus-workflow","path":"flow-nexus/workflow.md"}
+[2025-10-04T23:06:28.973Z] DEBUG: Loaded package agent {"name":"code-review-swarm","path":"github/code-review-swarm.md"}
+[2025-10-04T23:06:28.973Z] DEBUG: Loaded package agent {"name":"github-modes","path":"github/github-modes.md"}
+[2025-10-04T23:06:28.973Z] DEBUG: Loaded package agent {"name":"issue-tracker","path":"github/issue-tracker.md"}
+[2025-10-04T23:06:28.973Z] DEBUG: Loaded package agent {"name":"multi-repo-swarm","path":"github/multi-repo-swarm.md"}
+[2025-10-04T23:06:28.973Z] DEBUG: Loaded package agent {"name":"pr-manager","path":"github/pr-manager.md"}
+[2025-10-04T23:06:28.973Z] DEBUG: Loaded package agent {"name":"project-board-sync","path":"github/project-board-sync.md"}
+[2025-10-04T23:06:28.973Z] DEBUG: Loaded package agent {"name":"release-manager","path":"github/release-manager.md"}
+[2025-10-04T23:06:28.973Z] DEBUG: Loaded package agent {"name":"release-swarm","path":"github/release-swarm.md"}
+[2025-10-04T23:06:28.974Z] DEBUG: Loaded package agent {"name":"repo-architect","path":"github/repo-architect.md"}
+[2025-10-04T23:06:28.974Z] DEBUG: Loaded package agent {"name":"swarm-issue","path":"github/swarm-issue.md"}
+[2025-10-04T23:06:28.974Z] DEBUG: Loaded package agent {"name":"swarm-pr","path":"github/swarm-pr.md"}
+[2025-10-04T23:06:28.974Z] DEBUG: Loaded package agent {"name":"sync-coordinator","path":"github/sync-coordinator.md"}
+[2025-10-04T23:06:28.974Z] DEBUG: Loaded package agent {"name":"workflow-automation","path":"github/workflow-automation.md"}
+[2025-10-04T23:06:28.974Z] DEBUG: Loaded package agent {"name":"sublinear-goal-planner","path":"goal/agent.md"}
+[2025-10-04T23:06:28.974Z] DEBUG: Loaded package agent {"name":"goal-planner","path":"goal/goal-planner.md"}
+[2025-10-04T23:06:28.974Z] DEBUG: Loaded package agent {"name":"Benchmark Suite","path":"optimization/benchmark-suite.md"}
+[2025-10-04T23:06:28.974Z] DEBUG: Loaded package agent {"name":"Load Balancing Coordinator","path":"optimization/load-balancer.md"}
+[2025-10-04T23:06:28.974Z] DEBUG: Loaded package agent {"name":"Performance Monitor","path":"optimization/performance-monitor.md"}
+[2025-10-04T23:06:28.974Z] DEBUG: Loaded package agent {"name":"Resource Allocator","path":"optimization/resource-allocator.md"}
+[2025-10-04T23:06:28.975Z] DEBUG: Loaded package agent {"name":"Topology Optimizer","path":"optimization/topology-optimizer.md"}
+[2025-10-04T23:06:28.975Z] DEBUG: Loaded package agent {"name":"agentic-payments","path":"payments/agentic-payments.md"}
+[2025-10-04T23:06:28.975Z] DEBUG: Loaded package agent {"name":"architecture","path":"sparc/architecture.md"}
+[2025-10-04T23:06:28.975Z] DEBUG: Loaded package agent {"name":"pseudocode","path":"sparc/pseudocode.md"}
+[2025-10-04T23:06:28.975Z] DEBUG: Loaded package agent {"name":"refinement","path":"sparc/refinement.md"}
+[2025-10-04T23:06:28.975Z] DEBUG: Loaded package agent {"name":"specification","path":"sparc/specification.md"}
+[2025-10-04T23:06:28.975Z] WARN: Agent file missing required metadata {"filePath":"/home/codespace/.npm/_npx/208de6ef0e6833cc/node_modules/agentic-flow/.claude/agents/specialized/mobile/spec-mobile-react-native.md"}
+[2025-10-04T23:06:28.975Z] DEBUG: Loaded package agent {"name":"consensus-coordinator","path":"sublinear/consensus-coordinator.md"}
+[2025-10-04T23:06:28.975Z] DEBUG: Loaded package agent {"name":"matrix-optimizer","path":"sublinear/matrix-optimizer.md"}
+[2025-10-04T23:06:28.975Z] DEBUG: Loaded package agent {"name":"pagerank-analyzer","path":"sublinear/pagerank-analyzer.md"}
+[2025-10-04T23:06:28.975Z] DEBUG: Loaded package agent {"name":"performance-optimizer","path":"sublinear/performance-optimizer.md"}
+[2025-10-04T23:06:28.976Z] DEBUG: Loaded package agent {"name":"trading-predictor","path":"sublinear/trading-predictor.md"}
+[2025-10-04T23:06:28.976Z] DEBUG: Loaded package agent {"name":"adaptive-coordinator","path":"swarm/adaptive-coordinator.md"}
+[2025-10-04T23:06:28.976Z] DEBUG: Loaded package agent {"name":"hierarchical-coordinator","path":"swarm/hierarchical-coordinator.md"}
+[2025-10-04T23:06:28.976Z] DEBUG: Loaded package agent {"name":"mesh-coordinator","path":"swarm/mesh-coordinator.md"}
+[2025-10-04T23:06:28.976Z] DEBUG: Loaded package agent {"name":"smart-agent","path":"templates/automation-smart-agent.md"}
+[2025-10-04T23:06:28.976Z] DEBUG: Loaded package agent {"name":"swarm-init","path":"templates/coordinator-swarm-init.md"}
+[2025-10-04T23:06:28.976Z] DEBUG: Loaded package agent {"name":"pr-manager","path":"templates/github-pr-manager.md"}
+[2025-10-04T23:06:28.976Z] DEBUG: Loaded package agent {"name":"sparc-coder","path":"templates/implementer-sparc-coder.md"}
+[2025-10-04T23:06:28.976Z] DEBUG: Loaded package agent {"name":"memory-coordinator","path":"templates/memory-coordinator.md"}
+[2025-10-04T23:06:28.976Z] DEBUG: Loaded package agent {"name":"migration-planner","path":"templates/migration-plan.md"}
+[2025-10-04T23:06:28.977Z] DEBUG: Loaded package agent {"name":"task-orchestrator","path":"templates/orchestrator-task.md"}
+[2025-10-04T23:06:28.977Z] DEBUG: Loaded package agent {"name":"perf-analyzer","path":"templates/performance-analyzer.md"}
+[2025-10-04T23:06:28.977Z] DEBUG: Loaded package agent {"name":"sparc-coord","path":"templates/sparc-coordinator.md"}
+[2025-10-04T23:06:28.977Z] WARN: Agent file missing frontmatter {"filePath":"/home/codespace/.npm/_npx/208de6ef0e6833cc/node_modules/agentic-flow/.claude/agents/test-neural.md"}
+[2025-10-04T23:06:28.977Z] DEBUG: Loaded package agent {"name":"tdd-london-swarm","path":"testing/unit/tdd-london-swarm.md"}
+[2025-10-04T23:06:28.977Z] DEBUG: Loaded package agent {"name":"production-validator","path":"testing/validation/production-validator.md"}
+[2025-10-04T23:06:28.977Z] INFO: Loading local agents {"agentsDir":"/workspaces/agentic-flow/.claude/agents"}
+[2025-10-04T23:06:28.978Z] DEBUG: Found local agent files {"count":74}
+[2025-10-04T23:06:28.978Z] WARN: Agent file missing required metadata {"filePath":"/workspaces/agentic-flow/.claude/agents/analysis/code-analyzer.md"}
+[2025-10-04T23:06:28.978Z] WARN: Agent file missing required metadata {"filePath":"/workspaces/agentic-flow/.claude/agents/analysis/code-review/analyze-code-quality.md"}
+[2025-10-04T23:06:28.978Z] WARN: Agent file missing required metadata {"filePath":"/workspaces/agentic-flow/.claude/agents/architecture/system-design/arch-system-design.md"}
+[2025-10-04T23:06:28.978Z] INFO: Local agent overrides package agent {"name":"base-template-generator","path":"base-template-generator.md"}
+[2025-10-04T23:06:28.978Z] DEBUG: Loaded local agent {"name":"base-template-generator","path":"base-template-generator.md"}
+[2025-10-04T23:06:28.979Z] INFO: Local agent overrides package agent {"name":"byzantine-coordinator","path":"consensus/byzantine-coordinator.md"}
+[2025-10-04T23:06:28.979Z] DEBUG: Loaded local agent {"name":"byzantine-coordinator","path":"consensus/byzantine-coordinator.md"}
+[2025-10-04T23:06:28.979Z] INFO: Local agent overrides package agent {"name":"crdt-synchronizer","path":"consensus/crdt-synchronizer.md"}
+[2025-10-04T23:06:28.979Z] DEBUG: Loaded local agent {"name":"crdt-synchronizer","path":"consensus/crdt-synchronizer.md"}
+[2025-10-04T23:06:28.979Z] INFO: Local agent overrides package agent {"name":"gossip-coordinator","path":"consensus/gossip-coordinator.md"}
+[2025-10-04T23:06:28.979Z] DEBUG: Loaded local agent {"name":"gossip-coordinator","path":"consensus/gossip-coordinator.md"}
+[2025-10-04T23:06:28.979Z] INFO: Local agent overrides package agent {"name":"performance-benchmarker","path":"consensus/performance-benchmarker.md"}
+[2025-10-04T23:06:28.979Z] DEBUG: Loaded local agent {"name":"performance-benchmarker","path":"consensus/performance-benchmarker.md"}
+[2025-10-04T23:06:28.979Z] INFO: Local agent overrides package agent {"name":"quorum-manager","path":"consensus/quorum-manager.md"}
+[2025-10-04T23:06:28.979Z] DEBUG: Loaded local agent {"name":"quorum-manager","path":"consensus/quorum-manager.md"}
+[2025-10-04T23:06:28.979Z] INFO: Local agent overrides package agent {"name":"raft-manager","path":"consensus/raft-manager.md"}
+[2025-10-04T23:06:28.979Z] DEBUG: Loaded local agent {"name":"raft-manager","path":"consensus/raft-manager.md"}
+[2025-10-04T23:06:28.979Z] INFO: Local agent overrides package agent {"name":"security-manager","path":"consensus/security-manager.md"}
+[2025-10-04T23:06:28.979Z] DEBUG: Loaded local agent {"name":"security-manager","path":"consensus/security-manager.md"}
+[2025-10-04T23:06:28.979Z] INFO: Local agent overrides package agent {"name":"coder","path":"core/coder.md"}
+[2025-10-04T23:06:28.979Z] DEBUG: Loaded local agent {"name":"coder","path":"core/coder.md"}
+[2025-10-04T23:06:28.980Z] INFO: Local agent overrides package agent {"name":"planner","path":"core/planner.md"}
+[2025-10-04T23:06:28.980Z] DEBUG: Loaded local agent {"name":"planner","path":"core/planner.md"}
+[2025-10-04T23:06:28.980Z] INFO: Local agent overrides package agent {"name":"researcher","path":"core/researcher.md"}
+[2025-10-04T23:06:28.980Z] DEBUG: Loaded local agent {"name":"researcher","path":"core/researcher.md"}
+[2025-10-04T23:06:28.980Z] INFO: Local agent overrides package agent {"name":"reviewer","path":"core/reviewer.md"}
+[2025-10-04T23:06:28.980Z] DEBUG: Loaded local agent {"name":"reviewer","path":"core/reviewer.md"}
+[2025-10-04T23:06:28.980Z] INFO: Local agent overrides package agent {"name":"tester","path":"core/tester.md"}
+[2025-10-04T23:06:28.980Z] DEBUG: Loaded local agent {"name":"tester","path":"core/tester.md"}
+[2025-10-04T23:06:28.980Z] WARN: Agent file missing required metadata {"filePath":"/workspaces/agentic-flow/.claude/agents/data/ml/data-ml-model.md"}
+[2025-10-04T23:06:28.980Z] WARN: Agent file missing required metadata {"filePath":"/workspaces/agentic-flow/.claude/agents/development/backend/dev-backend-api.md"}
+[2025-10-04T23:06:28.981Z] WARN: Agent file missing required metadata {"filePath":"/workspaces/agentic-flow/.claude/agents/devops/ci-cd/ops-cicd-github.md"}
+[2025-10-04T23:06:28.981Z] WARN: Agent file missing required metadata {"filePath":"/workspaces/agentic-flow/.claude/agents/documentation/api-docs/docs-api-openapi.md"}
+[2025-10-04T23:06:28.981Z] INFO: Local agent overrides package agent {"name":"flow-nexus-app-store","path":"flow-nexus/app-store.md"}
+[2025-10-04T23:06:28.981Z] DEBUG: Loaded local agent {"name":"flow-nexus-app-store","path":"flow-nexus/app-store.md"}
+[2025-10-04T23:06:28.981Z] INFO: Local agent overrides package agent {"name":"flow-nexus-auth","path":"flow-nexus/authentication.md"}
+[2025-10-04T23:06:28.981Z] DEBUG: Loaded local agent {"name":"flow-nexus-auth","path":"flow-nexus/authentication.md"}
+[2025-10-04T23:06:28.981Z] INFO: Local agent overrides package agent {"name":"flow-nexus-challenges","path":"flow-nexus/challenges.md"}
+[2025-10-04T23:06:28.981Z] DEBUG: Loaded local agent {"name":"flow-nexus-challenges","path":"flow-nexus/challenges.md"}
+[2025-10-04T23:06:28.981Z] INFO: Local agent overrides package agent {"name":"flow-nexus-neural","path":"flow-nexus/neural-network.md"}
+[2025-10-04T23:06:28.981Z] DEBUG: Loaded local agent {"name":"flow-nexus-neural","path":"flow-nexus/neural-network.md"}
+[2025-10-04T23:06:28.981Z] INFO: Local agent overrides package agent {"name":"flow-nexus-payments","path":"flow-nexus/payments.md"}
+[2025-10-04T23:06:28.981Z] DEBUG: Loaded local agent {"name":"flow-nexus-payments","path":"flow-nexus/payments.md"}
+[2025-10-04T23:06:28.981Z] INFO: Local agent overrides package agent {"name":"flow-nexus-sandbox","path":"flow-nexus/sandbox.md"}
+[2025-10-04T23:06:28.981Z] DEBUG: Loaded local agent {"name":"flow-nexus-sandbox","path":"flow-nexus/sandbox.md"}
+[2025-10-04T23:06:28.981Z] INFO: Local agent overrides package agent {"name":"flow-nexus-swarm","path":"flow-nexus/swarm.md"}
+[2025-10-04T23:06:28.981Z] DEBUG: Loaded local agent {"name":"flow-nexus-swarm","path":"flow-nexus/swarm.md"}
+[2025-10-04T23:06:28.981Z] INFO: Local agent overrides package agent {"name":"flow-nexus-user-tools","path":"flow-nexus/user-tools.md"}
+[2025-10-04T23:06:28.981Z] DEBUG: Loaded local agent {"name":"flow-nexus-user-tools","path":"flow-nexus/user-tools.md"}
+[2025-10-04T23:06:28.981Z] INFO: Local agent overrides package agent {"name":"flow-nexus-workflow","path":"flow-nexus/workflow.md"}
+[2025-10-04T23:06:28.981Z] DEBUG: Loaded local agent {"name":"flow-nexus-workflow","path":"flow-nexus/workflow.md"}
+[2025-10-04T23:06:28.981Z] INFO: Local agent overrides package agent {"name":"code-review-swarm","path":"github/code-review-swarm.md"}
+[2025-10-04T23:06:28.981Z] DEBUG: Loaded local agent {"name":"code-review-swarm","path":"github/code-review-swarm.md"}
+[2025-10-04T23:06:28.981Z] INFO: Local agent overrides package agent {"name":"github-modes","path":"github/github-modes.md"}
+[2025-10-04T23:06:28.981Z] DEBUG: Loaded local agent {"name":"github-modes","path":"github/github-modes.md"}
+[2025-10-04T23:06:28.981Z] INFO: Local agent overrides package agent {"name":"issue-tracker","path":"github/issue-tracker.md"}
+[2025-10-04T23:06:28.982Z] DEBUG: Loaded local agent {"name":"issue-tracker","path":"github/issue-tracker.md"}
+[2025-10-04T23:06:28.982Z] INFO: Local agent overrides package agent {"name":"multi-repo-swarm","path":"github/multi-repo-swarm.md"}
+[2025-10-04T23:06:28.982Z] DEBUG: Loaded local agent {"name":"multi-repo-swarm","path":"github/multi-repo-swarm.md"}
+[2025-10-04T23:06:28.982Z] INFO: Local agent overrides package agent {"name":"pr-manager","path":"github/pr-manager.md"}
+[2025-10-04T23:06:28.982Z] DEBUG: Loaded local agent {"name":"pr-manager","path":"github/pr-manager.md"}
+[2025-10-04T23:06:28.982Z] INFO: Local agent overrides package agent {"name":"project-board-sync","path":"github/project-board-sync.md"}
+[2025-10-04T23:06:28.982Z] DEBUG: Loaded local agent {"name":"project-board-sync","path":"github/project-board-sync.md"}
+[2025-10-04T23:06:28.982Z] INFO: Local agent overrides package agent {"name":"release-manager","path":"github/release-manager.md"}
+[2025-10-04T23:06:28.982Z] DEBUG: Loaded local agent {"name":"release-manager","path":"github/release-manager.md"}
+[2025-10-04T23:06:28.982Z] INFO: Local agent overrides package agent {"name":"release-swarm","path":"github/release-swarm.md"}
+[2025-10-04T23:06:28.982Z] DEBUG: Loaded local agent {"name":"release-swarm","path":"github/release-swarm.md"}
+[2025-10-04T23:06:28.982Z] INFO: Local agent overrides package agent {"name":"repo-architect","path":"github/repo-architect.md"}
+[2025-10-04T23:06:28.982Z] DEBUG: Loaded local agent {"name":"repo-architect","path":"github/repo-architect.md"}
+[2025-10-04T23:06:28.982Z] INFO: Local agent overrides package agent {"name":"swarm-issue","path":"github/swarm-issue.md"}
+[2025-10-04T23:06:28.982Z] DEBUG: Loaded local agent {"name":"swarm-issue","path":"github/swarm-issue.md"}
+[2025-10-04T23:06:28.982Z] INFO: Local agent overrides package agent {"name":"swarm-pr","path":"github/swarm-pr.md"}
+[2025-10-04T23:06:28.982Z] DEBUG: Loaded local agent {"name":"swarm-pr","path":"github/swarm-pr.md"}
+[2025-10-04T23:06:28.982Z] INFO: Local agent overrides package agent {"name":"sync-coordinator","path":"github/sync-coordinator.md"}
+[2025-10-04T23:06:28.982Z] DEBUG: Loaded local agent {"name":"sync-coordinator","path":"github/sync-coordinator.md"}
+[2025-10-04T23:06:28.982Z] INFO: Local agent overrides package agent {"name":"workflow-automation","path":"github/workflow-automation.md"}
+[2025-10-04T23:06:28.982Z] DEBUG: Loaded local agent {"name":"workflow-automation","path":"github/workflow-automation.md"}
+[2025-10-04T23:06:28.982Z] DEBUG: Loaded local agent {"name":"code-goal-planner","path":"goal/code-goal-planner.md"}
+[2025-10-04T23:06:28.982Z] INFO: Local agent overrides package agent {"name":"goal-planner","path":"goal/goal-planner.md"}
+[2025-10-04T23:06:28.982Z] DEBUG: Loaded local agent {"name":"goal-planner","path":"goal/goal-planner.md"}
+[2025-10-04T23:06:28.983Z] DEBUG: Loaded local agent {"name":"collective-intelligence-coordinator","path":"hive-mind/collective-intelligence-coordinator.md"}
+[2025-10-04T23:06:28.983Z] DEBUG: Loaded local agent {"name":"queen-coordinator","path":"hive-mind/queen-coordinator.md"}
+[2025-10-04T23:06:28.983Z] DEBUG: Loaded local agent {"name":"scout-explorer  ","path":"hive-mind/scout-explorer.md"}
+[2025-10-04T23:06:28.983Z] DEBUG: Loaded local agent {"name":"swarm-memory-manager","path":"hive-mind/swarm-memory-manager.md"}
+[2025-10-04T23:06:28.983Z] DEBUG: Loaded local agent {"name":"worker-specialist","path":"hive-mind/worker-specialist.md"}
+[2025-10-04T23:06:28.983Z] DEBUG: Loaded local agent {"name":"safla-neural","path":"neural/safla-neural.md"}
+[2025-10-04T23:06:28.983Z] INFO: Local agent overrides package agent {"name":"Benchmark Suite","path":"optimization/benchmark-suite.md"}
+[2025-10-04T23:06:28.983Z] DEBUG: Loaded local agent {"name":"Benchmark Suite","path":"optimization/benchmark-suite.md"}
+[2025-10-04T23:06:28.983Z] INFO: Local agent overrides package agent {"name":"Load Balancing Coordinator","path":"optimization/load-balancer.md"}
+[2025-10-04T23:06:28.983Z] DEBUG: Loaded local agent {"name":"Load Balancing Coordinator","path":"optimization/load-balancer.md"}
+[2025-10-04T23:06:28.983Z] INFO: Local agent overrides package agent {"name":"Performance Monitor","path":"optimization/performance-monitor.md"}
+[2025-10-04T23:06:28.983Z] DEBUG: Loaded local agent {"name":"Performance Monitor","path":"optimization/performance-monitor.md"}
+[2025-10-04T23:06:28.983Z] INFO: Local agent overrides package agent {"name":"Resource Allocator","path":"optimization/resource-allocator.md"}
+[2025-10-04T23:06:28.983Z] DEBUG: Loaded local agent {"name":"Resource Allocator","path":"optimization/resource-allocator.md"}
+[2025-10-04T23:06:28.983Z] INFO: Local agent overrides package agent {"name":"Topology Optimizer","path":"optimization/topology-optimizer.md"}
+[2025-10-04T23:06:28.983Z] DEBUG: Loaded local agent {"name":"Topology Optimizer","path":"optimization/topology-optimizer.md"}
+[2025-10-04T23:06:28.984Z] INFO: Local agent overrides package agent {"name":"architecture","path":"sparc/architecture.md"}
+[2025-10-04T23:06:28.984Z] DEBUG: Loaded local agent {"name":"architecture","path":"sparc/architecture.md"}
+[2025-10-04T23:06:28.984Z] INFO: Local agent overrides package agent {"name":"pseudocode","path":"sparc/pseudocode.md"}
+[2025-10-04T23:06:28.984Z] DEBUG: Loaded local agent {"name":"pseudocode","path":"sparc/pseudocode.md"}
+[2025-10-04T23:06:28.984Z] INFO: Local agent overrides package agent {"name":"refinement","path":"sparc/refinement.md"}
+[2025-10-04T23:06:28.984Z] DEBUG: Loaded local agent {"name":"refinement","path":"sparc/refinement.md"}
+[2025-10-04T23:06:28.984Z] INFO: Local agent overrides package agent {"name":"specification","path":"sparc/specification.md"}
+[2025-10-04T23:06:28.984Z] DEBUG: Loaded local agent {"name":"specification","path":"sparc/specification.md"}
+[2025-10-04T23:06:28.984Z] WARN: Agent file missing required metadata {"filePath":"/workspaces/agentic-flow/.claude/agents/specialized/mobile/spec-mobile-react-native.md"}
+[2025-10-04T23:06:28.984Z] INFO: Local agent overrides package agent {"name":"adaptive-coordinator","path":"swarm/adaptive-coordinator.md"}
+[2025-10-04T23:06:28.984Z] DEBUG: Loaded local agent {"name":"adaptive-coordinator","path":"swarm/adaptive-coordinator.md"}
+[2025-10-04T23:06:28.984Z] INFO: Local agent overrides package agent {"name":"hierarchical-coordinator","path":"swarm/hierarchical-coordinator.md"}
+[2025-10-04T23:06:28.984Z] DEBUG: Loaded local agent {"name":"hierarchical-coordinator","path":"swarm/hierarchical-coordinator.md"}
+[2025-10-04T23:06:28.984Z] INFO: Local agent overrides package agent {"name":"mesh-coordinator","path":"swarm/mesh-coordinator.md"}
+[2025-10-04T23:06:28.984Z] DEBUG: Loaded local agent {"name":"mesh-coordinator","path":"swarm/mesh-coordinator.md"}
+[2025-10-04T23:06:28.984Z] INFO: Local agent overrides package agent {"name":"smart-agent","path":"templates/automation-smart-agent.md"}
+[2025-10-04T23:06:28.984Z] DEBUG: Loaded local agent {"name":"smart-agent","path":"templates/automation-smart-agent.md"}
+[2025-10-04T23:06:28.984Z] INFO: Local agent overrides package agent {"name":"swarm-init","path":"templates/coordinator-swarm-init.md"}
+[2025-10-04T23:06:28.985Z] DEBUG: Loaded local agent {"name":"swarm-init","path":"templates/coordinator-swarm-init.md"}
+[2025-10-04T23:06:28.985Z] INFO: Local agent overrides package agent {"name":"pr-manager","path":"templates/github-pr-manager.md"}
+[2025-10-04T23:06:28.985Z] DEBUG: Loaded local agent {"name":"pr-manager","path":"templates/github-pr-manager.md"}
+[2025-10-04T23:06:28.985Z] INFO: Local agent overrides package agent {"name":"sparc-coder","path":"templates/implementer-sparc-coder.md"}
+[2025-10-04T23:06:28.985Z] DEBUG: Loaded local agent {"name":"sparc-coder","path":"templates/implementer-sparc-coder.md"}
+[2025-10-04T23:06:28.985Z] INFO: Local agent overrides package agent {"name":"memory-coordinator","path":"templates/memory-coordinator.md"}
+[2025-10-04T23:06:28.985Z] DEBUG: Loaded local agent {"name":"memory-coordinator","path":"templates/memory-coordinator.md"}
+[2025-10-04T23:06:28.985Z] INFO: Local agent overrides package agent {"name":"migration-planner","path":"templates/migration-plan.md"}
+[2025-10-04T23:06:28.985Z] DEBUG: Loaded local agent {"name":"migration-planner","path":"templates/migration-plan.md"}
+[2025-10-04T23:06:28.985Z] INFO: Local agent overrides package agent {"name":"task-orchestrator","path":"templates/orchestrator-task.md"}
+[2025-10-04T23:06:28.985Z] DEBUG: Loaded local agent {"name":"task-orchestrator","path":"templates/orchestrator-task.md"}
+[2025-10-04T23:06:28.985Z] INFO: Local agent overrides package agent {"name":"perf-analyzer","path":"templates/performance-analyzer.md"}
+[2025-10-04T23:06:28.985Z] DEBUG: Loaded local agent {"name":"perf-analyzer","path":"templates/performance-analyzer.md"}
+[2025-10-04T23:06:28.985Z] INFO: Local agent overrides package agent {"name":"sparc-coord","path":"templates/sparc-coordinator.md"}
+[2025-10-04T23:06:28.985Z] DEBUG: Loaded local agent {"name":"sparc-coord","path":"templates/sparc-coordinator.md"}
+[2025-10-04T23:06:28.985Z] INFO: Local agent overrides package agent {"name":"tdd-london-swarm","path":"testing/unit/tdd-london-swarm.md"}
+[2025-10-04T23:06:28.985Z] DEBUG: Loaded local agent {"name":"tdd-london-swarm","path":"testing/unit/tdd-london-swarm.md"}
+[2025-10-04T23:06:28.985Z] INFO: Local agent overrides package agent {"name":"production-validator","path":"testing/validation/production-validator.md"}
+[2025-10-04T23:06:28.985Z] DEBUG: Loaded local agent {"name":"production-validator","path":"testing/validation/production-validator.md"}
+[2025-10-04T23:06:28.988Z] INFO: Agents loaded successfully {"total":73,"package":76,"local":74}
+
+🤖 Agent: coder
+📝 Description: Implementation specialist for writing clean, efficient code
+
+🎯 Task: Create a JavaScript function that calculates factorial using recursion. Include error handling for negative numbers.
+
+🔧 Provider: OpenRouter (via proxy)
+🔧 Model: deepseek/deepseek-chat
+
+⏳ Running...
+
+[2025-10-04T23:06:28.988Z] INFO: Starting direct API agent {"agent":"coder","input":"Create a JavaScript function that calculates factorial using recursion. Include error handling for n"}
+[2025-10-04T23:06:28.988Z] DEBUG: Attempting operation {"attempt":1,"maxAttempts":3}
+[2025-10-04T23:06:28.989Z] DEBUG: API call iteration {"toolUseCount":0,"messagesLength":1}
+[2025-10-04T23:06:29.037Z] DEBUG: Proxy request {"method":"POST","path":"/v1/messages","headers":["host","connection","accept","user-agent","x-stainless-retry-count","x-stainless-timeout","x-stainless-lang","x-stainless-package-version","x-stainless-os","x-stainless-arch","x-stainless-runtime","x-stainless-runtime-version","anthropic-version","x-api-key","content-type","accept-language","sec-fetch-mode","accept-encoding","content-length"]}
+[2025-10-04T23:06:29.037Z] INFO: Converting Anthropic request to OpenRouter {"anthropicModel":"claude-sonnet-4-5-20250929","openaiModel":"claude-sonnet-4-5-20250929","messageCount":2}
+[2025-10-04T23:06:29.261Z] ERROR: OpenRouter API error {"status":400,"error":"{\"error\":{\"message\":\"claude-sonnet-4-5-20250929 is not a valid model ID\",\"code\":400},\"user_id\":\"user_2fpIwzuEpWqI8QCFyCGlMw1kINm\"}"}
+[2025-10-04T23:06:29.266Z] WARN: Error not retryable {"error":{"status":400,"headers":{},"requestID":null,"error":{"error":{"type":"api_error","message":"{\"error\":{\"message\":\"claude-sonnet-4-5-20250929 is not a valid model ID\",\"code\":400},\"user_id\":\"user_2fpIwzuEpWqI8QCFyCGlMw1kINm\"}"}}}}
+[2025-10-04T23:06:29.266Z] ERROR: Execution failed {"error":{"status":400,"headers":{},"requestID":null,"error":{"error":{"type":"api_error","message":"{\"error\":{\"message\":\"claude-sonnet-4-5-20250929 is not a valid model ID\",\"code\":400},\"user_id\":\"user_2fpIwzuEpWqI8QCFyCGlMw1kINm\"}"}}}}
+BadRequestError: 400 {"error":{"type":"api_error","message":"{\"error\":{\"message\":\"claude-sonnet-4-5-20250929 is not a valid model ID\",\"code\":400},\"user_id\":\"user_2fpIwzuEpWqI8QCFyCGlMw1kINm\"}"}}
+    at APIError.generate (file:///home/codespace/.npm/_npx/208de6ef0e6833cc/node_modules/@anthropic-ai/sdk/core/error.mjs:37:20)
+    at Anthropic.makeStatusError (file:///home/codespace/.npm/_npx/208de6ef0e6833cc/node_modules/@anthropic-ai/sdk/client.mjs:152:32)
+    at Anthropic.makeRequest (file:///home/codespace/.npm/_npx/208de6ef0e6833cc/node_modules/@anthropic-ai/sdk/client.mjs:306:30)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async file:///home/codespace/.npm/_npx/208de6ef0e6833cc/node_modules/agentic-flow/dist/agents/directApiAgent.js:200:28
+    at async withRetry (file:///home/codespace/.npm/_npx/208de6ef0e6833cc/node_modules/agentic-flow/dist/utils/retry.js:26:20)
+    at async AgenticFlowCLI.runAgent (file:///home/codespace/.npm/_npx/208de6ef0e6833cc/node_modules/agentic-flow/dist/cli-proxy.js:199:24)
+    at async AgenticFlowCLI.start (file:///home/codespace/.npm/_npx/208de6ef0e6833cc/node_modules/agentic-flow/dist/cli-proxy.js:73:13) {
+  status: 400,
+  headers: Headers {
+    'x-powered-by': 'Express',
+    'content-type': 'application/json; charset=utf-8',
+    'content-length': '185',
+    etag: 'W/"b9-0ZvKifZUti9awGmu0fsuYg9Jekg"',
+    date: 'Sat, 04 Oct 2025 23:06:29 GMT',
+    connection: 'keep-alive',
+    'keep-alive': 'timeout=5'
+  },
+  requestID: null,
+  error: {
+    error: {
+      type: 'api_error',
+      message: '{"error":{"message":"claude-sonnet-4-5-20250929 is not a valid model ID","code":400},"user_id":"user_2fpIwzuEpWqI8QCFyCGlMw1kINm"}'
+    }
+  }
+}

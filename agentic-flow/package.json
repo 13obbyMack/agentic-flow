@@ -1,6 +1,6 @@
 {
   "name": "agentic-flow",
-  "version": "1.0.6",
+  "version": "1.1.1",
   "description": "Production-ready AI agent orchestration platform with 66 specialized agents, 111 MCP tools, and autonomous multi-agent swarms. Built by @ruvnet with Claude Agent SDK, neural networks, memory persistence, GitHub integration, and distributed consensus protocols.",
   "type": "module",
   "main": "dist/index.js",

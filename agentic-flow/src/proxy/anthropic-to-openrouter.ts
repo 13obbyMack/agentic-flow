@@ -180,6 +180,11 @@ export class AnthropicToOpenRouterProxy {
       });
     }
 
+    // Override model - if request has a Claude model, use defaultModel instead
+    const requestedModel = anthropicReq.model || '';
+    const shouldOverrideModel = requestedModel.startsWith('claude-') || !requestedModel;
+    const finalModel = shouldOverrideModel ? this.defaultModel : requestedModel;
+
     // Convert Anthropic messages to OpenAI format
     for (const msg of anthropicReq.messages) {
       let content: string;
@@ -203,7 +208,7 @@ export class AnthropicToOpenRouterProxy {
     }
 
     return {
-      model: anthropicReq.model || this.defaultModel,
+      model: finalModel,
       messages,
       max_tokens: anthropicReq.max_tokens,
       temperature: anthropicReq.temperature,

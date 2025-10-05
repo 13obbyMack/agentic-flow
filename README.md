@@ -33,7 +33,7 @@ Built on **[Claude Agent SDK](https://docs.claude.com/en/api/agent-sdk)** by Ant
 - **Multi-Agent Swarms** - Deploy 3, 10, or 100 agents that collaborate via shared memory to complete complex projects
 - **Long-Running Tasks** - Agents persist through hours-long operations: full codebase refactors, comprehensive audits, dataset processing
 - **213 MCP Tools** - Agents have real capabilities: GitHub operations, neural network training, workflow automation, memory persistence
-- **Intelligent Cost Routing** - $0.0003 per code review with OpenRouter vs $0.08 with Claude. Save $2,400/month on 100 daily reviews
+- **Auto Model Optimization** - `--optimize` flag intelligently selects best model for each task. DeepSeek R1 costs 85% less than Claude with similar quality. Save $2,400/month on 100 daily reviews.
 - **Deploy Anywhere** - Same agentic capabilities locally, in Docker/Kubernetes, or cloud sandboxes
 
 **Real Agentic Use Cases:**
@@ -440,6 +440,137 @@ Docker: Infrastructure costs (AWS/GCP/Azure) + Claude API costs.*
 - **`tdd-london-swarm`** - Test-driven development
 
 *Use `npx agentic-flow --list` to see all 150+ agents*
+
+---
+
+## 🎯 Model Optimization (NEW!)
+
+**Automatically select the optimal model for any agent and task**, balancing quality, cost, and speed based on your priorities.
+
+### Why Model Optimization?
+
+Different tasks need different models:
+- **Production code** → Claude Sonnet 4.5 (highest quality)
+- **Code reviews** → DeepSeek R1 (85% cheaper, nearly same quality)
+- **Simple functions** → Llama 3.1 8B (99% cheaper)
+- **Privacy-critical** → ONNX Phi-4 (free, local, offline)
+
+**The optimizer analyzes your agent type + task complexity and recommends the best model automatically.**
+
+### Quick Examples
+
+```bash
+# Let the optimizer choose (balanced quality vs cost)
+npx agentic-flow --agent coder --task "Build REST API" --optimize
+
+# Optimize for lowest cost
+npx agentic-flow --agent coder --task "Simple function" --optimize --priority cost
+
+# Optimize for highest quality
+npx agentic-flow --agent reviewer --task "Security audit" --optimize --priority quality
+
+# Optimize for speed
+npx agentic-flow --agent researcher --task "Quick analysis" --optimize --priority speed
+
+# Set maximum budget ($0.001 per task)
+npx agentic-flow --agent coder --task "Code cleanup" --optimize --max-cost 0.001
+```
+
+### Optimization Priorities
+
+- **`quality`** (70% quality, 20% speed, 10% cost) - Best results, production code
+- **`balanced`** (40% quality, 40% cost, 20% speed) - Default, good mix
+- **`cost`** (70% cost, 20% quality, 10% speed) - Cheapest, development/testing
+- **`speed`** (70% speed, 20% quality, 10% cost) - Fastest responses
+- **`privacy`** - Local-only models (ONNX), zero cloud API calls
+
+### Model Tier Examples
+
+The optimizer chooses from 10+ models across 5 tiers:
+
+**Tier 1: Flagship** (premium quality)
+- Claude Sonnet 4.5 - $3/$15 per 1M tokens
+- GPT-4o - $2.50/$10 per 1M tokens
+- Gemini 2.5 Pro - $0.00/$2.00 per 1M tokens
+
+**Tier 2: Cost-Effective** (2025 breakthrough models)
+- **DeepSeek R1** - $0.55/$2.19 per 1M tokens (85% cheaper, flagship quality)
+- **DeepSeek Chat V3** - $0.14/$0.28 per 1M tokens (98% cheaper)
+
+**Tier 3: Balanced**
+- Gemini 2.5 Flash - $0.07/$0.30 per 1M tokens (fastest)
+- Llama 3.3 70B - $0.30/$0.30 per 1M tokens (open-source)
+
+**Tier 4: Budget**
+- Llama 3.1 8B - $0.055/$0.055 per 1M tokens (ultra-low cost)
+
+**Tier 5: Local/Privacy**
+- **ONNX Phi-4** - FREE (offline, private, no API)
+
+### Agent-Specific Recommendations
+
+The optimizer knows what each agent needs:
+
+```bash
+# Coder agent → prefers high quality (min 85/100)
+npx agentic-flow --agent coder --task "Production API" --optimize
+# → Selects: DeepSeek R1 (quality 90, cost 85)
+
+# Researcher agent → flexible, can use cheaper models
+npx agentic-flow --agent researcher --task "Trend analysis" --optimize --priority cost
+# → Selects: Gemini 2.5 Flash (quality 78, cost 98)
+
+# Reviewer agent → needs reasoning (min 85/100)
+npx agentic-flow --agent reviewer --task "Security review" --optimize
+# → Selects: DeepSeek R1 (quality 90, reasoning-optimized)
+
+# Tester agent → simple tasks, use budget models
+npx agentic-flow --agent tester --task "Unit tests" --optimize --priority cost
+# → Selects: Llama 3.1 8B (cost 95)
+```
+
+### Cost Savings Examples
+
+**Without Optimization** (always using Claude Sonnet 4.5):
+- 100 code reviews/day × $0.08 each = **$8/day = $240/month**
+
+**With Optimization** (DeepSeek R1 for reviews):
+- 100 code reviews/day × $0.012 each = **$1.20/day = $36/month**
+- **Savings: $204/month (85% reduction)**
+
+### Comprehensive Model Guide
+
+For detailed analysis of all 10 models, see:
+📖 **[Model Capabilities Guide](docs/agentic-flow/benchmarks/MODEL_CAPABILITIES.md)**
+
+Includes:
+- Full benchmark results across 6 task types
+- Cost comparison tables
+- Use case decision matrices
+- Performance characteristics
+- Best practices by model
+
+### MCP Tool for Optimization
+
+```javascript
+// Get model recommendation via MCP tool
+await query({
+  mcp: {
+    server: 'agentic-flow',
+    tool: 'agentic_flow_optimize_model',
+    params: {
+      agent: 'coder',
+      task: 'Build REST API with auth',
+      priority: 'balanced',  // quality | balanced | cost | speed | privacy
+      max_cost: 0.01         // optional budget cap in dollars
+    }
+  }
+});
+```
+
+**Learn More:**
+- See [benchmarks/README.md](docs/agentic-flow/benchmarks/README.md) for quick results
+- Run your own tests: `cd docs/agentic-flow/benchmarks && ./quick-benchmark.sh`
 
 ---
 

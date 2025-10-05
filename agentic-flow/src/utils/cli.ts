@@ -1,12 +1,39 @@
 // CLI argument parsing and help utilities
 
 export interface CliOptions {
-  mode: 'agent' | 'parallel' | 'list' | 'mcp' | 'config';
+  mode: 'agent' | 'parallel' | 'list' | 'mcp' | 'config' | 'agent-manager';
   agent?: string;
   task?: string;
+
+  // Provider Configuration
   model?: string;
   provider?: string;
+
+  // API Configuration
+  anthropicApiKey?: string;
+  openrouterApiKey?: string;
+
+  // Agent Behavior
   stream?: boolean;
+  temperature?: number;
+  maxTokens?: number;
+
+  // Directory Configuration
+  agentsDir?: string;
+
+  // Output Options
+  outputFormat?: 'text' | 'json' | 'markdown';
+  verbose?: boolean;
+
+  // Execution Control
+  timeout?: number;
+  retryOnError?: boolean;
+
+  // Model Optimization
+  optimize?: boolean;
+  optimizePriority?: 'quality' | 'balanced' | 'cost' | 'speed' | 'privacy';
+  maxCost?: number;
+
   help?: boolean;
   mcpCommand?: string; // start, stop, status, list
   mcpServer?: string; // claude-flow, flow-nexus, agentic-payments, all
@@ -29,6 +56,12 @@ export function parseArgs(): CliOptions {
   // Check for config command
   if (args[0] === 'config') {
     options.mode = 'config';
+    return options;
+  }
+
+  // Check for agent management command
+  if (args[0] === 'agent') {
+    options.mode = 'agent-manager';
     return options;
   }
 
@@ -71,6 +104,61 @@ export function parseArgs(): CliOptions {
       case '-l':
         options.mode = 'list';
         break;
+
+      // API Configuration
+      case '--anthropic-key':
+        options.anthropicApiKey = args[++i];
+        break;
+
+      case '--openrouter-key':
+        options.openrouterApiKey = args[++i];
+        break;
+
+      // Agent Behavior
+      case '--temperature':
+        options.temperature = parseFloat(args[++i]);
+        break;
+
+      case '--max-tokens':
+        options.maxTokens = parseInt(args[++i], 10);
+        break;
+
+      // Directory Configuration
+      case '--agents-dir':
+        options.agentsDir = args[++i];
+        break;
+
+      // Output Options
+      case '--output':
+        options.outputFormat = args[++i] as 'text' | 'json' | 'markdown';
+        break;
+
+      case '--verbose':
+        options.verbose = true;
+        break;
+
+      // Execution Control
+      case '--timeout':
+        options.timeout = parseInt(args[++i], 10);
+        break;
+
+      case '--retry':
+        options.retryOnError = true;
+        break;
+
+      // Model Optimization
+      case '--optimize':
+      case '-O':
+        options.optimize = true;
+        break;
+
+      case '--priority':
+        options.optimizePriority = args[++i] as 'quality' | 'balanced' | 'cost' | 'speed' | 'privacy';
+        break;
+
+      case '--max-cost':
+        options.maxCost = parseFloat(args[++i]);
+        break;
     }
   }
 
@@ -86,6 +174,8 @@ USAGE:
 
 COMMANDS:
   mcp <command> [server]  Manage MCP servers (start, stop, status, list)
+  config [command]        Configuration wizard (set, get, list, delete, reset)
+  agent <command>         Agent management (list, create, info, conflicts)
   --list, -l              List all available agents
   --agent, -a <name>      Run specific agent mode
   (default)               Run parallel mode (3 agents)
@@ -99,28 +189,78 @@ MCP COMMANDS:
   Available servers: claude-flow, flow-nexus, agentic-payments, all (default)
 
 OPTIONS:
-  --task, -t <task>       Task description for agent mode
-  --model, -m <model>     Model to use (supports OpenRouter models)
-  --provider, -p <name>   Provider to use (anthropic, openrouter, onnx)
-  --stream, -s            Enable real-time streaming output
-  --help, -h              Show this help message
+  --task, -t <task>           Task description for agent mode
+  --model, -m <model>         Model to use (supports OpenRouter models)
+  --provider, -p <name>       Provider (anthropic, openrouter, onnx)
+  --stream, -s                Enable real-time streaming output
+
+  API CONFIGURATION:
+  --anthropic-key <key>       Override ANTHROPIC_API_KEY
+  --openrouter-key <key>      Override OPENROUTER_API_KEY
+
+  AGENT BEHAVIOR:
+  --temperature <0.0-1.0>     Sampling temperature (creativity)
+  --max-tokens <number>       Maximum response tokens
+
+  DIRECTORY:
+  --agents-dir <path>         Custom agents directory
+
+  OUTPUT:
+  --output <text|json|md>     Output format
+  --verbose                   Enable verbose logging
+
+  EXECUTION:
+  --timeout <ms>              Execution timeout
+  --retry                     Auto-retry on errors
+
+  MODEL OPTIMIZATION (NEW!):
+  --optimize, -O              Auto-select best model for agent/task
+  --priority <type>           Optimization priority (quality|balanced|cost|speed|privacy)
+  --max-cost <dollars>        Maximum cost per task in dollars
+
+  --help, -h                  Show this help message
 
 EXAMPLES:
+  # Agent Management
+  npx agentic-flow agent list             # List all agents with sources
+  npx agentic-flow agent create           # Interactive agent creator
+  npx agentic-flow agent info coder       # Get agent details
+  npx agentic-flow agent conflicts        # Check for conflicts
+
+  # Configuration
+  npx agentic-flow config                 # Interactive config wizard
+  npx agentic-flow config set PROVIDER openrouter
+  npx agentic-flow config list            # View all settings
+
   # MCP Server Management
   npx agentic-flow mcp start              # Start all MCP servers
-  npx agentic-flow mcp start claude-flow  # Start specific server
-  npx agentic-flow mcp list               # List all 203+ MCP tools
-  npx agentic-flow mcp status             # Check server status
+  npx agentic-flow mcp list               # List all 209+ MCP tools
 
-  # Agent Execution
-  npx agentic-flow --list                 # List all 150+ agents
-  npx agentic-flow --agent researcher --task "Analyze AI trends"
-  npx agentic-flow --agent coder --task "Build REST API" --model "meta-llama/llama-3.1-8b-instruct"
-  npx agentic-flow --agent coder --task "Create hello world" --provider onnx
-  npx agentic-flow --agent coder --task "Build REST API" --stream
+  # Agent Execution (Basic)
+  npx agentic-flow --list                 # List all agents
+  npx agentic-flow --agent coder --task "Build REST API"
+
+  # Agent Execution (Advanced)
+  npx agentic-flow --agent coder --task "Build API" \\
+    --provider openrouter \\
+    --model "meta-llama/llama-3.1-8b-instruct" \\
+    --temperature 0.7 \\
+    --max-tokens 2000 \\
+    --output json \\
+    --verbose
+
+  # Agent Execution (Custom)
+  npx agentic-flow --agent my-custom-agent --task "Your task" \\
+    --agents-dir ./my-agents
 
   # Parallel Mode
-  npx agentic-flow  # Run 3 agents in parallel (requires TOPIC, DIFF, DATASET)
+  npx agentic-flow  # Run 3 agents in parallel
+
+  # Model Optimization (Auto-select best model)
+  npx agentic-flow --agent coder --task "Build API" --optimize
+  npx agentic-flow --agent coder --task "Build API" --optimize --priority cost
+  npx agentic-flow --agent researcher --task "Analyze data" --optimize --priority quality
+  npx agentic-flow --agent coder --task "Simple function" --optimize --max-cost 0.001
 
 ENVIRONMENT VARIABLES:
   ANTHROPIC_API_KEY       Anthropic API key (for Claude models)
@@ -136,11 +276,11 @@ ENVIRONMENT VARIABLES:
   ENABLE_STREAMING        Enable streaming (true/false)
   HEALTH_PORT             Health check port (default: 8080)
 
-MCP TOOLS (203+ available):
-  • claude-flow-sdk: 6 in-process tools (memory, swarm coordination)
+MCP TOOLS (209+ available):
+  • agentic-flow: 6 tools (agent execution, creation, management)
   • claude-flow: 101 tools (neural networks, GitHub, workflows, DAA)
   • flow-nexus: 96 cloud tools (sandboxes, distributed swarms, templates)
-  • agentic-payments: Payment authorization and multi-agent consensus
+  • agentic-payments: 6 tools (payment authorization, multi-agent consensus)
 
 For more information, visit: https://github.com/ruvnet/agentic-flow
   `);
