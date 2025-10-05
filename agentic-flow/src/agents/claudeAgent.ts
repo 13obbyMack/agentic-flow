@@ -88,9 +88,9 @@ export async function claudeAgent(
 
     if (provider === 'gemini' && process.env.GOOGLE_GEMINI_API_KEY) {
       // For Gemini: Route through translation proxy
-      // Proxy runs on port 3001 and translates Anthropic API → Gemini API
-      envOverrides.ANTHROPIC_API_KEY = 'proxy-key'; // Proxy handles real auth
-      envOverrides.ANTHROPIC_BASE_URL = process.env.GEMINI_PROXY_URL || 'http://localhost:3001';
+      // Use ANTHROPIC_BASE_URL if already set by CLI, otherwise use env-specific or default
+      envOverrides.ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY || 'proxy-key'; // Use existing or proxy key
+      envOverrides.ANTHROPIC_BASE_URL = process.env.ANTHROPIC_BASE_URL || process.env.GEMINI_PROXY_URL || 'http://localhost:3000';
 
       logger.info('Using Gemini proxy', {
         proxyUrl: envOverrides.ANTHROPIC_BASE_URL,
@@ -98,9 +98,9 @@ export async function claudeAgent(
       });
     } else if (provider === 'openrouter' && process.env.OPENROUTER_API_KEY) {
       // For OpenRouter: Route through translation proxy
-      // Proxy runs on port 3000 and translates Anthropic API → OpenRouter API
-      envOverrides.ANTHROPIC_API_KEY = 'proxy-key'; // Proxy handles real auth
-      envOverrides.ANTHROPIC_BASE_URL = process.env.OPENROUTER_PROXY_URL || 'http://localhost:3000';
+      // Use ANTHROPIC_BASE_URL if already set by CLI, otherwise use env-specific or default
+      envOverrides.ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY || 'proxy-key'; // Use existing or proxy key
+      envOverrides.ANTHROPIC_BASE_URL = process.env.ANTHROPIC_BASE_URL || process.env.OPENROUTER_PROXY_URL || 'http://localhost:3000';
 
       logger.info('Using OpenRouter proxy', {
         proxyUrl: envOverrides.ANTHROPIC_BASE_URL,
