@@ -1,7 +1,7 @@
 {
   "name": "agentic-flow",
-  "version": "1.1.14-beta.1",
-  "description": "Production-ready AI agent orchestration platform with 66 specialized agents, 111 MCP tools, and autonomous multi-agent swarms. Built by @ruvnet with Claude Agent SDK, neural networks, memory persistence, GitHub integration, and distributed consensus protocols. v1.1.14-beta: Fixed critical OpenRouter proxy bug - 70% model success rate including Grok 4 Fast (#1 most popular)!",
+  "version": "1.1.14",
+  "description": "Production-ready AI agent orchestration platform with 66 specialized agents, 111 MCP tools, and autonomous multi-agent swarms. Built by @ruvnet with Claude Agent SDK, neural networks, memory persistence, GitHub integration, and distributed consensus protocols. v1.1.14: Fixed critical OpenRouter proxy bug - 80% model success rate including Grok 4 Fast (#1 most popular)!",
   "type": "module",
   "main": "dist/index.js",
   "bin": {
