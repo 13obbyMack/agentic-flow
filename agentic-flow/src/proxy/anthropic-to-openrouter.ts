@@ -25,7 +25,7 @@ interface AnthropicRequest {
   messages: AnthropicMessage[];
   max_tokens?: number;
   temperature?: number;
-  system?: string;
+  system?: string | Array<{ type: string; text?: string; [key: string]: any }>; // Can be string OR array of blocks
   stream?: boolean;
   tools?: AnthropicTool[];
   [key: string]: any;
@@ -101,13 +101,49 @@ export class AnthropicToOpenRouterProxy {
       try {
         const anthropicReq: AnthropicRequest = req.body;
 
+        // VERBOSE LOGGING: Log incoming Anthropic request
+        // Handle system prompt which can be string OR array of content blocks
+        const systemPreview = typeof anthropicReq.system === 'string'
+          ? anthropicReq.system.substring(0, 200)
+          : Array.isArray(anthropicReq.system)
+          ? JSON.stringify(anthropicReq.system).substring(0, 200)
+          : undefined;
+
+        logger.info('=== INCOMING ANTHROPIC REQUEST ===', {
+          model: anthropicReq.model,
+          systemPrompt: systemPreview,
+          systemType: typeof anthropicReq.system,
+          messageCount: anthropicReq.messages?.length,
+          toolCount: anthropicReq.tools?.length || 0,
+          toolNames: anthropicReq.tools?.map(t => t.name) || [],
+          maxTokens: anthropicReq.max_tokens,
+          temperature: anthropicReq.temperature,
+          stream: anthropicReq.stream
+        });
+
+        // Log first user message for debugging
+        if (anthropicReq.messages && anthropicReq.messages.length > 0) {
+          const firstMsg = anthropicReq.messages[0];
+          logger.info('First user message:', {
+            role: firstMsg.role,
+            contentPreview: typeof firstMsg.content === 'string'
+              ? firstMsg.content.substring(0, 200)
+              : JSON.stringify(firstMsg.content).substring(0, 200)
+          });
+        }
+
         // Convert Anthropic format to OpenAI format
         const openaiReq = this.convertAnthropicToOpenAI(anthropicReq);
 
-        logger.info('Converting Anthropic request to OpenRouter', {
+        // VERBOSE LOGGING: Log converted OpenAI request
+        logger.info('=== CONVERTED OPENAI REQUEST ===', {
           anthropicModel: anthropicReq.model,
           openaiModel: openaiReq.model,
           messageCount: openaiReq.messages.length,
+          systemPrompt: openaiReq.messages[0]?.content?.substring(0, 300),
+          toolCount: openaiReq.tools?.length || 0,
+          toolNames: openaiReq.tools?.map(t => t.function.name) || [],
+          maxTokens: openaiReq.max_tokens,
           apiKeyPresent: !!this.openrouterApiKey,
           apiKeyPrefix: this.openrouterApiKey?.substring(0, 10)
         });
@@ -135,8 +171,16 @@ export class AnthropicToOpenRouterProxy {
           });
         }
 
+        // VERBOSE LOGGING: Log OpenRouter response status
+        logger.info('=== OPENROUTER RESPONSE RECEIVED ===', {
+          status: response.status,
+          statusText: response.statusText,
+          headers: Object.fromEntries(response.headers.entries())
+        });
+
         // Handle streaming vs non-streaming
         if (anthropicReq.stream) {
+          logger.info('Handling streaming response...');
           // Stream response
           res.setHeader('Content-Type', 'text/event-stream');
           res.setHeader('Cache-Control', 'no-cache');
@@ -159,12 +203,35 @@ export class AnthropicToOpenRouterProxy {
 
           res.end();
         } else {
+          logger.info('Handling non-streaming response...');
           // Non-streaming response
           const openaiRes = await response.json();
+
+          // VERBOSE LOGGING: Log raw OpenAI response
+          logger.info('=== RAW OPENAI RESPONSE ===', {
+            id: openaiRes.id,
+            model: openaiRes.model,
+            choices: openaiRes.choices?.length,
+            finishReason: openaiRes.choices?.[0]?.finish_reason,
+            hasToolCalls: !!(openaiRes.choices?.[0]?.message?.tool_calls),
+            toolCallCount: openaiRes.choices?.[0]?.message?.tool_calls?.length || 0,
+            toolCallNames: openaiRes.choices?.[0]?.message?.tool_calls?.map((tc: any) => tc.function.name) || [],
+            contentPreview: openaiRes.choices?.[0]?.message?.content?.substring(0, 300),
+            usage: openaiRes.usage
+          });
+
           const anthropicRes = this.convertOpenAIToAnthropic(openaiRes);
 
-          logger.info('Proxy response sent', {
+          // VERBOSE LOGGING: Log converted Anthropic response
+          logger.info('=== CONVERTED ANTHROPIC RESPONSE ===', {
+            id: anthropicRes.id,
             model: anthropicRes.model,
+            role: anthropicRes.role,
+            stopReason: anthropicRes.stop_reason,
+            contentBlocks: anthropicRes.content?.length,
+            contentTypes: anthropicRes.content?.map((c: any) => c.type),
+            toolUseCount: anthropicRes.content?.filter((c: any) => c.type === 'tool_use').length,
+            textPreview: anthropicRes.content?.find((c: any) => c.type === 'text')?.text?.substring(0, 200),
             usage: anthropicRes.usage
           });
 
@@ -194,31 +261,81 @@ export class AnthropicToOpenRouterProxy {
   }
 
   private convertAnthropicToOpenAI(anthropicReq: AnthropicRequest): OpenAIRequest {
+    logger.info('=== STARTING ANTHROPIC TO OPENAI CONVERSION ===');
     const messages: OpenAIMessage[] = [];
 
     // Get model-specific tool instructions
     const modelId = anthropicReq.model || this.defaultModel;
     const provider = this.extractProvider(modelId);
-    const instructions = getInstructionsForModel(modelId, provider);
 
-    // Check if task requires file operations
-    const needsFileOps = taskRequiresFileOps(
-      anthropicReq.system || '',
-      anthropicReq.messages
-    );
+    logger.info('Model detection:', {
+      requestedModel: anthropicReq.model,
+      defaultModel: this.defaultModel,
+      finalModelId: modelId,
+      extractedProvider: provider
+    });
 
-    // Only include XML instructions if task needs file/tool operations
-    const toolInstructions = formatInstructions(instructions, needsFileOps);
+    // CRITICAL: OpenRouter models use native OpenAI tool calling
+    // - If MCP tools are provided, OpenRouter handles them via function calling
+    // - Do NOT inject XML instructions - they cause malformed output
+    // - Let OpenRouter models use tools via OpenAI's tool_calls format
 
-    // Add system message with context-aware tool instructions
-    let systemContent = toolInstructions;
+    let systemContent = '';
+
+    // Check if we have MCP tools (function calling)
+    const hasMcpTools = anthropicReq.tools && anthropicReq.tools.length > 0;
+
+    logger.info('Tool detection:', {
+      hasMcpTools,
+      toolCount: anthropicReq.tools?.length || 0,
+      toolNames: anthropicReq.tools?.map(t => t.name) || []
+    });
+
+    if (hasMcpTools) {
+      // MCP tools present - OpenRouter will handle via function calling
+      systemContent = 'You are a helpful AI assistant. When you need to perform actions, use the available tools by calling functions. Always explain what you\'re doing.';
+      logger.info('Using MCP tools system prompt (with function calling support)');
+    } else {
+      // No tools - simple response mode
+      systemContent = 'You are a helpful AI assistant. Provide clear, well-formatted code and explanations.';
+      logger.info('Using simple system prompt (no tools)');
+    }
+
     if (anthropicReq.system) {
-      systemContent += '\n\n' + anthropicReq.system;
+      // System can be string OR array of content blocks
+      let originalSystem: string;
+      if (typeof anthropicReq.system === 'string') {
+        originalSystem = anthropicReq.system;
+      } else if (Array.isArray(anthropicReq.system)) {
+        // Extract text from content blocks
+        originalSystem = anthropicReq.system
+          .filter(block => block.type === 'text' && block.text)
+          .map(block => block.text)
+          .join('\n');
+      } else {
+        originalSystem = '';
+      }
+
+      logger.info('Appending original system prompt:', {
+        systemType: typeof anthropicReq.system,
+        isArray: Array.isArray(anthropicReq.system),
+        originalSystemLength: originalSystem.length,
+        originalSystemPreview: originalSystem.substring(0, 200)
+      });
+
+      if (originalSystem) {
+        systemContent += '\n\n' + originalSystem;
+      }
     }
 
     messages.push({
       role: 'system',
       content: systemContent
+    });
+
+    logger.info('System message created:', {
+      systemContentLength: systemContent.length,
+      systemContentPreview: systemContent.substring(0, 300)
     });
 
     // Override model - if request has a Claude model, use defaultModel instead
@@ -261,24 +378,42 @@ export class AnthropicToOpenRouterProxy {
 
     // Convert MCP/Anthropic tools to OpenAI tools format
     if (anthropicReq.tools && anthropicReq.tools.length > 0) {
-      openaiReq.tools = anthropicReq.tools.map(tool => ({
-        type: 'function' as const,
-        function: {
-          name: tool.name,
-          description: tool.description || '',
-          parameters: tool.input_schema || {
-            type: 'object',
-            properties: {},
-            required: []
+      logger.info('Converting MCP tools to OpenAI format...');
+      openaiReq.tools = anthropicReq.tools.map(tool => {
+        const openaiTool = {
+          type: 'function' as const,
+          function: {
+            name: tool.name,
+            description: tool.description || '',
+            parameters: tool.input_schema || {
+              type: 'object',
+              properties: {},
+              required: []
+            }
           }
-        }
-      }));
+        };
+        logger.info(`Converted tool: ${tool.name}`, {
+          hasDescription: !!tool.description,
+          hasInputSchema: !!tool.input_schema
+        });
+        return openaiTool;
+      });
 
       logger.info('Forwarding MCP tools to OpenRouter', {
         toolCount: openaiReq.tools.length,
         toolNames: openaiReq.tools.map(t => t.function.name)
       });
+    } else {
+      logger.info('No MCP tools to convert');
     }
+
+    logger.info('=== CONVERSION COMPLETE ===', {
+      messageCount: openaiReq.messages.length,
+      hasMcpTools: !!openaiReq.tools,
+      toolCount: openaiReq.tools?.length || 0,
+      maxTokens: openaiReq.max_tokens,
+      model: openaiReq.model
+    });
 
     return openaiReq;
   }
@@ -347,31 +482,44 @@ export class AnthropicToOpenRouterProxy {
     const rawText = message.content || choice.text || '';
     const toolCalls = message.tool_calls || [];
 
-    // Parse structured commands from model's response
-    const { cleanText, toolUses } = this.parseStructuredCommands(rawText);
+    logger.info('=== CONVERTING OPENAI TO ANTHROPIC ===', {
+      hasMessage: !!message,
+      hasContent: !!rawText,
+      contentLength: rawText?.length,
+      hasToolCalls: toolCalls.length > 0,
+      toolCallCount: toolCalls.length,
+      finishReason: choice.finish_reason
+    });
 
-    // Build content array with text and tool uses
+    // CRITICAL: Use ONLY native OpenAI tool_calls format
+    // Do NOT parse XML from text - models output malformed XML
+    // OpenRouter handles tools via OpenAI function calling standard
+
     const contentBlocks: any[] = [];
 
-    if (cleanText) {
-      contentBlocks.push({
-        type: 'text',
-        text: cleanText
-      });
-    }
-
-    // Add tool uses from structured commands
-    contentBlocks.push(...toolUses);
-
-    // Add tool uses from OpenAI tool_calls (MCP tools)
+    // Add tool uses from OpenAI tool_calls (MCP tools via function calling)
     if (toolCalls.length > 0) {
+      logger.info('Processing tool calls from OpenAI response...');
       for (const toolCall of toolCalls) {
-        contentBlocks.push({
-          type: 'tool_use',
-          id: toolCall.id,
-          name: toolCall.function.name,
-          input: JSON.parse(toolCall.function.arguments || '{}')
-        });
+        try {
+          logger.info('Tool call details:', {
+            id: toolCall.id,
+            name: toolCall.function.name,
+            argumentsRaw: toolCall.function.arguments
+          });
+
+          contentBlocks.push({
+            type: 'tool_use',
+            id: toolCall.id,
+            name: toolCall.function.name,
+            input: JSON.parse(toolCall.function.arguments || '{}')
+          });
+        } catch (error) {
+          logger.error('Failed to parse tool call arguments', {
+            toolCall,
+            error: (error as Error).message
+          });
+        }
       }
 
       logger.info('Converted OpenRouter tool calls to Anthropic format', {
@@ -380,23 +528,47 @@ export class AnthropicToOpenRouterProxy {
       });
     }
 
-    return {
+    // Add text response if present
+    if (rawText && rawText.trim()) {
+      logger.info('Adding text content block', {
+        textLength: rawText.length,
+        textPreview: rawText.substring(0, 200)
+      });
+      contentBlocks.push({
+        type: 'text',
+        text: rawText
+      });
+    }
+
+    // If no content blocks, add empty text
+    if (contentBlocks.length === 0) {
+      logger.warn('No content blocks found, adding empty text block');
+      contentBlocks.push({
+        type: 'text',
+        text: rawText || ''
+      });
+    }
+
+    logger.info('Final content blocks:', {
+      blockCount: contentBlocks.length,
+      blockTypes: contentBlocks.map(b => b.type)
+    });
+
+    const result = {
       id: openaiRes.id || `msg_${Date.now()}`,
       type: 'message',
       role: 'assistant',
       model: openaiRes.model,
-      content: contentBlocks.length > 0 ? contentBlocks : [
-        {
-          type: 'text',
-          text: rawText
-        }
-      ],
+      content: contentBlocks,
       stop_reason: this.mapFinishReason(choice.finish_reason),
       usage: {
         input_tokens: openaiRes.usage?.prompt_tokens || 0,
         output_tokens: openaiRes.usage?.completion_tokens || 0
       }
     };
+
+    logger.info('Conversion complete, returning Anthropic response');
+    return result;
   }
 
   private convertOpenAIStreamToAnthropic(chunk: string): string {

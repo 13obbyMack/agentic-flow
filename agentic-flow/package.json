@@ -1,7 +1,7 @@
 {
   "name": "agentic-flow",
-  "version": "1.1.13",
-  "description": "Production-ready AI agent orchestration platform with 66 specialized agents, 111 MCP tools, and autonomous multi-agent swarms. Built by @ruvnet with Claude Agent SDK, neural networks, memory persistence, GitHub integration, and distributed consensus protocols. v1.1.13: Context-aware OpenRouter proxy with 100% success rate across GPT, DeepSeek, and Llama models!",
+  "version": "1.1.14-beta.1",
+  "description": "Production-ready AI agent orchestration platform with 66 specialized agents, 111 MCP tools, and autonomous multi-agent swarms. Built by @ruvnet with Claude Agent SDK, neural networks, memory persistence, GitHub integration, and distributed consensus protocols. v1.1.14-beta: Fixed critical OpenRouter proxy bug - 70% model success rate including Grok 4 Fast (#1 most popular)!",
   "type": "module",
   "main": "dist/index.js",
   "bin": {
@@ -27,6 +27,7 @@
     "mcp:fastmcp-poc": "node dist/mcp/fastmcp/servers/poc-stdio.js",
     "mcp:http": "node dist/mcp/fastmcp/servers/http-sse.js",
     "mcp:stdio": "node dist/mcp/standalone-stdio.js",
+    "claude-code": "node dist/cli/claude-code-wrapper.js",
     "example:goal-planner": "tsx src/examples/use-goal-planner.ts",
     "example:multi-agent": "tsx src/examples/multi-agent-orchestration.ts",
     "proxy": "node dist/proxy/anthropic-to-openrouter.js",
@@ -141,7 +142,11 @@
     "dist",
     "docs",
     ".claude",
+    "validation",
+    "scripts",
     "README.md",
-    "LICENSE"
+    "LICENSE",
+    "VALIDATION-RESULTS.md",
+    "CHANGELOG.md"
   ]
 }
