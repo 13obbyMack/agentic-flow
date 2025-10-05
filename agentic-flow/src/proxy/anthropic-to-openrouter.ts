@@ -3,7 +3,7 @@
 import express, { Request, Response, NextFunction } from 'express';
 import { createProxyMiddleware, Options } from 'http-proxy-middleware';
 import { logger } from '../utils/logger.js';
-import { getInstructionsForModel, formatInstructions } from './provider-instructions.js';
+import { getInstructionsForModel, formatInstructions, taskRequiresFileOps, getMaxTokensForModel } from './provider-instructions.js';
 
 interface AnthropicMessage {
   role: 'user' | 'assistant';
@@ -200,9 +200,17 @@ export class AnthropicToOpenRouterProxy {
     const modelId = anthropicReq.model || this.defaultModel;
     const provider = this.extractProvider(modelId);
     const instructions = getInstructionsForModel(modelId, provider);
-    const toolInstructions = formatInstructions(instructions);
 
-    // Add system message with optimized tool instructions
+    // Check if task requires file operations
+    const needsFileOps = taskRequiresFileOps(
+      anthropicReq.system || '',
+      anthropicReq.messages
+    );
+
+    // Only include XML instructions if task needs file/tool operations
+    const toolInstructions = formatInstructions(instructions, needsFileOps);
+
+    // Add system message with context-aware tool instructions
     let systemContent = toolInstructions;
     if (anthropicReq.system) {
       systemContent += '\n\n' + anthropicReq.system;
@@ -240,10 +248,13 @@ export class AnthropicToOpenRouterProxy {
       });
     }
 
+    // Get appropriate max_tokens for this model
+    const maxTokens = getMaxTokensForModel(finalModel, anthropicReq.max_tokens);
+
     const openaiReq: OpenAIRequest = {
       model: finalModel,
       messages,
-      max_tokens: anthropicReq.max_tokens,
+      max_tokens: maxTokens,
       temperature: anthropicReq.temperature,
       stream: anthropicReq.stream
     };

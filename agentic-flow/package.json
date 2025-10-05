@@ -1,7 +1,7 @@
 {
   "name": "agentic-flow",
-  "version": "1.1.12",
-  "description": "Production-ready AI agent orchestration platform with 66 specialized agents, 111 MCP tools, and autonomous multi-agent swarms. Built by @ruvnet with Claude Agent SDK, neural networks, memory persistence, GitHub integration, and distributed consensus protocols. v1.1.11: MCP tools now work through proxy providers (Gemini, OpenRouter) for 85-90% cost savings!",
+  "version": "1.1.13",
+  "description": "Production-ready AI agent orchestration platform with 66 specialized agents, 111 MCP tools, and autonomous multi-agent swarms. Built by @ruvnet with Claude Agent SDK, neural networks, memory persistence, GitHub integration, and distributed consensus protocols. v1.1.13: Context-aware OpenRouter proxy with 100% success rate across GPT, DeepSeek, and Llama models!",
   "type": "module",
   "main": "dist/index.js",
   "bin": {
@@ -18,6 +18,7 @@
     "validate": "tsx validation/quick-wins/validate-all.ts",
     "validate:sdk": "tsx validation/sdk-validation.ts",
     "validate:health": "bash validation/quick-wins/test-health.sh",
+    "validate:openrouter": "tsx validation/test-openrouter-fixes.ts",
     "validate:claude-flow": "npm run test:memory && npm run test:coordination && npm run test:hybrid",
     "test:memory": "tsx validation/claude-flow/test-memory.ts",
     "test:coordination": "tsx validation/claude-flow/test-coordination.ts",

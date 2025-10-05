@@ -211,10 +211,33 @@ export function getInstructionsForModel(modelId: string, provider?: string): Too
   return BASE_INSTRUCTIONS;
 }
 
+// Check if task requires file/tool operations based on prompt content
+export function taskRequiresFileOps(systemPrompt: string, userMessages: any[]): boolean {
+  const combined = (systemPrompt + ' ' + JSON.stringify(userMessages)).toLowerCase();
+
+  // Keywords that suggest file operations are needed
+  const fileKeywords = [
+    'create file', 'write file', 'save to', 'create a file',
+    'write to disk', 'save code to', 'create script',
+    'bash', 'shell', 'command', 'execute', 'run command'
+  ];
+
+  return fileKeywords.some(keyword => combined.includes(keyword));
+}
+
 // Generate formatted instruction string for injection
-export function formatInstructions(instructions: ToolInstructions): string {
+// Only include XML instructions if task actually requires file operations
+export function formatInstructions(
+  instructions: ToolInstructions,
+  includeXmlInstructions: boolean = true
+): string {
   if (instructions.format === 'native') {
     return `${instructions.emphasis}\n\n${instructions.commands.write}\n${instructions.commands.read}\n${instructions.commands.bash}`;
+  }
+
+  // For simple code generation without file ops, skip XML instructions
+  if (!includeXmlInstructions) {
+    return 'Provide clean, well-formatted code in your response. Use markdown code blocks for code.';
   }
 
   let formatted = `${instructions.emphasis}\n\n`;
@@ -228,4 +251,32 @@ export function formatInstructions(instructions: ToolInstructions): string {
   }
 
   return formatted;
+}
+
+// Get appropriate max_tokens for model
+export function getMaxTokensForModel(modelId: string, requestedMaxTokens?: number): number {
+  const normalizedModel = modelId.toLowerCase();
+
+  // If user requested specific max_tokens, use it
+  if (requestedMaxTokens) {
+    return requestedMaxTokens;
+  }
+
+  // DeepSeek needs higher max_tokens
+  if (normalizedModel.includes('deepseek')) {
+    return 8000;
+  }
+
+  // Llama 3.1/3.3 - moderate
+  if (normalizedModel.includes('llama')) {
+    return 4096;
+  }
+
+  // GPT models - standard
+  if (normalizedModel.includes('gpt')) {
+    return 4096;
+  }
+
+  // Default
+  return 4096;
 }
