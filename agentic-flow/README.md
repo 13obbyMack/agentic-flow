@@ -2,6 +2,30 @@
 
 **Production-Ready AI Agent Orchestration with Multi-Model Router, OpenRouter Integration & Free Local Inference**
 
+## 🎉 NEW in v1.1.11: MCP Tools Through Proxy + Standalone Proxy Mode!
+
+**Use Gemini or OpenRouter with Claude Code at 85-90% cost savings!**
+
+```bash
+# Start standalone proxy
+npx agentic-flow proxy --provider gemini
+
+# Configure Claude Code (in another terminal)
+export ANTHROPIC_BASE_URL=http://localhost:3000
+export ANTHROPIC_API_KEY=sk-ant-proxy-dummy-key
+claude  # Now using Gemini instead of Anthropic!
+```
+
+**What's New:**
+- ✅ **MCP tools now work through proxy providers** (Gemini, OpenRouter)
+- ✅ **Standalone proxy mode** for Claude Code and Cursor integration
+- ✅ **85-90% cost savings** with full MCP functionality
+- ✅ **Zero breaking changes** - fully backward compatible
+
+See [v1.1.11 Release Notes](README_V1.1.11.md) | [Standalone Proxy Guide](docs/STANDALONE_PROXY_GUIDE.md)
+
+---
+
 Agentic Flow works with any agent or command built or used in Claude Code. It automatically runs through the Claude Agent SDK, forming swarms of intelligent, cost and performance-optimized agents that decide how to execute each task. Built for business, government, and commercial use where cost, traceability, and reliability matter.
 
 Agentic Flow runs Claude Code agents at near zero cost without rewriting a thing. It routes every task to the cheapest lane that still meets the bar. Local ONNX when privacy or price wins. OpenRouter for breadth. Gemini for speed. Anthropic when quality matters most. One agent. Any model. Lowest viable cost.
@@ -79,6 +103,32 @@ npx agentic-flow --help
 # Set your API key
 export ANTHROPIC_API_KEY=sk-ant-...
 ```
+
+### Standalone Proxy Mode (NEW in v1.1.11) 🎉
+
+Use Gemini or OpenRouter with **Claude Code** at 85-90% cost savings!
+
+```bash
+# Terminal 1: Start proxy
+export GOOGLE_GEMINI_API_KEY=your-key-here
+npx agentic-flow proxy
+
+# Terminal 2: Use Claude Code
+export ANTHROPIC_BASE_URL=http://localhost:3000
+export ANTHROPIC_API_KEY=sk-ant-proxy-dummy-key
+claude  # Now uses Gemini at 85% cost savings!
+
+# Or with OpenRouter (90% savings)
+npx agentic-flow proxy --provider openrouter --model "openai/gpt-4o-mini"
+```
+
+**Features:**
+- ✅ MCP tools work through proxy (memory, swarms, GitHub)
+- ✅ Compatible with Claude Code official CLI
+- ✅ Future Cursor IDE support (when they add ANTHROPIC_BASE_URL)
+- ✅ 85-90% cost savings vs direct Anthropic API
+
+See [Standalone Proxy Guide](docs/STANDALONE_PROXY_GUIDE.md) for details.
 
 ### Your First Agent (Local Execution)
 

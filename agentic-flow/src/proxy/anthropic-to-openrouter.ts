@@ -10,6 +10,16 @@ interface AnthropicMessage {
   content: string | Array<{ type: string; text?: string; [key: string]: any }>;
 }
 
+interface AnthropicTool {
+  name: string;
+  description?: string;
+  input_schema?: {
+    type: string;
+    properties?: Record<string, any>;
+    required?: string[];
+  };
+}
+
 interface AnthropicRequest {
   model?: string;
   messages: AnthropicMessage[];
@@ -17,6 +27,7 @@ interface AnthropicRequest {
   temperature?: number;
   system?: string;
   stream?: boolean;
+  tools?: AnthropicTool[];
   [key: string]: any;
 }
 
@@ -25,12 +36,22 @@ interface OpenAIMessage {
   content: string;
 }
 
+interface OpenAITool {
+  type: 'function';
+  function: {
+    name: string;
+    description?: string;
+    parameters?: any;
+  };
+}
+
 interface OpenAIRequest {
   model: string;
   messages: OpenAIMessage[];
   max_tokens?: number;
   temperature?: number;
   stream?: boolean;
+  tools?: OpenAITool[];
   [key: string]: any;
 }
 
@@ -219,13 +240,36 @@ export class AnthropicToOpenRouterProxy {
       });
     }
 
-    return {
+    const openaiReq: OpenAIRequest = {
       model: finalModel,
       messages,
       max_tokens: anthropicReq.max_tokens,
       temperature: anthropicReq.temperature,
       stream: anthropicReq.stream
     };
+
+    // Convert MCP/Anthropic tools to OpenAI tools format
+    if (anthropicReq.tools && anthropicReq.tools.length > 0) {
+      openaiReq.tools = anthropicReq.tools.map(tool => ({
+        type: 'function' as const,
+        function: {
+          name: tool.name,
+          description: tool.description || '',
+          parameters: tool.input_schema || {
+            type: 'object',
+            properties: {},
+            required: []
+          }
+        }
+      }));
+
+      logger.info('Forwarding MCP tools to OpenRouter', {
+        toolCount: openaiReq.tools.length,
+        toolNames: openaiReq.tools.map(t => t.function.name)
+      });
+    }
+
+    return openaiReq;
   }
 
   private parseStructuredCommands(text: string): {
@@ -288,7 +332,9 @@ export class AnthropicToOpenRouterProxy {
       throw new Error('No choices in OpenAI response');
     }
 
-    const rawText = choice.message?.content || choice.text || '';
+    const message = choice.message || {};
+    const rawText = message.content || choice.text || '';
+    const toolCalls = message.tool_calls || [];
 
     // Parse structured commands from model's response
     const { cleanText, toolUses } = this.parseStructuredCommands(rawText);
@@ -303,8 +349,25 @@ export class AnthropicToOpenRouterProxy {
       });
     }
 
-    // Add tool uses
+    // Add tool uses from structured commands
     contentBlocks.push(...toolUses);
+
+    // Add tool uses from OpenAI tool_calls (MCP tools)
+    if (toolCalls.length > 0) {
+      for (const toolCall of toolCalls) {
+        contentBlocks.push({
+          type: 'tool_use',
+          id: toolCall.id,
+          name: toolCall.function.name,
+          input: JSON.parse(toolCall.function.arguments || '{}')
+        });
+      }
+
+      logger.info('Converted OpenRouter tool calls to Anthropic format', {
+        toolCallCount: toolCalls.length,
+        toolNames: toolCalls.map((tc: any) => tc.function.name)
+      });
+    }
 
     return {
       id: openaiRes.id || `msg_${Date.now()}`,

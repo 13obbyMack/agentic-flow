@@ -1,7 +1,7 @@
 // CLI argument parsing and help utilities
 
 export interface CliOptions {
-  mode: 'agent' | 'parallel' | 'list' | 'mcp' | 'config' | 'agent-manager';
+  mode: 'agent' | 'parallel' | 'list' | 'mcp' | 'config' | 'agent-manager' | 'proxy';
   agent?: string;
   task?: string;
 
@@ -46,7 +46,13 @@ export function parseArgs(): CliOptions {
     mode: 'parallel'
   };
 
-  // Check for MCP command first
+  // Check for proxy command first
+  if (args[0] === 'proxy') {
+    options.mode = 'proxy';
+    return options;
+  }
+
+  // Check for MCP command
   if (args[0] === 'mcp') {
     options.mode = 'mcp';
     options.mcpCommand = args[1] || 'start'; // default to start

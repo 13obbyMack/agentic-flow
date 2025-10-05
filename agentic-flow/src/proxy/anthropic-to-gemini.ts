@@ -8,6 +8,16 @@ interface AnthropicMessage {
   content: string | Array<{ type: string; text?: string; [key: string]: any }>;
 }
 
+interface AnthropicTool {
+  name: string;
+  description?: string;
+  input_schema?: {
+    type: string;
+    properties?: Record<string, any>;
+    required?: string[];
+  };
+}
+
 interface AnthropicRequest {
   model?: string;
   messages: AnthropicMessage[];
@@ -15,6 +25,7 @@ interface AnthropicRequest {
   temperature?: number;
   system?: string;
   stream?: boolean;
+  tools?: AnthropicTool[];
   [key: string]: any;
 }
 
@@ -27,6 +38,14 @@ interface GeminiContent {
   parts: GeminiPart[];
 }
 
+interface GeminiTool {
+  functionDeclarations: Array<{
+    name: string;
+    description?: string;
+    parameters?: any;
+  }>;
+}
+
 interface GeminiRequest {
   contents: GeminiContent[];
   generationConfig?: {
@@ -34,6 +53,7 @@ interface GeminiRequest {
     maxOutputTokens?: number;
     [key: string]: any;
   };
+  tools?: GeminiTool[];
 }
 
 export class AnthropicToGeminiProxy {
@@ -258,6 +278,53 @@ The system will automatically execute these commands and provide results.
       }
     }
 
+    // Convert MCP/Anthropic tools to Gemini tools format
+    if (anthropicReq.tools && anthropicReq.tools.length > 0) {
+      geminiReq.tools = [{
+        functionDeclarations: anthropicReq.tools.map(tool => {
+          // Clean schema: Remove $schema and additionalProperties fields that Gemini doesn't support
+          const cleanSchema = (schema: any): any => {
+            if (!schema || typeof schema !== 'object') return schema;
+
+            const { $schema, additionalProperties, ...rest } = schema;
+            const cleaned: any = { ...rest };
+
+            // Recursively clean nested objects
+            if (cleaned.properties) {
+              cleaned.properties = Object.fromEntries(
+                Object.entries(cleaned.properties).map(([key, value]: [string, any]) => [
+                  key,
+                  cleanSchema(value)
+                ])
+              );
+            }
+
+            // Clean items if present
+            if (cleaned.items) {
+              cleaned.items = cleanSchema(cleaned.items);
+            }
+
+            return cleaned;
+          };
+
+          return {
+            name: tool.name,
+            description: tool.description || '',
+            parameters: cleanSchema(tool.input_schema) || {
+              type: 'object',
+              properties: {},
+              required: []
+            }
+          };
+        })
+      }];
+
+      logger.info('Forwarding MCP tools to Gemini', {
+        toolCount: anthropicReq.tools.length,
+        toolNames: anthropicReq.tools.map(t => t.name)
+      });
+    }
+
     return geminiReq;
   }
 
@@ -322,9 +389,22 @@ The system will automatically execute these commands and provide results.
     }
 
     const content = candidate.content;
-    const rawText = content?.parts?.map((part: any) => part.text).join('') || '';
+    const parts = content?.parts || [];
 
-    // Parse structured commands from Gemini's response
+    // Extract text and function calls
+    let rawText = '';
+    const functionCalls: any[] = [];
+
+    for (const part of parts) {
+      if (part.text) {
+        rawText += part.text;
+      }
+      if (part.functionCall) {
+        functionCalls.push(part.functionCall);
+      }
+    }
+
+    // Parse structured commands from Gemini's text response
     const { cleanText, toolUses } = this.parseStructuredCommands(rawText);
 
     // Build content array with text and tool uses
@@ -337,8 +417,25 @@ The system will automatically execute these commands and provide results.
       });
     }
 
-    // Add tool uses
+    // Add tool uses from structured commands
     contentBlocks.push(...toolUses);
+
+    // Add tool uses from Gemini function calls (MCP tools)
+    if (functionCalls.length > 0) {
+      for (const functionCall of functionCalls) {
+        contentBlocks.push({
+          type: 'tool_use',
+          id: `tool_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          name: functionCall.name,
+          input: functionCall.args || {}
+        });
+      }
+
+      logger.info('Converted Gemini function calls to Anthropic format', {
+        functionCallCount: functionCalls.length,
+        functionNames: functionCalls.map((fc: any) => fc.name)
+      });
+    }
 
     return {
       id: `msg_${Date.now()}`,
