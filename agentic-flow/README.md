@@ -70,7 +70,7 @@ npx agentic-flow --list
 Access 213 MCP tools for memory, swarms, GitHub, neural networks, and cloud sandboxes:
 
 ```bash
-# Start all MCP servers (213 tools)
+# Start all MCP servers (213 tools) - stdio transport
 npx agentic-flow mcp start
 
 # List all available tools
@@ -84,7 +84,24 @@ export ENABLE_CLAUDE_FLOW_SDK=true
 npx agentic-flow --agent coder --task "Store config in memory using memory_store"
 ```
 
+**MCP Transports:**
+- **stdio** (default): Standard input/output for Claude Desktop integration
+- **HTTP/SSE** (new): HTTP server with Server-Sent Events for web apps
+
+```bash
+# Start HTTP/SSE server on port 8080
+npm run mcp:http
+# Endpoints:
+# - HTTP: http://localhost:8080/mcp
+# - SSE: http://localhost:8080/sse
+# - Health: http://localhost:8080/health
+
+# Start stdio server (default)
+npm run mcp:stdio
+```
+
 **MCP Tool Categories:**
+- **Agentic Flow** (6 tools): Agent execution, creation, optimization, model selection
 - **Claude Flow SDK** (6 tools): In-process memory and swarm coordination
 - **Claude Flow** (101 tools): Neural networks, GitHub, workflows, performance, DAA
 - **Flow Nexus** (96 tools): E2B sandboxes, distributed swarms, templates, storage
@@ -286,6 +303,7 @@ MCP (Model Context Protocol) tools extend agent capabilities beyond text generat
 
 ### Starting MCP Servers
 
+**stdio Transport (default for Claude Desktop):**
 ```bash
 # Start all 213 tools (4 servers)
 npx agentic-flow mcp start
@@ -304,6 +322,24 @@ npx agentic-flow mcp status
 # Stop servers
 npx agentic-flow mcp stop
 ```
+
+**HTTP/SSE Transport (new for web applications):**
+```bash
+# Start HTTP/SSE MCP server on port 8080
+npm run mcp:http
+
+# Or manually:
+node dist/mcp/fastmcp/servers/http-sse.js
+
+# Server provides 3 endpoints:
+# - http://localhost:8080/mcp (MCP protocol)
+# - http://localhost:8080/sse (Server-Sent Events)
+# - http://localhost:8080/health (health check)
+```
+
+**When to use each transport:**
+- **stdio**: Claude Desktop, Cursor IDE, command-line tools
+- **HTTP/SSE**: Web apps, browser extensions, REST APIs, mobile apps
 
 ### Using MCP Tools in Agents
 
