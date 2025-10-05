@@ -1,6 +1,13 @@
-FROM node:22-alpine
+FROM node:22-slim
 
 WORKDIR /app
+
+# Install required dependencies for ONNX
+RUN apt-get update && apt-get install -y \
+    python3 \
+    make \
+    g++ \
+    && rm -rf /var/lib/apt/lists/*
 
 # Copy the package tarball
 COPY agentic-flow/agentic-flow-1.1.3.tgz .

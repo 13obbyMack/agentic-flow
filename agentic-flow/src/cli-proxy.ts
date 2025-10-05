@@ -261,6 +261,11 @@ class AgenticFlowCLI {
       process.exit(1);
     }
 
+    // Set PROVIDER environment variable if --provider flag is used
+    if (options.provider) {
+      process.env.PROVIDER = options.provider;
+    }
+
     // Check for API key (unless using ONNX)
     const isOnnx = options.provider === 'onnx' || process.env.USE_ONNX === 'true' || process.env.PROVIDER === 'onnx';
 
