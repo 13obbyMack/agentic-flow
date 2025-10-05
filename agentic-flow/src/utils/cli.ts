@@ -35,6 +35,7 @@ export interface CliOptions {
   maxCost?: number;
 
   help?: boolean;
+  version?: boolean;
   mcpCommand?: string; // start, stop, status, list
   mcpServer?: string; // claude-flow, flow-nexus, agentic-payments, all
 }
@@ -72,6 +73,11 @@ export function parseArgs(): CliOptions {
       case '--help':
       case '-h':
         options.help = true;
+        break;
+
+      case '--version':
+      case '-v':
+        options.version = true;
         break;
 
       case '--agent':

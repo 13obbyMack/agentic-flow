@@ -52,6 +52,11 @@ class AgenticFlowCLI {
   async start() {
     const options = parseArgs();
 
+    if (options.version) {
+      console.log(`agentic-flow v${VERSION}`);
+      process.exit(0);
+    }
+
     if (options.help) {
       this.printHelp();
       process.exit(0);
