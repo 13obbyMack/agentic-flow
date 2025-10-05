@@ -1,27 +1,20 @@
-# Archived Documentation
+# Validation & Testing Reports
 
-Historical documentation, completed implementation reports, and legacy documents.
+Test results, validation reports, and quality assurance documentation.
 
-## Completed Implementations
+## System Validation
 
-- [FastMCP Complete](FASTMCP_COMPLETE.md) - FastMCP implementation completion
-- [Flow Nexus Complete](FLOW-NEXUS-COMPLETE.md) - Flow Nexus integration completion
-- [OpenRouter Proxy Complete](OPENROUTER_PROXY_COMPLETE.md) - OpenRouter proxy implementation
-- [Package Complete](PACKAGE-COMPLETE.md) - Package implementation completion
-- [SDK Setup Complete](SDK-SETUP-COMPLETE.md) - SDK setup completion
+- [Final System Validation](FINAL_SYSTEM_VALIDATION.md) - Complete system validation results
+- [Final Validation Summary](FINAL_VALIDATION_SUMMARY.md) - Summary of validation outcomes
 
-## Integration Reports
+## Component Testing
 
-- [FastMCP Integration Status](FASTMCP_INTEGRATION_STATUS.md) - Historical FastMCP integration status
-- [Integration Confirmed](INTEGRATION_CONFIRMED.md) - Integration confirmation report
+- [Docker MCP Validation](DOCKER_MCP_VALIDATION.md) - Docker MCP integration tests
+- [Docker OpenRouter Validation](DOCKER_OPENROUTER_VALIDATION.md) - OpenRouter Docker validation
+- [MCP CLI Tools Validation](MCP_CLI_TOOLS_VALIDATION.md) - MCP command-line tools testing
+- [Model Validation Report](MODEL_VALIDATION_REPORT.md) - Language model validation results
 
-## ONNX Implementation
+## Integration Testing
 
-- [ONNX Final Report](ONNX_FINAL_REPORT.md) - ONNX implementation final report
-- [ONNX Implementation Complete](ONNX_IMPLEMENTATION_COMPLETE.md) - ONNX completion status
-- [ONNX Implementation Summary](ONNX_IMPLEMENTATION_SUMMARY.md) - ONNX implementation overview
-- [ONNX Success Report](ONNX_SUCCESS_REPORT.md) - ONNX success metrics
-
-## Research
-
-- [Research Complete](RESEARCH_COMPLETE.txt) - Historical research documentation
+- [OpenRouter Validation Complete](OPENROUTER_VALIDATION_COMPLETE.md) - OpenRouter integration validation
+- [Router Validation](ROUTER_VALIDATION.md) - Multi-model router validation tests

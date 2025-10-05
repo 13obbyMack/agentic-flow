@@ -1,7 +1,7 @@
 // CLI argument parsing and help utilities
 
 export interface CliOptions {
-  mode: 'agent' | 'parallel' | 'list' | 'mcp' | 'config' | 'agent-manager' | 'proxy';
+  mode: 'agent' | 'parallel' | 'list' | 'mcp' | 'config' | 'agent-manager' | 'proxy' | 'claude-code';
   agent?: string;
   task?: string;
 
@@ -49,6 +49,12 @@ export function parseArgs(): CliOptions {
   // Check for proxy command first
   if (args[0] === 'proxy') {
     options.mode = 'proxy';
+    return options;
+  }
+
+  // Check for claude-code command
+  if (args[0] === 'claude-code') {
+    options.mode = 'claude-code';
     return options;
   }
 

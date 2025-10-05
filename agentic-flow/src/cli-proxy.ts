@@ -86,6 +86,25 @@ class AgenticFlowCLI {
       return;
     }
 
+    if (options.mode === 'claude-code') {
+      // Spawn Claude Code with auto-configured proxy
+      const { spawn } = await import('child_process');
+      const claudeCodePath = pathResolve(__dirname, './cli/claude-code-wrapper.js');
+
+      const proc = spawn('node', [claudeCodePath, ...process.argv.slice(3)], {
+        stdio: 'inherit',
+        env: process.env as NodeJS.ProcessEnv
+      });
+
+      proc.on('exit', (code) => {
+        process.exit(code || 0);
+      });
+
+      process.on('SIGINT', () => proc.kill('SIGINT'));
+      process.on('SIGTERM', () => proc.kill('SIGTERM'));
+      return;
+    }
+
     if (options.mode === 'mcp') {
       // Run standalone MCP server directly
       const { spawn } = await import('child_process');
@@ -620,6 +639,8 @@ COMMANDS:
   config [subcommand]     Manage environment configuration (interactive wizard)
   mcp <command> [server]  Manage MCP servers (start, stop, status, list)
   agent <command>         Agent management (list, create, info, conflicts)
+  proxy [options]         Run standalone proxy server for Claude Code/Cursor
+  claude-code [options]   Spawn Claude Code with auto-configured proxy
   --list, -l              List all available agents
   --agent, -a <name>      Run specific agent mode
 
@@ -692,6 +713,15 @@ EXAMPLES:
   npx agentic-flow mcp start claude-flow  # Start specific server
   npx agentic-flow mcp list               # List all 203+ MCP tools
   npx agentic-flow mcp status             # Check server status
+
+  # Proxy Server for Claude Code/Cursor
+  npx agentic-flow proxy --provider openrouter --port 3000
+  npx agentic-flow proxy --provider gemini --port 3001
+
+  # Claude Code Integration (Auto-start proxy + spawn Claude Code)
+  npx agentic-flow claude-code --provider openrouter "Write a Python function"
+  npx agentic-flow claude-code --provider gemini "Create a REST API"
+  npx agentic-flow claude-code --provider anthropic "Help me debug this code"
 
   # Agent Execution
   npx agentic-flow --list                 # List all 150+ agents

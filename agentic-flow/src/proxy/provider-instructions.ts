@@ -213,16 +213,28 @@ export function getInstructionsForModel(modelId: string, provider?: string): Too
 
 // Check if task requires file/tool operations based on prompt content
 export function taskRequiresFileOps(systemPrompt: string, userMessages: any[]): boolean {
-  const combined = (systemPrompt + ' ' + JSON.stringify(userMessages)).toLowerCase();
+  const combined = systemPrompt + ' ' + JSON.stringify(userMessages);
 
-  // Keywords that suggest file operations are needed
-  const fileKeywords = [
-    'create file', 'write file', 'save to', 'create a file',
-    'write to disk', 'save code to', 'create script',
-    'bash', 'shell', 'command', 'execute', 'run command'
+  // Regex patterns that suggest file operations are needed
+  const filePatterns = [
+    /create\s+.*?file/i,           // "create a file", "create file", "create the file"
+    /write\s+.*?file/i,            // "write a file", "write to file"
+    /save\s+.*?file/i,             // "save to file", "save as file"
+    /save\s+.*?to/i,               // "save to disk", "save code to"
+    /write\s+to\s+disk/i,          // "write to disk"
+    /create\s+.*?script/i,         // "create a script", "create script"
+    /make\s+.*?file/i,             // "make a file"
+    /generate\s+.*?file/i,         // "generate a file"
+    /put\s+.*?in\s+.*?file/i,      // "put code in a file"
+    /store\s+.*?in\s+.*?file/i,    // "store in a file"
+    /run\s+bash/i,                 // "run bash command"
+    /execute\s+command/i,          // "execute command"
+    /run\s+command/i,              // "run command"
+    /shell\s+command/i,            // "shell command"
+    /use\s+bash/i                  // "use bash"
   ];
 
-  return fileKeywords.some(keyword => combined.includes(keyword));
+  return filePatterns.some(pattern => pattern.test(combined));
 }
 
 // Generate formatted instruction string for injection

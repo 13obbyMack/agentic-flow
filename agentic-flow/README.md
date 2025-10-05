@@ -109,9 +109,30 @@ npm run mcp:stdio
 
 ---
 
-### Option 3: Standalone Proxy (NEW in v1.1.11)
+### Option 3: Claude Code Integration (NEW in v1.1.13)
 
-Use Gemini or OpenRouter with Claude Code at 85-90% cost savings:
+**Auto-start proxy + spawn Claude Code with one command:**
+
+```bash
+# OpenRouter (99% cost savings)
+npx agentic-flow claude-code --provider openrouter "Write a Python function"
+
+# Gemini (FREE tier)
+npx agentic-flow claude-code --provider gemini "Create a REST API"
+
+# Anthropic (direct, no proxy)
+npx agentic-flow claude-code --provider anthropic "Help me debug"
+```
+
+**How it works:**
+1. ✅ Auto-detects if proxy is running
+2. ✅ Auto-starts proxy if needed (background)
+3. ✅ Sets `ANTHROPIC_BASE_URL` to proxy endpoint
+4. ✅ Configures provider-specific API keys
+5. ✅ Spawns Claude Code with environment configured
+6. ✅ Cleans up proxy on exit (optional)
+
+**Alternative: Manual Proxy (v1.1.11)**
 
 ```bash
 # Terminal 1: Start proxy server
@@ -130,6 +151,8 @@ npx agentic-flow proxy --provider openrouter --model "openai/gpt-4o-mini"
 **Features:**
 - ✅ MCP tools work through proxy (all 213 tools)
 - ✅ Compatible with Claude Code official CLI
+- ✅ Context-aware instruction injection (v1.1.13)
+- ✅ Model-specific max_tokens optimization
 - ✅ Future Cursor IDE support (waiting for ANTHROPIC_BASE_URL)
 - ✅ 85-90% cost savings vs direct Anthropic API
 
@@ -415,6 +438,173 @@ const result = await query({
 - `sign_mandate` - Ed25519 cryptographic signing
 - `verify_mandate` - Signature verification
 - `verify_consensus` - Multi-agent Byzantine consensus
+
+---
+
+## 📚 Tutorial: Claude Code Integration
+
+### What is Claude Code Integration?
+
+**One command to use Claude Code with any provider** - OpenRouter, Gemini, ONNX, or Anthropic.
+
+No need to manually:
+- Start proxy servers
+- Export environment variables
+- Configure base URLs
+- Manage API keys
+
+Just run `npx agentic-flow claude-code --provider <name> "your task"` and everything is handled automatically.
+
+### Quick Examples
+
+```bash
+# OpenRouter - 99% cost savings, wide model selection
+npx agentic-flow claude-code --provider openrouter \
+  "Write a Python function to parse JSON"
+
+# Gemini - FREE tier available, fast responses
+npx agentic-flow claude-code --provider gemini \
+  "Create a simple REST API with Flask"
+
+# Anthropic - Direct API, highest quality
+npx agentic-flow claude-code --provider anthropic \
+  "Help me implement OAuth2 authentication"
+
+# ONNX - 100% offline, no API costs
+npx agentic-flow claude-code --provider onnx \
+  "Write a sorting algorithm"
+```
+
+### How It Works
+
+**Behind the scenes:**
+
+1. **Checks if proxy is running** on port 3000 (or custom `--port`)
+2. **Auto-starts proxy** if needed (OpenRouter/Gemini/ONNX)
+3. **Sets environment variables:**
+   ```bash
+   ANTHROPIC_BASE_URL=http://localhost:3000
+   ANTHROPIC_API_KEY=sk-ant-proxy-dummy
+   OPENROUTER_API_KEY=<your-key>  # Or GOOGLE_GEMINI_API_KEY
+   ```
+4. **Spawns Claude Code** with configured environment
+5. **Cleans up proxy** on exit (unless `--keep-proxy`)
+
+### Advanced Options
+
+```bash
+# Use specific model
+npx agentic-flow claude-code \
+  --provider openrouter \
+  --model "meta-llama/llama-3.3-70b-instruct" \
+  "Write complex code"
+
+# Custom proxy port
+npx agentic-flow claude-code \
+  --provider gemini \
+  --port 8080 \
+  "Generate code"
+
+# Keep proxy running for multiple sessions
+npx agentic-flow claude-code \
+  --provider openrouter \
+  --keep-proxy \
+  "First task"
+
+# Reuse running proxy (no auto-start)
+npx agentic-flow claude-code \
+  --provider openrouter \
+  --no-auto-start \
+  "Second task"
+```
+
+### Alternative: Bash Wrapper Script
+
+For frequent use, copy the wrapper script to your PATH:
+
+```bash
+# Install wrapper
+cp node_modules/agentic-flow/scripts/claude-code ~/bin/
+chmod +x ~/bin/claude-code
+
+# Usage - cleaner syntax
+claude-code openrouter "Write a function"
+claude-code gemini "Create an API"
+claude-code anthropic "Debug my code"
+```
+
+### Validation
+
+Test that all providers work correctly:
+
+```bash
+# Test OpenRouter
+npx agentic-flow claude-code --provider openrouter \
+  "print hello world in python"
+
+# Test Gemini
+npx agentic-flow claude-code --provider gemini \
+  "print hello world in python"
+
+# Test Anthropic
+npx agentic-flow claude-code --provider anthropic \
+  "print hello world in python"
+```
+
+**Expected output:** Clean Python code with no XML tags:
+```python
+print("Hello, World!")
+```
+
+### Cost Comparison
+
+| Provider | Cost/Task | Speed | Quality | Free Tier |
+|----------|-----------|-------|---------|-----------|
+| Anthropic (direct) | $0.015 | Fast | Excellent | No |
+| OpenRouter GPT-4o-mini | $0.0001 | Very Fast | Excellent | No |
+| Gemini 2.0 Flash | $0.00 | Fastest | Excellent | **Yes** |
+| ONNX (local) | $0.00 | Moderate | Good | **Yes** |
+
+**Savings:** 99% with OpenRouter, 100% with Gemini/ONNX
+
+### Troubleshooting
+
+**Proxy won't start:**
+```bash
+# Check if port is in use
+lsof -i :3000
+
+# Use custom port
+npx agentic-flow claude-code --provider openrouter --port 3001 "task"
+```
+
+**API key not found:**
+```bash
+# Set key before running
+export OPENROUTER_API_KEY=sk-or-v1-xxxxx
+
+# Or inline
+OPENROUTER_API_KEY=sk-or-v1-xxxxx \
+npx agentic-flow claude-code --provider openrouter "task"
+```
+
+**Claude Code not installed:**
+```bash
+# Install official Claude Code CLI
+npm install -g @anthropic-ai/claude-code
+
+# Verify installation
+claude --version
+```
+
+### Full Guide
+
+See [docs/guides/CLAUDE-CODE-INTEGRATION.md](docs/guides/CLAUDE-CODE-INTEGRATION.md) for:
+- Architecture diagrams
+- Request flow details
+- Custom proxy configuration
+- Environment variable presets
+- Advanced usage patterns
 
 ---
 
