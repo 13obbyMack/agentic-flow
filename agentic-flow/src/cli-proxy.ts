@@ -132,9 +132,11 @@ class AgenticFlowCLI {
     const useGemini = this.shouldUseGemini(options);
 
     try {
-      // Start proxy if needed (OpenRouter only)
+      // Start proxy if needed (OpenRouter or Gemini)
       if (useOpenRouter) {
-        await this.startProxy(options.model);
+        await this.startOpenRouterProxy(options.model);
+      } else if (useGemini) {
+        await this.startGeminiProxy(options.model);
       }
 
       // Run agent
@@ -207,7 +209,7 @@ class AgenticFlowCLI {
     return false;
   }
 
-  private async startProxy(modelOverride?: string): Promise<void> {
+  private async startOpenRouterProxy(modelOverride?: string): Promise<void> {
     const openrouterKey = process.env.OPENROUTER_API_KEY;
 
     if (!openrouterKey) {
@@ -242,6 +244,49 @@ class AgenticFlowCLI {
     }
 
     console.log(`🔗 Proxy Mode: OpenRouter`);
+    console.log(`🔧 Proxy URL: http://localhost:${this.proxyPort}`);
+    console.log(`🤖 Default Model: ${defaultModel}\n`);
+
+    // Wait for proxy to be ready
+    await new Promise(resolve => setTimeout(resolve, 1500));
+  }
+
+  private async startGeminiProxy(modelOverride?: string): Promise<void> {
+    const geminiKey = process.env.GOOGLE_GEMINI_API_KEY;
+
+    if (!geminiKey) {
+      console.error('❌ Error: GOOGLE_GEMINI_API_KEY required for Gemini models');
+      console.error('Set it in .env or export GOOGLE_GEMINI_API_KEY=xxxxx');
+      process.exit(1);
+    }
+
+    logger.info('Starting integrated Gemini proxy');
+
+    const defaultModel = modelOverride ||
+                        process.env.COMPLETION_MODEL ||
+                        'gemini-2.0-flash-exp';
+
+    // Import Gemini proxy
+    const { AnthropicToGeminiProxy } = await import('./proxy/anthropic-to-gemini.js');
+
+    const proxy = new AnthropicToGeminiProxy({
+      geminiApiKey: geminiKey,
+      defaultModel
+    });
+
+    // Start proxy in background
+    proxy.start(this.proxyPort);
+    this.proxyServer = proxy;
+
+    // Set ANTHROPIC_BASE_URL to proxy
+    process.env.ANTHROPIC_BASE_URL = `http://localhost:${this.proxyPort}`;
+
+    // Set dummy ANTHROPIC_API_KEY for proxy (actual auth uses GOOGLE_GEMINI_API_KEY)
+    if (!process.env.ANTHROPIC_API_KEY) {
+      process.env.ANTHROPIC_API_KEY = 'sk-ant-proxy-dummy-key';
+    }
+
+    console.log(`🔗 Proxy Mode: Google Gemini`);
     console.log(`🔧 Proxy URL: http://localhost:${this.proxyPort}`);
     console.log(`🤖 Default Model: ${defaultModel}\n`);
 
