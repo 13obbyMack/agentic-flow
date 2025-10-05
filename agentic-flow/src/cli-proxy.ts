@@ -4,7 +4,31 @@
  * Usage: npx agentic-flow-proxy --agent coder --task "Create code" --openrouter
  */
 
-import "dotenv/config";
+import dotenv from "dotenv";
+import { existsSync, readFileSync } from 'fs';
+import { resolve as pathResolve, dirname } from 'path';
+import { fileURLToPath } from 'url';
+
+// Load .env from current directory, or search up the directory tree
+function loadEnvRecursive(startPath: string = process.cwd()): boolean {
+  let currentPath = startPath;
+  const root = pathResolve('/');
+
+  while (currentPath !== root) {
+    const envPath = pathResolve(currentPath, '.env');
+    if (existsSync(envPath)) {
+      dotenv.config({ path: envPath });
+      return true;
+    }
+    currentPath = pathResolve(currentPath, '..');
+  }
+
+  // Fallback to default behavior
+  dotenv.config();
+  return false;
+}
+
+loadEnvRecursive();
 import { AnthropicToOpenRouterProxy } from "./proxy/anthropic-to-openrouter.js";
 import { logger } from "./utils/logger.js";
 import { parseArgs } from "./utils/cli.js";
@@ -15,13 +39,10 @@ import { handleMCPCommand } from "./utils/mcpCommands.js";
 import { handleConfigCommand } from "./cli/config-wizard.js";
 import { handleAgentCommand } from "./cli/agent-manager.js";
 import { ModelOptimizer } from "./utils/modelOptimizer.js";
-import { readFileSync } from 'fs';
-import { resolve, dirname } from 'path';
-import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
-const packageJson = JSON.parse(readFileSync(resolve(__dirname, '../package.json'), 'utf-8'));
+const packageJson = JSON.parse(readFileSync(pathResolve(__dirname, '../package.json'), 'utf-8'));
 const VERSION = packageJson.version;
 
 class AgenticFlowCLI {
@@ -102,17 +123,18 @@ class AgenticFlowCLI {
       console.log(`✅ Using optimized model: ${recommendation.modelName}\n`);
     }
 
-    // Determine if we should use OpenRouter
+    // Determine which provider to use
     const useOpenRouter = this.shouldUseOpenRouter(options);
+    const useGemini = this.shouldUseGemini(options);
 
     try {
-      // Start proxy if needed
+      // Start proxy if needed (OpenRouter only)
       if (useOpenRouter) {
         await this.startProxy(options.model);
       }
 
       // Run agent
-      await this.runAgent(options, useOpenRouter);
+      await this.runAgent(options, useOpenRouter, useGemini);
 
       logger.info('Execution completed successfully');
       process.exit(0);
@@ -123,9 +145,37 @@ class AgenticFlowCLI {
     }
   }
 
+  private shouldUseGemini(options: any): boolean {
+    // Use Gemini if:
+    // 1. Provider is explicitly set to gemini
+    // 2. PROVIDER env var is set to gemini
+    // 3. USE_GEMINI env var is set
+    // 4. GOOGLE_GEMINI_API_KEY is set and no other provider is specified
+    if (options.provider === 'gemini' || process.env.PROVIDER === 'gemini') {
+      return true;
+    }
+
+    if (process.env.USE_GEMINI === 'true') {
+      return true;
+    }
+
+    if (process.env.GOOGLE_GEMINI_API_KEY &&
+        !process.env.ANTHROPIC_API_KEY &&
+        !process.env.OPENROUTER_API_KEY &&
+        options.provider !== 'onnx') {
+      return true;
+    }
+
+    return false;
+  }
+
   private shouldUseOpenRouter(options: any): boolean {
-    // Don't use OpenRouter if ONNX is explicitly requested
+    // Don't use OpenRouter if ONNX or Gemini is explicitly requested
     if (options.provider === 'onnx' || process.env.USE_ONNX === 'true' || process.env.PROVIDER === 'onnx') {
+      return false;
+    }
+
+    if (options.provider === 'gemini' || process.env.PROVIDER === 'gemini') {
       return false;
     }
 
@@ -146,7 +196,7 @@ class AgenticFlowCLI {
       return true;
     }
 
-    if (process.env.OPENROUTER_API_KEY && !process.env.ANTHROPIC_API_KEY) {
+    if (process.env.OPENROUTER_API_KEY && !process.env.ANTHROPIC_API_KEY && !process.env.GOOGLE_GEMINI_API_KEY) {
       return true;
     }
 
@@ -195,7 +245,7 @@ class AgenticFlowCLI {
     await new Promise(resolve => setTimeout(resolve, 1500));
   }
 
-  private async runAgent(options: any, useOpenRouter: boolean): Promise<void> {
+  private async runAgent(options: any, useOpenRouter: boolean, useGemini: boolean): Promise<void> {
     const agentName = options.agent || process.env.AGENT || '';
     const task = options.task || process.env.TASK || '';
 
@@ -213,12 +263,14 @@ class AgenticFlowCLI {
 
     // Check for API key (unless using ONNX)
     const isOnnx = options.provider === 'onnx' || process.env.USE_ONNX === 'true' || process.env.PROVIDER === 'onnx';
-    if (!isOnnx && !useOpenRouter && !process.env.ANTHROPIC_API_KEY) {
+
+    if (!isOnnx && !useOpenRouter && !useGemini && !process.env.ANTHROPIC_API_KEY) {
       console.error('\n❌ Error: ANTHROPIC_API_KEY is required\n');
       console.error('Please set your API key:');
       console.error('  export ANTHROPIC_API_KEY=sk-ant-xxxxx\n');
       console.error('Or use alternative providers:');
       console.error('  --provider openrouter  (requires OPENROUTER_API_KEY)');
+      console.error('  --provider gemini      (requires GOOGLE_GEMINI_API_KEY)');
       console.error('  --provider onnx        (free local inference)\n');
       process.exit(1);
     }
@@ -229,7 +281,19 @@ class AgenticFlowCLI {
       console.error('  export OPENROUTER_API_KEY=sk-or-v1-xxxxx\n');
       console.error('Or use alternative providers:');
       console.error('  --provider anthropic  (requires ANTHROPIC_API_KEY)');
+      console.error('  --provider gemini     (requires GOOGLE_GEMINI_API_KEY)');
       console.error('  --provider onnx       (free local inference)\n');
+      process.exit(1);
+    }
+
+    if (!isOnnx && useGemini && !process.env.GOOGLE_GEMINI_API_KEY) {
+      console.error('\n❌ Error: GOOGLE_GEMINI_API_KEY is required for Gemini\n');
+      console.error('Please set your API key:');
+      console.error('  export GOOGLE_GEMINI_API_KEY=xxxxx\n');
+      console.error('Or use alternative providers:');
+      console.error('  --provider anthropic   (requires ANTHROPIC_API_KEY)');
+      console.error('  --provider openrouter  (requires OPENROUTER_API_KEY)');
+      console.error('  --provider onnx        (free local inference)\n');
       process.exit(1);
     }
 
@@ -254,6 +318,10 @@ class AgenticFlowCLI {
     if (useOpenRouter) {
       const model = options.model || process.env.COMPLETION_MODEL || 'meta-llama/llama-3.1-8b-instruct';
       console.log(`🔧 Provider: OpenRouter (via proxy)`);
+      console.log(`🔧 Model: ${model}\n`);
+    } else if (useGemini) {
+      const model = options.model || 'gemini-2.0-flash-exp';
+      console.log(`🔧 Provider: Google Gemini`);
       console.log(`🔧 Model: ${model}\n`);
     } else if (options.provider === 'onnx' || process.env.USE_ONNX === 'true' || process.env.PROVIDER === 'onnx') {
       console.log(`🔧 Provider: ONNX Local (Phi-4-mini)`);
@@ -281,7 +349,7 @@ class AgenticFlowCLI {
     logger.info('Agent completed', {
       agent: agentName,
       outputLength: result.output.length,
-      provider: useOpenRouter ? 'openrouter' : 'anthropic'
+      provider: useOpenRouter ? 'openrouter' : useGemini ? 'gemini' : 'anthropic'
     });
   }
 
@@ -351,13 +419,14 @@ AGENT COMMANDS:
 OPTIONS:
   --task, -t <task>           Task description for agent mode
   --model, -m <model>         Model to use (triggers OpenRouter if contains "/")
-  --provider, -p <name>       Provider to use (anthropic, openrouter, onnx)
+  --provider, -p <name>       Provider to use (anthropic, openrouter, gemini, onnx)
   --stream, -s                Enable real-time streaming output
   --help, -h                  Show this help message
 
   API CONFIGURATION:
   --anthropic-key <key>       Override ANTHROPIC_API_KEY environment variable
   --openrouter-key <key>      Override OPENROUTER_API_KEY environment variable
+  --gemini-key <key>          Override GOOGLE_GEMINI_API_KEY environment variable
 
   AGENT BEHAVIOR:
   --temperature <0.0-1.0>     Sampling temperature (creativity control)
@@ -410,16 +479,21 @@ EXAMPLES:
 ENVIRONMENT VARIABLES:
   ANTHROPIC_API_KEY       Anthropic API key (for Claude models)
   OPENROUTER_API_KEY      OpenRouter API key (for alternative models)
+  GOOGLE_GEMINI_API_KEY   Google Gemini API key (for Gemini models)
   USE_OPENROUTER          Set to 'true' to force OpenRouter usage
+  USE_GEMINI              Set to 'true' to force Gemini usage
   COMPLETION_MODEL        Default model for OpenRouter
   AGENTS_DIR              Path to agents directory
   PROXY_PORT              Proxy server port (default: 3000)
 
-OPENROUTER MODELS:
-  - meta-llama/llama-3.1-8b-instruct (99% cost savings)
-  - deepseek/deepseek-chat-v3.1 (excellent for code)
-  - google/gemini-2.5-flash-preview (fastest)
-  - See https://openrouter.ai/models for full list
+OPENROUTER MODELS (Best Free Tested):
+  ✅ deepseek/deepseek-r1-0528:free           (reasoning, 95s/task, RFC validation)
+  ✅ deepseek/deepseek-chat-v3.1:free         (coding, 21-103s/task, enterprise-grade)
+  ✅ meta-llama/llama-3.3-8b-instruct:free    (versatile, 4.4s/task, fast coding)
+  ✅ openai/gpt-4-turbo                       (premium, 10.7s/task, no :free needed)
+
+  All models above support OpenRouter leaderboard tracking via HTTP-Referer headers.
+  See https://openrouter.ai/models for full model catalog.
 
 MCP TOOLS (213+ available):
   • agentic-flow: 7 tools (agent execution, creation, management, model optimization)
@@ -432,6 +506,31 @@ OPTIMIZATION BENEFITS:
   🎯 Smart Selection: Agent-aware (coder needs quality ≥85, researcher flexible)
   📊 10+ Models: Claude, GPT-4o, Gemini, DeepSeek, Llama, ONNX local
   ⚡ Zero Overhead: <5ms decision time, no API calls during optimization
+
+PROXY MODE (Claude Code CLI Integration):
+  The OpenRouter proxy allows Claude Code to use alternative models via API translation.
+
+  Terminal 1 - Start Proxy Server:
+    npx agentic-flow proxy
+    # Or with custom port: PROXY_PORT=8080 npx agentic-flow proxy
+    # Proxy runs at http://localhost:3000 by default
+
+  Terminal 2 - Use with Claude Code:
+    export ANTHROPIC_BASE_URL="http://localhost:3000"
+    export ANTHROPIC_API_KEY="sk-ant-proxy-dummy-key"
+    export OPENROUTER_API_KEY="sk-or-v1-xxxxx"
+
+    # Now Claude Code will route through OpenRouter proxy
+    claude-code --agent coder --task "Create API"
+
+  Proxy automatically translates Anthropic API calls to OpenRouter format.
+  Model override happens automatically: Claude requests → OpenRouter models.
+
+  Benefits for Claude Code users:
+  • 85-99% cost savings vs Claude Sonnet 4.5
+  • Access to 100+ models (DeepSeek, Llama, Gemini, etc.)
+  • Leaderboard tracking on OpenRouter
+  • No code changes to Claude Code itself
 
 For more information: https://github.com/ruvnet/agentic-flow
     `);

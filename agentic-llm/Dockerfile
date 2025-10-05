@@ -73,5 +73,13 @@ RUN mkdir -p /app/models /app/checkpoints /app/logs /app/results
 # Set permissions
 RUN chmod +x /app/training/*.py /app/deployment/*.sh || true
 
-# Default command - run MCP fine-tuning
-CMD ["python3", "training/finetune_mcp.py"]
+# Copy and configure health server entrypoint
+COPY cloudrun/entrypoint.sh /app/cloudrun/entrypoint.sh
+COPY cloudrun/health_server.py /app/cloudrun/health_server.py
+RUN chmod +x /app/cloudrun/entrypoint.sh
+
+# Install Flask for health server
+RUN pip3 install flask
+
+# Start via entrypoint - health server first, then training in background
+CMD ["/app/cloudrun/entrypoint.sh"]

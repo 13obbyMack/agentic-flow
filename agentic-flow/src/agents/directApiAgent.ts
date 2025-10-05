@@ -1,12 +1,15 @@
-// Direct Anthropic API agent with in-process tool execution (no subprocess)
+// Direct API agent with multi-provider support (Anthropic, OpenRouter, Gemini)
 import Anthropic from '@anthropic-ai/sdk';
 import { logger } from '../utils/logger.js';
 import { withRetry } from '../utils/retry.js';
 import { AgentDefinition } from '../utils/agentLoader.js';
 import { execSync } from 'child_process';
+import { ModelRouter } from '../router/router.js';
+import { ChatParams, ContentBlock, Message } from '../router/types.js';
 
-// Lazy initialize Anthropic client to allow runtime API key validation
+// Lazy initialize clients
 let anthropic: Anthropic | null = null;
+let router: ModelRouter | null = null;
 
 function getAnthropicClient(): Anthropic {
   if (!anthropic) {
@@ -29,6 +32,28 @@ function getAnthropicClient(): Anthropic {
   }
 
   return anthropic;
+}
+
+function getRouter(): ModelRouter {
+  if (!router) {
+    // Router will now auto-create config from environment variables if no file exists
+    router = new ModelRouter();
+  }
+  return router;
+}
+
+function getCurrentProvider(): string {
+  // Determine provider from environment
+  if (process.env.PROVIDER === 'gemini' || process.env.USE_GEMINI === 'true') {
+    return 'gemini';
+  }
+  if (process.env.PROVIDER === 'openrouter' || process.env.USE_OPENROUTER === 'true') {
+    return 'openrouter';
+  }
+  if (process.env.PROVIDER === 'onnx' || process.env.USE_ONNX === 'true') {
+    return 'onnx';
+  }
+  return 'anthropic';
 }
 
 // Define claude-flow tools as native Anthropic tool definitions
@@ -221,32 +246,96 @@ export async function directApiAgent(
     while (toolUseCount < maxToolUses) {
       logger.debug('API call iteration', { toolUseCount, messagesLength: messages.length });
 
-      const client = getAnthropicClient();
-
+      const provider = getCurrentProvider();
       let response;
+
       try {
-        response = await client.messages.create({
-          model: 'claude-sonnet-4-5-20250929',
-          max_tokens: 8192,
-          system: agent.systemPrompt || 'You are a helpful AI assistant.',
-          messages,
-          tools: claudeFlowTools
-        });
+        // Use router for non-Anthropic providers
+        if (provider === 'gemini' || provider === 'openrouter') {
+          const routerInstance = getRouter();
+
+          // Convert Anthropic messages format to router format
+          const routerMessages: Message[] = messages.map(msg => ({
+            role: msg.role,
+            content: typeof msg.content === 'string' ? msg.content : msg.content.map((block: any) => {
+              if ('text' in block) return { type: 'text' as const, text: block.text };
+              if ('tool_use_id' in block) return {
+                type: 'tool_result' as const,
+                content: block.content
+              };
+              if ('name' in block && 'input' in block) return {
+                type: 'tool_use' as const,
+                id: block.id,
+                name: block.name,
+                input: block.input
+              };
+              return { type: 'text' as const, text: '' };
+            }).filter((b: ContentBlock) => b.type === 'text' || b.type === 'tool_use' || b.type === 'tool_result')
+          }));
+
+          // Add system prompt as first message if needed
+          const messagesWithSystem = agent.systemPrompt
+            ? [{ role: 'system' as const, content: agent.systemPrompt }, ...routerMessages]
+            : routerMessages;
+
+          const params: ChatParams = {
+            model: provider === 'gemini'
+              ? (process.env.COMPLETION_MODEL || 'gemini-2.0-flash-exp')
+              : (process.env.COMPLETION_MODEL || 'meta-llama/llama-3.1-8b-instruct'),
+            messages: messagesWithSystem,
+            maxTokens: 8192,
+            temperature: 0.7
+          };
+
+          const routerResponse = await routerInstance.chat(params);
+
+          // Convert router response to Anthropic format
+          response = {
+            id: routerResponse.id,
+            model: routerResponse.model,
+            stop_reason: routerResponse.stopReason,
+            content: routerResponse.content.map(block => {
+              if (block.type === 'text') return { type: 'text' as const, text: block.text || '' };
+              if (block.type === 'tool_use') return {
+                type: 'tool_use' as const,
+                id: block.id || '',
+                name: block.name || '',
+                input: block.input || {}
+              };
+              return { type: 'text' as const, text: '' };
+            }) as any
+          };
+        } else {
+          // Use Anthropic client for Anthropic provider
+          const client = getAnthropicClient();
+          response = await client.messages.create({
+            model: process.env.COMPLETION_MODEL || 'claude-sonnet-4-5-20250929',
+            max_tokens: 8192,
+            system: agent.systemPrompt || 'You are a helpful AI assistant.',
+            messages,
+            tools: claudeFlowTools
+          });
+        }
       } catch (error: any) {
         // Enhance authentication errors with helpful guidance
-        if (error?.status === 401) {
-          const apiKey = process.env.ANTHROPIC_API_KEY;
+        if (error?.status === 401 || error?.statusCode === 401) {
+          const providerName = provider === 'gemini' ? 'Google Gemini' : provider === 'openrouter' ? 'OpenRouter' : 'Anthropic';
+          const apiKey = provider === 'gemini'
+            ? process.env.GOOGLE_GEMINI_API_KEY
+            : provider === 'openrouter'
+            ? process.env.OPENROUTER_API_KEY
+            : process.env.ANTHROPIC_API_KEY;
+
           throw new Error(
-            `❌ Anthropic API authentication failed (401)\n\n` +
+            `❌ ${providerName} API authentication failed (401)\n\n` +
             `Your API key is invalid, expired, or lacks permissions.\n` +
             `Current key: ${apiKey?.substring(0, 15)}...\n\n` +
-            `Please:\n` +
-            `  1. Check your key at: https://console.anthropic.com/settings/keys\n` +
-            `  2. Verify it's not expired\n` +
-            `  3. Ensure it has proper permissions\n` +
-            `  4. Update your .env file with: ANTHROPIC_API_KEY=sk-ant-...\n\n` +
-            `Alternative: Use OpenRouter instead (--model "meta-llama/llama-3.1-8b-instruct")\n` +
-            `Or use local ONNX (--provider onnx)`
+            `Please check your ${providerName} API key and update your .env file.\n\n` +
+            `Alternative providers:\n` +
+            `  --provider anthropic  (Claude models)\n` +
+            `  --provider openrouter (100+ models, 99% cost savings)\n` +
+            `  --provider gemini     (Google models)\n` +
+            `  --provider onnx       (free local inference)`
           );
         }
         throw error;
@@ -309,9 +398,9 @@ export async function directApiAgent(
       }
 
       // Stop if no tool use or end_turn
-      if (response.stop_reason === 'end_turn' || response.content.every(b => b.type === 'text')) {
+      if (response.stop_reason === 'end_turn' || response.content.every((b: any) => b.type === 'text')) {
         // Add final assistant message if it has text
-        const textContent = response.content.filter(b => b.type === 'text');
+        const textContent = response.content.filter((b: any) => b.type === 'text');
         if (textContent.length > 0 && messages[messages.length - 1].role !== 'assistant') {
           messages.push({
             role: 'assistant',

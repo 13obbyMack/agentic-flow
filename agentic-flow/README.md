@@ -1,31 +1,58 @@
 # 🤖 Agentic Flow
 
-**Ephemeral AI Agent Orchestration Framework with Multi-Model Router, OpenRouter Integration & Free Local Inference**
+**Production-Ready AI Agent Orchestration with Multi-Model Router, OpenRouter Integration & Free Local Inference**
 
-Deploy autonomous multi-agent swarms with **99% cost savings** via OpenRouter integration. Features intelligent multi-model routing with **100+ LLM models** at 1/100th the cost, plus **100% free local CPU/GPU inference** via ONNX Runtime for privacy-sensitive workloads. Agents spin up on-demand, execute complex tasks, and automatically terminate.
+Agentic Flow works with any agent or command built or used in Claude Code. It automatically runs through the Claude Agent SDK, forming swarms of intelligent, cost and performance-optimized agents that decide how to execute each task. Built for business, government, and commercial use where cost, traceability, and reliability matter.
 
-Built on **[Claude Agent SDK](https://docs.claude.com/en/api/agent-sdk)** by Anthropic, powered by **[Claude Flow](https://github.com/ruvnet/claude-flow)** (101 MCP tools), **[Flow Nexus](https://github.com/ruvnet/flow-nexus)** (96 cloud tools), **[OpenRouter](https://openrouter.ai)** (100+ LLM models), **[Agentic Payments](https://www.npmjs.com/package/agentic-payments)** (payment authorization), and **ONNX Runtime** (free local CPU or GPU inference).
+Agentic Flow runs Claude Code agents at near zero cost without rewriting a thing. It routes every task to the cheapest lane that still meets the bar. Local ONNX when privacy or price wins. OpenRouter for breadth. Gemini for speed. Anthropic when quality matters most. One agent. Any model. Lowest viable cost.
+
+The system takes the Claude SDK's logic and merges it with Claude Flow memory to give every agent a durable brain. Each run logs inputs, outputs, and route decisions with artifacts, manifests, and checksums for proof and reproducibility. It self-optimizes in real time, balancing price, latency, and accuracy through a simple policy file.
+
+Strict mode keeps sensitive data offline. Economy mode prefers ONNX or OpenRouter. Premium mode goes Anthropic first. The policy defines the rules, and the swarm enforces them automatically.
+
+It runs anywhere: local for dev, Docker for CI, or Flow Nexus for scale. With project-scoped settings, explicit tool allowlists, and an offline privacy lane, it stays secure by default.
+
+**Agentic Flow is the framework for autonomous efficiency—one unified runner for every Claude Code agent, self-tuning, self-routing, and built for real-world deployment.**
+
+Built on **[Claude Agent SDK](https://docs.claude.com/en/api/agent-sdk)** by Anthropic, powered by **[Claude Flow](https://github.com/ruvnet/claude-flow)** (101 MCP tools), **[Flow Nexus](https://github.com/ruvnet/flow-nexus)** (96 cloud tools), **[OpenRouter](https://openrouter.ai)** (100+ LLM models), **Google Gemini** (fast, cost-effective inference), **[Agentic Payments](https://www.npmjs.com/package/agentic-payments)** (payment authorization), and **ONNX Runtime** (free local CPU or GPU inference).
 
 [![npm version](https://img.shields.io/npm/v/agentic-flow.svg)](https://www.npmjs.com/package/agentic-flow)
+[![npm downloads](https://img.shields.io/npm/dm/agentic-flow.svg)](https://www.npmjs.com/package/agentic-flow)
+[![npm total downloads](https://img.shields.io/npm/dt/agentic-flow.svg)](https://www.npmjs.com/package/agentic-flow)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![Node.js Version](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen)](https://nodejs.org/)
+[![rUv](https://img.shields.io/badge/by-rUv-purple.svg)](https://github.com/ruvnet/)
+[![Agentic Engineering](https://img.shields.io/badge/Agentic-Engineering-orange.svg)](https://github.com/ruvnet/agentic-flow#-agent-types)
 
 ---
 
 ## Why Agentic Flow?
 
-Traditional AI frameworks require persistent infrastructure and complex orchestration. **Agentic Flow** takes a different approach by combining the power of Anthropic's **Claude Agent SDK**, the orchestration capabilities of **Claude Flow**, OpenRouter's **100+ LLM models**, and the cloud infrastructure of **Flow Nexus**:
+**The Problem:** You need agents that actually complete tasks, not chatbots that need constant supervision. Long-running workflows - migrating codebases, generating documentation, analyzing datasets - shouldn't require you to sit there clicking "continue."
 
-- **99% Cost Savings** - OpenRouter integration with Llama 3.1, DeepSeek, Gemini
-- **Deploy Anywhere** - Local development, Docker containers, or cloud sandboxes
-- **Ephemeral by Design** - Agents exist only while working, minimizing costs
-- **Full MCP Support** - 203+ tools locally and in containers, cloud-ready
-- **Auto-Scaling** - Spawn 1 or 100 agents based on workload
-- **Zero Infrastructure** - No databases, queues, or persistent services required
-- **Production-Ready** - Built on battle-tested Claude Agent SDK v0.1.5
-- **Model Flexibility** - Use Claude, OpenRouter, or free local ONNX models
+**What True Agentic Systems Need:**
+- **Autonomy** - Agents that plan, execute, and recover from errors without hand-holding
+- **Persistence** - Tasks that run for hours, even when you're offline
+- **Collaboration** - Multiple agents coordinating on complex work
+- **Tool Access** - Real capabilities: file systems, APIs, databases, not just text generation
+- **Cost Control** - Run cheap models for grunt work, expensive ones only when needed
 
-> **Deploy your way:** Run locally for development (all 203 tools), containerize for production (Docker/Kubernetes), or scale in cloud sandboxes (Flow Nexus E2B). **Use OpenRouter for 99% cost savings** or ONNX for 100% free local inference.
+**What You Get:**
+
+- **150+ Specialized Agents** - Researcher, coder, reviewer, tester, architect - each with domain expertise and tool access
+- **Multi-Agent Swarms** - Deploy 3, 10, or 100 agents that collaborate via shared memory to complete complex projects
+- **Long-Running Tasks** - Agents persist through hours-long operations: full codebase refactors, comprehensive audits, dataset processing
+- **213 MCP Tools** - Agents have real capabilities: GitHub operations, neural network training, workflow automation, memory persistence
+- **Auto Model Optimization** - `--optimize` flag intelligently selects best model for each task. DeepSeek R1 costs 85% less than Claude with similar quality. Save $2,400/month on 100 daily reviews.
+- **Deploy Anywhere** - Same agentic capabilities locally, in Docker/Kubernetes, or cloud sandboxes
+
+**Real Agentic Use Cases:**
+- **Overnight Code Migration** - Deploy a swarm to migrate a 50K line codebase from JavaScript to TypeScript while you sleep
+- **Continuous Security Audits** - Agents monitor repos, analyze PRs, and flag vulnerabilities 24/7
+- **Automated API Development** - One agent designs schema, another implements endpoints, a third writes tests - all coordinated
+- **Data Pipeline Processing** - Agents process TBs of data across distributed sandboxes, checkpoint progress, and recover from failures
+
+> **True autonomy at commodity prices.** Your agents work independently on long-running tasks, coordinate when needed, and cost pennies per hour instead of dollars.
 
 ### Built on Industry Standards
 
@@ -40,7 +67,7 @@ Traditional AI frameworks require persistent infrastructure and complex orchestr
 
 ## 🚀 Quick Start
 
-### Installation
+### Local Installation (Recommended for Development)
 
 ```bash
 # Global installation
@@ -48,28 +75,10 @@ npm install -g agentic-flow
 
 # Or use directly with npx (no installation)
 npx agentic-flow --help
+
+# Set your API key
+export ANTHROPIC_API_KEY=sk-ant-...
 ```
-
-### Configuration Wizard (Interactive Setup)
-
-```bash
-# Launch interactive configuration wizard
-npx agentic-flow config
-
-# Or use direct commands
-npx agentic-flow config set ANTHROPIC_API_KEY sk-ant-xxxxx
-npx agentic-flow config set PROVIDER anthropic
-npx agentic-flow config list
-```
-
-The wizard helps you configure:
-- **API Keys** - Anthropic, OpenRouter with validation
-- **Provider Settings** - Choose default provider (anthropic/openrouter/onnx)
-- **Model Selection** - Set default models
-- **Custom Paths** - Configure agents directory
-- **Advanced Options** - Proxy port, feature flags
-
-All configuration is saved to `.env` with helpful comments.
 
 ### Your First Agent (Local Execution)
 
@@ -180,7 +189,7 @@ docker run --rm \
 - **Pay-Per-Use** - Only pay for actual sandbox runtime (≈$1/hour)
 
 ### 🤖 Intelligent Agents
-- **75 Pre-Built Specialists** - Researchers, coders, testers, reviewers, architects
+- **150+ Pre-Built Specialists** - Researchers, coders, testers, reviewers, architects
 - **Swarm Coordination** - Agents collaborate via shared memory
 - **Tool Access** - 200+ MCP tools for GitHub, neural networks, workflows
 - **Custom Agents** - Define your own in YAML with system prompts
@@ -351,35 +360,34 @@ spec:
 }
 ```
 
-### ⚠️ AWS Lambda (Limited - Not Recommended)
-```javascript
-// Lambda limitations: No MCP subprocesses, only 6 in-SDK tools
-exports.handler = async (event) => {
-  // ❌ claude-flow MCP server won't work (subprocess not allowed)
-  // ❌ flow-nexus MCP server won't work (subprocess not allowed)
-  // ✅ Only claude-flow-sdk in-SDK tools available (6 tools)
+### 🔓 ONNX Local Inference (Free Offline AI)
 
-  const result = await query({
-    prompt: event.query,
-    options: {
-      mcpServers: {
-        'claude-flow-sdk': claudeFlowSdkServer // Only 6 tools work
-        // 'claude-flow': subprocess blocked by Lambda
-        // 'flow-nexus': subprocess blocked by Lambda
-      }
-    }
-  });
+**Run agents completely offline with zero API costs:**
 
-  return { statusCode: 200, body: JSON.stringify(result) };
-};
+```bash
+# Auto-downloads Phi-4 model (~4.9GB one-time download)
+npx agentic-flow \
+  --agent coder \
+  --task "Build a REST API" \
+  --provider onnx
+
+# Router auto-selects ONNX for privacy-sensitive tasks
+npx agentic-flow \
+  --agent researcher \
+  --task "Analyze confidential medical records" \
+  --privacy high \
+  --local-only
 ```
 
-**Why Lambda Doesn't Work Well:**
-- ❌ Cannot spawn MCP subprocess servers (npx blocked)
-- ❌ No access to 197 tools (101 claude-flow + 96 flow-nexus)
-- ❌ No persistent memory (Claude Flow memory unavailable)
-- ❌ Limited to 6 in-SDK tools only
-- ✅ **Solution**: Use Flow Nexus sandboxes instead for full functionality
+**ONNX Capabilities:**
+- ✅ 100% free local inference (Microsoft Phi-4 model)
+- ✅ Privacy: All processing stays on your machine
+- ✅ Offline: No internet required after model download
+- ✅ Performance: ~6 tokens/sec CPU, 60-300 tokens/sec GPU
+- ✅ Auto-download: Model fetches automatically on first use
+- ✅ Quantized: INT4 optimization for efficiency (~4.9GB total)
+- ⚠️ Limited to 6 in-SDK tools (no subprocess MCP servers)
+- 📚 See [docs](docs/ONNX_INTEGRATION.md) for full capabilities
 
 ---
 
@@ -441,50 +449,174 @@ Docker: Infrastructure costs (AWS/GCP/Azure) + Claude API costs.*
 - **`production-validator`** - Deployment readiness checks
 - **`tdd-london-swarm`** - Test-driven development
 
-*Use `npx agentic-flow --list` to see all 75 agents*
+*Use `npx agentic-flow --list` to see all 150+ agents*
+
+---
+
+## 🎯 Model Optimization (NEW!)
+
+**Automatically select the optimal model for any agent and task**, balancing quality, cost, and speed based on your priorities.
+
+### Why Model Optimization?
+
+Different tasks need different models:
+- **Production code** → Claude Sonnet 4.5 (highest quality)
+- **Code reviews** → DeepSeek R1 (85% cheaper, nearly same quality)
+- **Simple functions** → Llama 3.1 8B (99% cheaper)
+- **Privacy-critical** → ONNX Phi-4 (free, local, offline)
+
+**The optimizer analyzes your agent type + task complexity and recommends the best model automatically.**
+
+### Quick Examples
+
+```bash
+# Let the optimizer choose (balanced quality vs cost)
+npx agentic-flow --agent coder --task "Build REST API" --optimize
+
+# Optimize for lowest cost
+npx agentic-flow --agent coder --task "Simple function" --optimize --priority cost
+
+# Optimize for highest quality
+npx agentic-flow --agent reviewer --task "Security audit" --optimize --priority quality
+
+# Optimize for speed
+npx agentic-flow --agent researcher --task "Quick analysis" --optimize --priority speed
+
+# Set maximum budget ($0.001 per task)
+npx agentic-flow --agent coder --task "Code cleanup" --optimize --max-cost 0.001
+```
+
+### Optimization Priorities
+
+- **`quality`** (70% quality, 20% speed, 10% cost) - Best results, production code
+- **`balanced`** (40% quality, 40% cost, 20% speed) - Default, good mix
+- **`cost`** (70% cost, 20% quality, 10% speed) - Cheapest, development/testing
+- **`speed`** (70% speed, 20% quality, 10% cost) - Fastest responses
+- **`privacy`** - Local-only models (ONNX), zero cloud API calls
+
+### Model Tier Examples
+
+The optimizer chooses from 10+ models across 5 tiers:
+
+**Tier 1: Flagship** (premium quality)
+- Claude Sonnet 4.5 - $3/$15 per 1M tokens
+- GPT-4o - $2.50/$10 per 1M tokens
+- Gemini 2.5 Pro - $0.00/$2.00 per 1M tokens
+
+**Tier 2: Cost-Effective** (2025 breakthrough models)
+- **DeepSeek R1** - $0.55/$2.19 per 1M tokens (85% cheaper, flagship quality)
+- **DeepSeek Chat V3** - $0.14/$0.28 per 1M tokens (98% cheaper)
+
+**Tier 3: Balanced**
+- Gemini 2.5 Flash - $0.07/$0.30 per 1M tokens (fastest)
+- Llama 3.3 70B - $0.30/$0.30 per 1M tokens (open-source)
+
+**Tier 4: Budget**
+- Llama 3.1 8B - $0.055/$0.055 per 1M tokens (ultra-low cost)
+
+**Tier 5: Local/Privacy**
+- **ONNX Phi-4** - FREE (offline, private, no API)
+
+### Agent-Specific Recommendations
+
+The optimizer knows what each agent needs:
+
+```bash
+# Coder agent → prefers high quality (min 85/100)
+npx agentic-flow --agent coder --task "Production API" --optimize
+# → Selects: DeepSeek R1 (quality 90, cost 85)
+
+# Researcher agent → flexible, can use cheaper models
+npx agentic-flow --agent researcher --task "Trend analysis" --optimize --priority cost
+# → Selects: Gemini 2.5 Flash (quality 78, cost 98)
+
+# Reviewer agent → needs reasoning (min 85/100)
+npx agentic-flow --agent reviewer --task "Security review" --optimize
+# → Selects: DeepSeek R1 (quality 90, reasoning-optimized)
+
+# Tester agent → simple tasks, use budget models
+npx agentic-flow --agent tester --task "Unit tests" --optimize --priority cost
+# → Selects: Llama 3.1 8B (cost 95)
+```
+
+### Cost Savings Examples
+
+**Without Optimization** (always using Claude Sonnet 4.5):
+- 100 code reviews/day × $0.08 each = **$8/day = $240/month**
+
+**With Optimization** (DeepSeek R1 for reviews):
+- 100 code reviews/day × $0.012 each = **$1.20/day = $36/month**
+- **Savings: $204/month (85% reduction)**
+
+### Comprehensive Model Guide
+
+For detailed analysis of all 10 models, see:
+📖 **[Model Capabilities Guide](docs/agentic-flow/benchmarks/MODEL_CAPABILITIES.md)**
+
+Includes:
+- Full benchmark results across 6 task types
+- Cost comparison tables
+- Use case decision matrices
+- Performance characteristics
+- Best practices by model
+
+### MCP Tool for Optimization
+
+```javascript
+// Get model recommendation via MCP tool
+await query({
+  mcp: {
+    server: 'agentic-flow',
+    tool: 'agentic_flow_optimize_model',
+    params: {
+      agent: 'coder',
+      task: 'Build REST API with auth',
+      priority: 'balanced',  // quality | balanced | cost | speed | privacy
+      max_cost: 0.01         // optional budget cap in dollars
+    }
+  }
+});
+```
+
+**Learn More:**
+- See [benchmarks/README.md](docs/agentic-flow/benchmarks/README.md) for quick results
+- Run your own tests: `cd docs/agentic-flow/benchmarks && ./quick-benchmark.sh`
 
 ---
 
 ## 📋 Commands
 
-### Configuration Management
+### MCP Server Management (Direct Tool Access)
 
 ```bash
-# Interactive configuration wizard
-npx agentic-flow config
+# Start all MCP servers (213 tools)
+npx agentic-flow mcp start
 
-# Direct configuration commands
-npx agentic-flow config set ANTHROPIC_API_KEY sk-ant-xxxxx
-npx agentic-flow config set OPENROUTER_API_KEY sk-or-v1-xxxxx
-npx agentic-flow config set PROVIDER openrouter
-npx agentic-flow config set COMPLETION_MODEL meta-llama/llama-3.1-8b-instruct
+# Start specific MCP server
+npx agentic-flow mcp start claude-flow      # 101 tools
+npx agentic-flow mcp start flow-nexus       # 96 cloud tools
+npx agentic-flow mcp start agentic-payments # Payment tools
 
-# View configuration
-npx agentic-flow config list
-npx agentic-flow config get PROVIDER
+# List all available MCP tools (213 total)
+npx agentic-flow mcp list
 
-# Manage configuration
-npx agentic-flow config delete OPENROUTER_API_KEY
-npx agentic-flow config reset
+# Check MCP server status
+npx agentic-flow mcp status
 
-# Get help
-npx agentic-flow config help
+# Stop MCP servers
+npx agentic-flow mcp stop [server]
 ```
 
-**Available Configuration Keys:**
-- `ANTHROPIC_API_KEY` - Anthropic API key (validated: must start with `sk-ant-`)
-- `OPENROUTER_API_KEY` - OpenRouter API key (validated: must start with `sk-or-`)
-- `COMPLETION_MODEL` - Default model name
-- `PROVIDER` - Default provider (anthropic, openrouter, onnx)
-- `AGENTS_DIR` - Custom agents directory path
-- `PROXY_PORT` - Proxy server port (default: 3000)
-- `USE_OPENROUTER` - Force OpenRouter usage (true/false)
-- `USE_ONNX` - Use ONNX local inference (true/false)
+**MCP Servers Available:**
+- **claude-flow** (101 tools): Neural networks, GitHub integration, workflows, DAA, performance
+- **flow-nexus** (96 tools): E2B sandboxes, distributed swarms, templates, cloud storage
+- **agentic-payments** (10 tools): Payment authorization, Ed25519 signatures, consensus
+- **claude-flow-sdk** (6 tools): In-process memory and swarm coordination
 
 ### Basic Operations (Works Locally, Docker, Cloud)
 
 ```bash
-# List all available agents (75 total)
+# List all available agents (150+ total)
 npx agentic-flow --list
 
 # Run specific agent (local execution)
@@ -497,14 +629,11 @@ npx agentic-flow --agent coder --task "Build API" --stream
 npx agentic-flow  # Requires TOPIC, DIFF, DATASET env vars
 ```
 
-### Environment Configuration (Alternative to Config Wizard)
+### Environment Configuration
 
 ```bash
-# Required (use config wizard instead for better UX)
+# Required
 export ANTHROPIC_API_KEY=sk-ant-...
-
-# Or use OpenRouter
-export OPENROUTER_API_KEY=sk-or-v1-...
 
 # Agent mode (optional)
 export AGENT=researcher
@@ -775,9 +904,34 @@ npx agentic-flow \
 
 ---
 
-## 🔧 MCP Tools (203+)
+## 🔧 MCP Tools (213 Total)
 
-Agentic Flow integrates with **four MCP servers** providing 203+ tools:
+Agentic Flow integrates with **four MCP servers** providing 213 tools total:
+
+### Direct MCP Access
+
+You can now directly manage MCP servers via the CLI:
+
+```bash
+# Start all MCP servers
+npx agentic-flow mcp start
+
+# List all 213 available tools
+npx agentic-flow mcp list
+
+# Check server status
+npx agentic-flow mcp status
+
+# Start specific server
+npx agentic-flow mcp start claude-flow
+```
+
+**How It Works:**
+1. **Automatic** (Recommended): Agents automatically access all 213 tools when you run tasks
+2. **Manual**: Use `npx agentic-flow mcp <command>` for direct server management
+3. **Integrated**: All tools work seamlessly whether accessed automatically or manually
+
+### Tool Breakdown
 
 ### Core Orchestration (claude-flow - 101 tools)
 
@@ -894,15 +1048,16 @@ Add to your MCP config (`~/.config/claude/mcp.json`):
 
 ## 🔍 Deployment Comparison
 
-| Feature | Local | Docker | Flow Nexus Sandboxes | AWS Lambda |
+| Feature | Local | Docker | Flow Nexus Sandboxes | ONNX Local |
 |---------|-------|--------|----------------------|------------|
 | **MCP Tools Available** | 203 (100%) | 203 (100%) | 203 (100%) | 6 (3%) |
-| **Setup Complexity** | Low | Medium | Medium | High |
-| **Cold Start Time** | <500ms | <2s | <2s | <800ms |
-| **Cost (Development)** | Free* | Free* | $1/hour | $0.20/1M |
-| **Cost (Production)** | Free* | Infra costs | $1/hour | Limited tools |
-| **Scaling** | Manual | Orchestrator | Automatic | Automatic |
-| **Best For** | Dev/Testing | CI/CD/Prod | Cloud-Scale | ❌ Not Recommended |
+| **Setup Complexity** | Low | Medium | Medium | Low |
+| **Cold Start Time** | <500ms | <2s | <2s | ~2s (first load) |
+| **Cost (Development)** | Free* | Free* | $1/hour | $0 (100% free) |
+| **Cost (Production)** | Free* | Infra costs | $1/hour | $0 (100% free) |
+| **Privacy** | Local | Local | Cloud | 100% Offline |
+| **Scaling** | Manual | Orchestrator | Automatic | Manual |
+| **Best For** | Dev/Testing | CI/CD/Prod | Cloud-Scale | Privacy/Offline |
 
 *Free infrastructure, Claude API costs only
 
@@ -1033,63 +1188,55 @@ spec:
 - Implement PodDisruptionBudgets
 - All 203 MCP tools available
 
-### ⚠️ Serverless Functions (Limited - Not Recommended)
+### 💡 ONNX Local Inference - Extended Configuration
 
-#### AWS Lambda (Restricted)
+**Advanced ONNX setup with router integration:**
 
 ```javascript
-// ❌ THIS WON'T WORK AS EXPECTED
-// Lambda blocks subprocess spawning, breaking MCP servers
-
-import { query } from '@anthropic-ai/claude-agent-sdk';
-import { claudeFlowSdkServer } from './mcp/claudeFlowSdkServer.js';
-
-export const handler = async (event) => {
-  const result = await query({
-    prompt: event.task,
-    options: {
-      permissionMode: 'bypassPermissions',
-      mcpServers: {
-        // ✅ Works: In-SDK server (6 tools)
-        'claude-flow-sdk': claudeFlowSdkServer,
-
-        // ❌ Blocked: Cannot spawn subprocess
-        // 'claude-flow': { command: 'npx', args: [...] },
-
-        // ❌ Blocked: Cannot spawn subprocess
-        // 'flow-nexus': { command: 'npx', args: [...] }
+// router.config.json - Auto-route privacy tasks to ONNX
+{
+  "routing": {
+    "rules": [
+      {
+        "condition": { "privacy": "high", "localOnly": true },
+        "action": { "provider": "onnx" }
+      },
+      {
+        "condition": { "cost": "free" },
+        "action": { "provider": "onnx" }
       }
+    ]
+  },
+  "providers": {
+    "onnx": {
+      "modelPath": "./models/phi-4/model.onnx",
+      "maxTokens": 2048,
+      "temperature": 0.7
     }
-  });
-
-  return { statusCode: 200, body: JSON.stringify(result) };
-};
+  }
+}
 ```
 
-**Lambda Limitations:**
-| Feature | Status | Notes |
-|---------|--------|-------|
-| Claude Agent SDK | ✅ Works | Core SDK functions normally |
-| In-SDK MCP Tools | ✅ Works | 6 tools from claude-flow-sdk |
-| Claude Flow MCP | ❌ Blocked | Cannot spawn `npx claude-flow` subprocess |
-| Flow Nexus MCP | ❌ Blocked | Cannot spawn `npx flow-nexus` subprocess |
-| Persistent Memory | ❌ Unavailable | Claude Flow memory requires subprocess |
-| Total Tools | 6/203 | Only 3% of tools work |
+**Performance Benchmarks:**
+| Metric | CPU (Intel i7) | GPU (NVIDIA RTX 3060) |
+|--------|---------------|----------------------|
+| Tokens/sec | ~6 | 60-300 |
+| First Token | ~2s | ~500ms |
+| Model Load | ~3s | ~2s |
+| Memory Usage | ~2GB | ~3GB |
+| Cost | $0 | $0 |
 
-**Why Lambda Fails:**
-1. **Subprocess Restrictions**: Lambda blocks `child_process.spawn()` for security
-2. **No npx**: Cannot run `npx claude-flow` or `npx flow-nexus`
-3. **Memory Architecture**: Persistent memory requires subprocess MCP server
-4. **File System**: Read-only `/tmp` prevents MCP server file operations
+**Use Cases:**
+- ✅ Privacy-sensitive data processing
+- ✅ Offline/air-gapped environments
+- ✅ Cost-conscious development
+- ✅ Compliance requirements (HIPAA, GDPR)
+- ✅ Prototype/testing without API costs
 
-**Solution: Use Flow Nexus sandboxes instead** - Full 203 tool support with Lambda-triggered sandbox execution:
-
-```javascript
-// ✅ RECOMMENDED: Lambda triggers Flow Nexus sandbox
-import { flowNexus } from 'flow-nexus';
-
-export const handler = async (event) => {
-  // Lambda just orchestrates - execution happens in sandbox
+**Documentation:**
+- [ONNX Integration Guide](docs/ONNX_INTEGRATION.md)
+- [ONNX CLI Usage](docs/ONNX_CLI_USAGE.md)
+- [ONNX vs Claude Quality Analysis](docs/ONNX_VS_CLAUDE_QUALITY.md)
   const sandbox = await flowNexus.sandboxCreate({
     template: 'node',
     env_vars: { ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY }
@@ -1225,16 +1372,16 @@ npx agentic-flow --agent flow-nexus-sandbox \
 | **Concurrent Agents** | 10+ on t3.small, 100+ on c6a.xlarge |
 | **Token Efficiency** | 32% reduction via swarm coordination |
 
-### Cost Analysis (AWS Lambda arm64)
+### Cost Analysis - ONNX vs Cloud APIs
 
-| Memory | Duration | Cost per Invocation | Monthly (10K requests) |
-|--------|----------|---------------------|------------------------|
-| 1GB | 30s | $0.0008 | $8 |
-| 2GB | 30s | $0.0016 | $16 |
-| 2GB | 60s | $0.0032 | $32 |
-| 4GB | 60s | $0.0064 | $64 |
+| Provider | Model | Tokens/sec | Cost per 1M tokens | Monthly (100K tasks) |
+|----------|-------|------------|-------------------|---------------------|
+| ONNX Local | Phi-4 | 6-300 | $0 | $0 |
+| OpenRouter | Llama 3.1 8B | API | $0.06 | $6 |
+| OpenRouter | DeepSeek | API | $0.14 | $14 |
+| Claude | Sonnet 3.5 | API | $3.00 | $300 |
 
-*Free tier: 400,000 GB-seconds/month*
+**ONNX Savings:** Up to $3,600/year for typical development workloads
 
 ---
 

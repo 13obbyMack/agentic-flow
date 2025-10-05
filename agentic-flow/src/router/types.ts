@@ -11,7 +11,7 @@ export interface LLMProvider {
   validateCapabilities(features: string[]): boolean;
 }
 
-export type ProviderType = 'anthropic' | 'openai' | 'openrouter' | 'ollama' | 'litellm' | 'onnx' | 'custom';
+export type ProviderType = 'anthropic' | 'openai' | 'openrouter' | 'ollama' | 'litellm' | 'onnx' | 'gemini' | 'custom';
 
 export interface ChatParams {
   model: string;

@@ -1,19 +1,10 @@
 #!/bin/bash
-# Entrypoint for Cloud Run - starts health server immediately, then training
+# Entrypoint for Cloud Run
+# Health server starts immediately and handles training in background thread
 
-# Start health server in background immediately
-python3 /app/cloudrun/health_server.py &
-HEALTH_PID=$!
+echo "🚀 Starting Cloud Run GPU Training Service"
+echo "📡 Health server will respond immediately on port ${PORT:-8080}"
+echo "⏳ Training will start automatically after 30 seconds"
 
-# Wait 10 seconds for health server to be fully ready
-sleep 10
-
-# Start training in background
-nohup python3 /app/cloudrun/cloud_runner.py > /app/logs/training.log 2>&1 &
-TRAINING_PID=$!
-
-echo "Health server started (PID: $HEALTH_PID)"
-echo "Training started (PID: $TRAINING_PID)"
-
-# Keep the health server in foreground so container stays alive
-wait $HEALTH_PID
+# Run health server (which triggers training internally)
+exec python3 /app/cloudrun/health_server.py
