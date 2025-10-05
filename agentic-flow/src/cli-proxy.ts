@@ -131,12 +131,28 @@ class AgenticFlowCLI {
     const useOpenRouter = this.shouldUseOpenRouter(options);
     const useGemini = this.shouldUseGemini(options);
 
+    // Debug output for provider selection
+    if (options.verbose || process.env.VERBOSE === 'true') {
+      console.log('\n🔍 Provider Selection Debug:');
+      console.log(`  Provider flag: ${options.provider || 'not set'}`);
+      console.log(`  Model: ${options.model || 'default'}`);
+      console.log(`  Use OpenRouter: ${useOpenRouter}`);
+      console.log(`  Use Gemini: ${useGemini}`);
+      console.log(`  OPENROUTER_API_KEY: ${process.env.OPENROUTER_API_KEY ? '✓ set' : '✗ not set'}`);
+      console.log(`  GOOGLE_GEMINI_API_KEY: ${process.env.GOOGLE_GEMINI_API_KEY ? '✓ set' : '✗ not set'}`);
+      console.log(`  ANTHROPIC_API_KEY: ${process.env.ANTHROPIC_API_KEY ? '✓ set' : '✗ not set'}\n`);
+    }
+
     try {
       // Start proxy if needed (OpenRouter or Gemini)
       if (useOpenRouter) {
+        console.log('🚀 Initializing OpenRouter proxy...');
         await this.startOpenRouterProxy(options.model);
       } else if (useGemini) {
+        console.log('🚀 Initializing Gemini proxy...');
         await this.startGeminiProxy(options.model);
+      } else {
+        console.log('🚀 Using direct Anthropic API...\n');
       }
 
       // Run agent
