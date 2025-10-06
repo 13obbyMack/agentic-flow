@@ -168,6 +168,40 @@ export async function claudeAgent(
         };
       }
 
+      // Load MCP servers from user config file (~/.agentic-flow/mcp-config.json)
+      try {
+        const fs = await import('fs');
+        const path = await import('path');
+        const os = await import('os');
+
+        const configPath = path.join(os.homedir(), '.agentic-flow', 'mcp-config.json');
+
+        if (fs.existsSync(configPath)) {
+          const configContent = fs.readFileSync(configPath, 'utf-8');
+          const config = JSON.parse(configContent);
+
+          // Add enabled user-configured servers
+          for (const [name, server] of Object.entries(config.servers || {})) {
+            const serverConfig = server as any;
+            if (serverConfig.enabled) {
+              mcpServers[name] = {
+                type: 'stdio',
+                command: serverConfig.command,
+                args: serverConfig.args || [],
+                env: {
+                  ...process.env,
+                  ...serverConfig.env
+                }
+              };
+              console.log(`[agentic-flow] Loaded MCP server: ${name}`);
+            }
+          }
+        }
+      } catch (error) {
+        // Silently fail if config doesn't exist or can't be read
+        console.log('[agentic-flow] No user MCP config found (this is normal)');
+      }
+
       const queryOptions: any = {
         systemPrompt: agent.systemPrompt,
         model: finalModel, // Claude Agent SDK handles model selection

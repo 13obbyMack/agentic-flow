@@ -52,6 +52,9 @@ npx agentic-flow --agent coder --task "Build REST API" --model "meta-llama/llama
 export GOOGLE_GEMINI_API_KEY=AIza...
 npx agentic-flow --agent coder --task "Build REST API" --provider gemini
 
+# Enable real-time streaming output
+npx agentic-flow --agent coder --task "Build REST API" --stream
+
 # List all 66 available agents
 npx agentic-flow --list
 ```
@@ -185,13 +188,16 @@ npx agentic-flow --agent reviewer --task "Review this code for security vulnerab
 
 # Test generation
 npx agentic-flow --agent tester --task "Write comprehensive tests for this API"
+
+# Enable real-time streaming output (see responses token-by-token)
+npx agentic-flow --agent coder --task "Build a web scraper" --stream
 ```
 
 **Technical Details:**
 - Uses Claude Agent SDK's `query()` function
 - Automatically loads agent's system prompt from `.claude/agents/`
 - All 213 MCP tools available via `mcpServers` configuration
-- Streams output in real-time with `--stream` flag
+- **Streams output in real-time with `--stream` flag** - see responses token-by-token as they're generated
 
 ---
 
@@ -363,6 +369,49 @@ node dist/mcp/fastmcp/servers/http-sse.js
 **When to use each transport:**
 - **stdio**: Claude Desktop, Cursor IDE, command-line tools
 - **HTTP/SSE**: Web apps, browser extensions, REST APIs, mobile apps
+
+### Add Custom MCP Servers (No Code Required)
+
+Add your own MCP servers via CLI without editing code:
+
+```bash
+# Add MCP server (Claude Desktop style JSON config)
+npx agentic-flow mcp add weather '{"command":"npx","args":["-y","weather-mcp"],"env":{"API_KEY":"xxx"}}'
+
+# Add MCP server (flag-based)
+npx agentic-flow mcp add github --npm @modelcontextprotocol/server-github --env "GITHUB_TOKEN=ghp_xxx"
+
+# Add local MCP server
+npx agentic-flow mcp add my-tools --local /path/to/server.js
+
+# List configured servers
+npx agentic-flow mcp list
+
+# Enable/disable servers
+npx agentic-flow mcp enable weather
+npx agentic-flow mcp disable weather
+
+# Remove server
+npx agentic-flow mcp remove weather
+```
+
+**Configuration stored in:** `~/.agentic-flow/mcp-config.json`
+
+**Usage:** Once configured, all enabled MCP servers automatically load in agents. No need to specify which server to use - tools are available by name (e.g., `mcp__weather__get_forecast`).
+
+**Example:** After adding weather MCP:
+```bash
+npx agentic-flow --agent researcher --task "Get weather forecast for Tokyo"
+```
+
+**Popular MCP Servers:**
+- `@modelcontextprotocol/server-filesystem` - File system access
+- `@modelcontextprotocol/server-github` - GitHub operations
+- `@modelcontextprotocol/server-brave-search` - Web search
+- `weather-mcp` - Weather data
+- `database-mcp` - Database operations
+
+**Documentation:** See [docs/guides/ADDING-MCP-SERVERS-CLI.md](docs/guides/ADDING-MCP-SERVERS-CLI.md) for complete guide.
 
 ### Using MCP Tools in Agents
 
