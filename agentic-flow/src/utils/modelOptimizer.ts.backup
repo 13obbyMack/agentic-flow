@@ -90,7 +90,7 @@ const MODEL_DATABASE = {
     speed_score: 80,
     cost_score: 100,
     tier: 'cost-effective' as const,
-    supports_tools: false, // DeepSeek R1 does NOT support tool/function calling
+    supports_tools: false, // DeepSeek R1 does NOT support function calling
     strengths: ['reasoning', 'coding', 'math', 'value', 'free'],
     weaknesses: ['newer-model', 'no-tool-use'],
     bestFor: ['coder', 'pseudocode', 'specification', 'refinement', 'tester']
@@ -105,7 +105,6 @@ const MODEL_DATABASE = {
     speed_score: 90,
     cost_score: 100,
     tier: 'cost-effective' as const,
-    supports_tools: true,
     strengths: ['cost', 'speed', 'coding', 'development', 'free'],
     weaknesses: ['complex-reasoning'],
     bestFor: ['coder', 'reviewer', 'tester', 'backend-dev', 'cicd-engineer']
@@ -122,7 +121,6 @@ const MODEL_DATABASE = {
     speed_score: 98,
     cost_score: 98,
     tier: 'balanced' as const,
-    supports_tools: true,
     strengths: ['speed', 'cost', 'interactive'],
     weaknesses: ['quality'],
     bestFor: ['researcher', 'planner', 'smart-agent']
@@ -137,7 +135,6 @@ const MODEL_DATABASE = {
     speed_score: 95,
     cost_score: 100,
     tier: 'balanced' as const,
-    supports_tools: true,
     strengths: ['open-source', 'versatile', 'coding', 'free', 'fast'],
     weaknesses: ['smaller-model'],
     bestFor: ['coder', 'reviewer', 'base-template-generator', 'tester']
@@ -152,7 +149,6 @@ const MODEL_DATABASE = {
     speed_score: 85,
     cost_score: 90,
     tier: 'balanced' as const,
-    supports_tools: true,
     strengths: ['multilingual', 'coding', 'reasoning'],
     weaknesses: ['english-optimized'],
     bestFor: ['researcher', 'coder', 'multilingual-tasks']
@@ -169,7 +165,6 @@ const MODEL_DATABASE = {
     speed_score: 95,
     cost_score: 99,
     tier: 'budget' as const,
-    supports_tools: true,
     strengths: ['ultra-low-cost', 'speed'],
     weaknesses: ['quality', 'complex-tasks'],
     bestFor: ['simple-tasks', 'testing']
@@ -186,7 +181,6 @@ const MODEL_DATABASE = {
     speed_score: 30,
     cost_score: 100,
     tier: 'local' as const,
-    supports_tools: false,
     strengths: ['privacy', 'offline', 'zero-cost'],
     weaknesses: ['quality', 'speed'],
     bestFor: ['privacy-tasks', 'offline-tasks']
@@ -252,16 +246,8 @@ export class ModelOptimizer {
     // Set default priority to balanced if not specified
     const priority = criteria.priority || 'balanced';
 
-    // Filter models that support tools if required
-    let availableModels = Object.entries(MODEL_DATABASE);
-
-    if (criteria.requiresTools) {
-      availableModels = availableModels.filter(([key, model]) => model.supports_tools !== false);
-      logger.info(`Filtered to ${availableModels.length} models with tool support`);
-    }
-
     // Score all models
-    const scoredModels = availableModels.map(([key, model]) => {
+    const scoredModels = Object.entries(MODEL_DATABASE).map(([key, model]) => {
       // Calculate overall score based on priority
       let overall_score: number;
 

@@ -1,7 +1,7 @@
 // CLI argument parsing and help utilities
 
 export interface CliOptions {
-  mode: 'agent' | 'parallel' | 'list' | 'mcp' | 'config' | 'agent-manager' | 'proxy' | 'claude-code';
+  mode: 'agent' | 'parallel' | 'list' | 'mcp' | 'mcp-manager' | 'config' | 'agent-manager' | 'proxy' | 'claude-code';
   agent?: string;
   task?: string;
 
@@ -60,8 +60,19 @@ export function parseArgs(): CliOptions {
 
   // Check for MCP command
   if (args[0] === 'mcp') {
+    const mcpSubcommand = args[1];
+
+    // MCP Manager commands (CLI configuration)
+    const managerCommands = ['add', 'list', 'remove', 'enable', 'disable', 'update', 'test', 'info', 'export', 'import'];
+
+    if (managerCommands.includes(mcpSubcommand)) {
+      options.mode = 'mcp-manager';
+      return options;
+    }
+
+    // MCP Server commands (start/stop server)
     options.mode = 'mcp';
-    options.mcpCommand = args[1] || 'start'; // default to start
+    options.mcpCommand = mcpSubcommand || 'start'; // default to start
     options.mcpServer = args[2] || 'all'; // default to all servers
     return options;
   }
