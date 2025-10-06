@@ -878,7 +878,9 @@ PROXY MODE (Claude Code CLI Integration):
   • Leaderboard tracking on OpenRouter
   • No code changes to Claude Code itself
 
-For more information: https://github.com/ruvnet/agentic-flow
+DOCUMENTATION:
+  https://github.com/ruvnet/agentic-flow
+  https://ruv.io
     `);
   }
 }

@@ -23,11 +23,11 @@ Extending agent capabilities is effortless. Add custom tools and integrations th
 Define routing rules through flexible policy modes: Strict mode keeps sensitive data offline, Economy mode prefers free models (99% savings), Premium mode uses Anthropic for highest quality, or create custom cost/quality thresholds. The policy defines the rules; the swarm enforces them automatically. Runs local for development, Docker for CI/CD, or Flow Nexus cloud for production scale. Agentic Flow is the framework for autonomous efficiency—one unified runner for every Claude Code agent, self-tuning, self-routing, and built for real-world deployment.
 
 **Key Capabilities:**
+- ✅ **Claude Code Mode** - Run Claude Code with OpenRouter/Gemini/ONNX (85-99% savings)
 - ✅ **66 Specialized Agents** - Pre-built experts for coding, research, review, testing, DevOps
 - ✅ **213 MCP Tools** - Memory, GitHub, neural networks, sandboxes, workflows, payments
 - ✅ **Multi-Model Router** - Anthropic, OpenRouter (100+ models), Gemini, ONNX (free local)
-- ✅ **Cost Optimization** - 85-99% savings with DeepSeek, Llama, Gemini vs Claude
-- ✅ **Standalone Proxy** - Use Gemini/OpenRouter with Claude Code at 85% cost savings
+- ✅ **Cost Optimization** - DeepSeek at $0.14/M tokens vs Claude at $15/M (99% savings)
 
 **Built On:**
 - [Claude Agent SDK](https://docs.claude.com/en/api/agent-sdk) by Anthropic
@@ -120,28 +120,67 @@ npm run mcp:stdio
 
 ---
 
-### Option 3: Claude Code Integration (NEW in v1.1.13)
+### Option 3: Claude Code Mode (v1.2.3+)
 
-**Auto-start proxy + spawn Claude Code with one command:**
+**Run Claude Code with alternative AI providers - 85-99% cost savings!**
+
+Automatically spawns Claude Code with proxy configuration for OpenRouter, Gemini, or ONNX models:
 
 ```bash
-# OpenRouter (99% cost savings)
-npx agentic-flow claude-code --provider openrouter "Write a Python function"
+# Interactive mode - Opens Claude Code UI with proxy
+npx agentic-flow claude-code --provider openrouter
+npx agentic-flow claude-code --provider gemini
 
-# Gemini (FREE tier)
-npx agentic-flow claude-code --provider gemini "Create a REST API"
+# Non-interactive mode - Execute task and exit
+npx agentic-flow claude-code --provider openrouter "Write a Python hello world function"
+npx agentic-flow claude-code --provider openrouter --model "deepseek/deepseek-chat" "Create REST API"
 
-# Anthropic (direct, no proxy)
-npx agentic-flow claude-code --provider anthropic "Help me debug"
+# Use specific models
+npx agentic-flow claude-code --provider openrouter --model "mistralai/mistral-small"
+npx agentic-flow claude-code --provider gemini --model "gemini-2.0-flash-exp"
+
+# Local ONNX models (100% free, privacy-focused)
+npx agentic-flow claude-code --provider onnx "Analyze this codebase"
 ```
 
+**Recommended Models:**
+
+| Provider | Model | Cost/M Tokens | Context | Best For |
+|----------|-------|---------------|---------|----------|
+| OpenRouter | `deepseek/deepseek-chat` (default) | $0.14 | 128k | General tasks, best value |
+| OpenRouter | `anthropic/claude-3.5-sonnet` | $3.00 | 200k | Highest quality, complex reasoning |
+| OpenRouter | `google/gemini-2.0-flash-exp:free` | FREE | 1M | Development, testing (rate limited) |
+| Gemini | `gemini-2.0-flash-exp` | FREE | 1M | Fast responses, rate limited |
+| ONNX | `phi-4-mini-instruct` | FREE | 128k | Privacy, offline, no API needed |
+
+⚠️ **Note:** Claude Code sends 35k+ tokens in tool definitions. Models with <128k context (like Mistral Small at 32k) will fail with "context length exceeded" errors.
+
 **How it works:**
-1. ✅ Auto-detects if proxy is running
-2. ✅ Auto-starts proxy if needed (background)
-3. ✅ Sets `ANTHROPIC_BASE_URL` to proxy endpoint
-4. ✅ Configures provider-specific API keys
-5. ✅ Spawns Claude Code with environment configured
-6. ✅ Cleans up proxy on exit (optional)
+1. ✅ Auto-starts proxy server in background (OpenRouter/Gemini/ONNX)
+2. ✅ Sets `ANTHROPIC_BASE_URL` to proxy endpoint
+3. ✅ Configures provider-specific API keys transparently
+4. ✅ Spawns Claude Code with environment configured
+5. ✅ All Claude SDK features work (tools, memory, MCP, etc.)
+6. ✅ Automatic cleanup on exit
+
+**Environment Setup:**
+
+```bash
+# OpenRouter (100+ models at 85-99% savings)
+export OPENROUTER_API_KEY=sk-or-v1-...
+
+# Gemini (FREE tier available)
+export GOOGLE_GEMINI_API_KEY=AIza...
+
+# ONNX (local models, no API key needed)
+# export ONNX_MODEL_PATH=/path/to/models  # Optional
+```
+
+**Full Help:**
+
+```bash
+npx agentic-flow claude-code --help
+```
 
 **Alternative: Manual Proxy (v1.1.11)**
 
