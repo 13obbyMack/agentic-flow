@@ -105,11 +105,14 @@ export async function claudeAgent(
         model: finalModel
       });
     } else if (provider === 'onnx') {
-      // For ONNX: Local inference (TODO: implement ONNX proxy)
-      envOverrides.ANTHROPIC_API_KEY = 'local';
-      if (modelConfig.baseURL) {
-        envOverrides.ANTHROPIC_BASE_URL = modelConfig.baseURL;
-      }
+      // For ONNX: Use ANTHROPIC_BASE_URL if already set by CLI (proxy mode)
+      envOverrides.ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY || 'sk-ant-onnx-local-key';
+      envOverrides.ANTHROPIC_BASE_URL = process.env.ANTHROPIC_BASE_URL || process.env.ONNX_PROXY_URL || 'http://localhost:3001';
+
+      logger.info('Using ONNX local proxy', {
+        proxyUrl: envOverrides.ANTHROPIC_BASE_URL,
+        model: finalModel
+      });
     }
     // For Anthropic provider, use existing ANTHROPIC_API_KEY (no proxy needed)
 

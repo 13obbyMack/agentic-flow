@@ -180,6 +180,7 @@ class AgenticFlowCLI {
     }
 
     // Determine which provider to use
+    const useONNX = this.shouldUseONNX(options);
     const useOpenRouter = this.shouldUseOpenRouter(options);
     const useGemini = this.shouldUseGemini(options);
 
@@ -188,6 +189,7 @@ class AgenticFlowCLI {
       console.log('\n🔍 Provider Selection Debug:');
       console.log(`  Provider flag: ${options.provider || 'not set'}`);
       console.log(`  Model: ${options.model || 'default'}`);
+      console.log(`  Use ONNX: ${useONNX}`);
       console.log(`  Use OpenRouter: ${useOpenRouter}`);
       console.log(`  Use Gemini: ${useGemini}`);
       console.log(`  OPENROUTER_API_KEY: ${process.env.OPENROUTER_API_KEY ? '✓ set' : '✗ not set'}`);
@@ -196,8 +198,11 @@ class AgenticFlowCLI {
     }
 
     try {
-      // Start proxy if needed (OpenRouter or Gemini)
-      if (useOpenRouter) {
+      // Start proxy if needed (ONNX, OpenRouter, or Gemini)
+      if (useONNX) {
+        console.log('🚀 Initializing ONNX local inference proxy...');
+        await this.startONNXProxy(options.model);
+      } else if (useOpenRouter) {
         console.log('🚀 Initializing OpenRouter proxy...');
         await this.startOpenRouterProxy(options.model);
       } else if (useGemini) {
@@ -208,7 +213,7 @@ class AgenticFlowCLI {
       }
 
       // Run agent
-      await this.runAgent(options, useOpenRouter, useGemini);
+      await this.runAgent(options, useOpenRouter, useGemini, useONNX);
 
       logger.info('Execution completed successfully');
       process.exit(0);
@@ -217,6 +222,22 @@ class AgenticFlowCLI {
       console.error(err);
       process.exit(1);
     }
+  }
+
+  private shouldUseONNX(options: any): boolean {
+    // Use ONNX if:
+    // 1. Provider is explicitly set to onnx
+    // 2. PROVIDER env var is set to onnx
+    // 3. USE_ONNX env var is set
+    if (options.provider === 'onnx' || process.env.PROVIDER === 'onnx') {
+      return true;
+    }
+
+    if (process.env.USE_ONNX === 'true') {
+      return true;
+    }
+
+    return false;
   }
 
   private shouldUseGemini(options: any): boolean {
@@ -360,6 +381,45 @@ class AgenticFlowCLI {
 
     // Wait for proxy to be ready
     await new Promise(resolve => setTimeout(resolve, 1500));
+  }
+
+  private async startONNXProxy(modelOverride?: string): Promise<void> {
+    logger.info('Starting integrated ONNX local inference proxy');
+
+    console.log('🔧 Provider: ONNX Local (Phi-4-mini)');
+    console.log('💾 Free local inference - no API costs\n');
+
+    // Import ONNX proxy
+    const { AnthropicToONNXProxy } = await import('./proxy/anthropic-to-onnx.js');
+
+    // Use a different port for ONNX to avoid conflicts
+    const onnxProxyPort = parseInt(process.env.ONNX_PROXY_PORT || '3001');
+
+    const proxy = new AnthropicToONNXProxy({
+      port: onnxProxyPort,
+      modelPath: process.env.ONNX_MODEL_PATH,
+      executionProviders: process.env.ONNX_EXECUTION_PROVIDERS?.split(',') || ['cpu']
+    });
+
+    // Start proxy in background
+    await proxy.start();
+    this.proxyServer = proxy;
+
+    // Set ANTHROPIC_BASE_URL to ONNX proxy
+    process.env.ANTHROPIC_BASE_URL = `http://localhost:${onnxProxyPort}`;
+
+    // Set dummy ANTHROPIC_API_KEY for proxy (local inference doesn't need key)
+    if (!process.env.ANTHROPIC_API_KEY) {
+      process.env.ANTHROPIC_API_KEY = 'sk-ant-onnx-local-key';
+    }
+
+    console.log(`🔗 Proxy Mode: ONNX Local Inference`);
+    console.log(`🔧 Proxy URL: http://localhost:${onnxProxyPort}`);
+    console.log(`🤖 Model: Phi-4-mini-instruct (ONNX)\n`);
+
+    // Wait for proxy to be ready and model to load
+    console.log('⏳ Loading ONNX model... (this may take a moment)\n');
+    await new Promise(resolve => setTimeout(resolve, 2000));
   }
 
   private async runStandaloneProxy(): Promise<void> {
@@ -515,7 +575,7 @@ EXAMPLES:
 `);
   }
 
-  private async runAgent(options: any, useOpenRouter: boolean, useGemini: boolean): Promise<void> {
+  private async runAgent(options: any, useOpenRouter: boolean, useGemini: boolean, useONNX: boolean = false): Promise<void> {
     const agentName = options.agent || process.env.AGENT || '';
     const task = options.task || process.env.TASK || '';
 
