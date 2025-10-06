@@ -21,10 +21,14 @@
 import { spawn, ChildProcess } from 'child_process';
 import { Command } from 'commander';
 import * as dotenv from 'dotenv';
+import { resolve, dirname } from 'path';
+import { fileURLToPath } from 'url';
 import { logger } from '../utils/logger.js';
 
-// Load environment variables
-dotenv.config();
+// Load environment variables from root .env
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+dotenv.config({ path: resolve(__dirname, '../../../.env') });
 
 interface ProxyConfig {
   provider: 'anthropic' | 'openrouter' | 'gemini' | 'onnx';
@@ -48,7 +52,7 @@ function getProxyConfig(provider: string, customPort?: number): ProxyConfig {
         provider: 'openrouter',
         port,
         baseUrl,
-        model: process.env.COMPLETION_MODEL || 'meta-llama/llama-3.1-8b-instruct',
+        model: process.env.COMPLETION_MODEL || 'mistralai/mistral-small-3.1-24b-instruct',
         apiKey: process.env.OPENROUTER_API_KEY || '',
         requiresProxy: true
       };
@@ -98,9 +102,9 @@ async function isProxyRunning(port: number): Promise<boolean> {
 }
 
 /**
- * Start the proxy server in background
+ * Start the proxy server in background using the same approach as the agent
  */
-async function startProxyServer(config: ProxyConfig): Promise<ChildProcess | null> {
+async function startProxyServer(config: ProxyConfig): Promise<any> {
   if (!config.requiresProxy) {
     return null;
   }
@@ -114,59 +118,42 @@ async function startProxyServer(config: ProxyConfig): Promise<ChildProcess | nul
 
   logger.info(`Starting ${config.provider} proxy on port ${config.port}...`);
 
-  // Determine which proxy to start
-  let scriptPath: string;
-  let env: Record<string, string>;
+  let proxy: any;
 
   if (config.provider === 'gemini') {
-    scriptPath = 'dist/proxy/anthropic-to-gemini.js';
-    env = {
-      ...process.env,
-      PORT: config.port.toString(),
-      GOOGLE_GEMINI_API_KEY: config.apiKey,
-      GEMINI_MODEL: config.model || 'gemini-2.0-flash-exp'
-    };
+    const { AnthropicToGeminiProxy } = await import('../proxy/anthropic-to-gemini.js');
+    proxy = new AnthropicToGeminiProxy({
+      geminiApiKey: config.apiKey,
+      defaultModel: config.model || 'gemini-2.0-flash-exp'
+    });
+  } else if (config.provider === 'onnx') {
+    const { AnthropicToONNXProxy } = await import('../proxy/anthropic-to-onnx.js');
+    proxy = new AnthropicToONNXProxy({
+      port: config.port,
+      modelPath: process.env.ONNX_MODEL_PATH,
+      executionProviders: process.env.ONNX_EXECUTION_PROVIDERS?.split(',') || ['cpu']
+    });
   } else {
-    // OpenRouter or ONNX
-    scriptPath = 'dist/proxy/anthropic-to-openrouter.js';
-    env = {
-      ...process.env,
-      PORT: config.port.toString(),
-      OPENROUTER_API_KEY: config.apiKey,
-      COMPLETION_MODEL: config.model || 'meta-llama/llama-3.1-8b-instruct'
-    };
+    // OpenRouter - DeepSeek Chat: cheap ($0.14/M), fast, supports tools, good quality
+    const { AnthropicToOpenRouterProxy } = await import('../proxy/anthropic-to-openrouter.js');
+    proxy = new AnthropicToOpenRouterProxy({
+      openrouterApiKey: config.apiKey,
+      openrouterBaseUrl: process.env.ANTHROPIC_PROXY_BASE_URL,
+      defaultModel: config.model || 'mistralai/mistral-small-3.1-24b-instruct'
+    });
   }
 
-  const proxyProcess = spawn('node', [scriptPath], {
-    env: env as NodeJS.ProcessEnv,
-    detached: false,
-    stdio: 'pipe'
-  });
+  // Start proxy
+  proxy.start(config.port);
+
+  console.log(`🔗 Proxy Mode: ${config.provider}`);
+  console.log(`🔧 Proxy URL: ${config.baseUrl}`);
+  console.log(`🤖 Default Model: ${config.model}\n`);
 
   // Wait for proxy to be ready
-  await new Promise<void>((resolve, reject) => {
-    const timeout = setTimeout(() => {
-      reject(new Error('Proxy startup timeout'));
-    }, 10000);
+  await new Promise(resolve => setTimeout(resolve, 1500));
 
-    const checkReady = setInterval(async () => {
-      const ready = await isProxyRunning(config.port);
-      if (ready) {
-        clearInterval(checkReady);
-        clearTimeout(timeout);
-        logger.info(`✅ Proxy server ready on port ${config.port}`);
-        resolve();
-      }
-    }, 500);
-
-    proxyProcess.on('error', (err) => {
-      clearInterval(checkReady);
-      clearTimeout(timeout);
-      reject(err);
-    });
-  });
-
-  return proxyProcess;
+  return proxy;
 }
 
 /**
@@ -186,9 +173,10 @@ function spawnClaudeCode(config: ProxyConfig, claudeArgs: string[]): ChildProces
   } as Record<string, string>;
 
   if (config.requiresProxy) {
-    // Using proxy - set base URL and dummy key
+    // Using proxy - set base URL and realistic dummy key
+    // Use a properly formatted key that won't trigger Claude's validation warnings
     env.ANTHROPIC_BASE_URL = config.baseUrl;
-    env.ANTHROPIC_API_KEY = 'sk-ant-proxy-dummy';
+    env.ANTHROPIC_API_KEY = 'sk-ant-api03-proxy-forwarded-to-' + config.provider + '-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx';
 
     // Set provider-specific keys
     if (config.provider === 'openrouter') {
@@ -228,12 +216,46 @@ async function main() {
 
   program
     .name('agentic-flow claude-code')
-    .description('Spawn Claude Code with automatic proxy configuration')
-    .option('--provider <provider>', 'Provider to use (anthropic, openrouter, gemini, onnx)', 'anthropic')
-    .option('--port <port>', 'Proxy port (default: 3000)', '3000')
-    .option('--model <model>', 'Model to use (overrides env vars)')
-    .option('--keep-proxy', 'Keep proxy running after Claude Code exits', false)
-    .option('--no-auto-start', 'Do not auto-start proxy (assumes already running)', false)
+    .description('Spawn Claude Code with automatic proxy configuration for alternative AI providers')
+    .usage('[options] [task]')
+    .addHelpText('after', `
+Examples:
+  # Interactive mode - Opens Claude Code UI with proxy
+  $ agentic-flow claude-code --provider openrouter
+  $ agentic-flow claude-code --provider gemini
+
+  # Non-interactive mode - Execute task and exit
+  $ agentic-flow claude-code --provider openrouter "Write a Python hello world function"
+  $ agentic-flow claude-code --provider openrouter --model "mistralai/mistral-small-3.1-24b-instruct" "Create REST API"
+
+  # Using different providers
+  $ agentic-flow claude-code --provider openrouter  # Uses Mistral Small (default, $0.02/M tokens)
+  $ agentic-flow claude-code --provider gemini      # Uses Gemini 2.0 Flash
+  $ agentic-flow claude-code --provider onnx        # Uses local ONNX models (free)
+
+Recommended Models:
+  OpenRouter:
+    mistralai/mistral-small-3.1-24b-instruct  (default, $0.02/M, 128k context, optimized for tools)
+    anthropic/claude-3.5-sonnet         ($3/M, highest quality, large context)
+    google/gemini-2.0-flash-exp:free    (FREE tier, rate limited)
+
+  Note: Models with <128k context will fail with tool definitions (Claude sends 35k+ tokens)
+
+Environment Variables:
+  OPENROUTER_API_KEY    Required for --provider openrouter
+  GOOGLE_GEMINI_API_KEY Required for --provider gemini
+  ANTHROPIC_API_KEY     Required for --provider anthropic (default)
+  ONNX_MODEL_PATH       Optional for --provider onnx
+
+Documentation:
+  https://github.com/ruvnet/agentic-flow#claude-code-mode
+  https://ruv.io
+`)
+    .option('--provider <provider>', 'AI provider (anthropic, openrouter, gemini, onnx)', 'anthropic')
+    .option('--port <port>', 'Proxy server port', '3000')
+    .option('--model <model>', 'Specific model to use (e.g., mistralai/mistral-small-3.1-24b-instruct)')
+    .option('--keep-proxy', 'Keep proxy running after Claude Code exits')
+    .option('--no-auto-start', 'Skip proxy startup (use existing proxy)')
     .allowUnknownOption(true)
     .allowExcessArguments(true);
 
@@ -260,24 +282,56 @@ async function main() {
     process.exit(1);
   }
 
-  // Get Claude Code arguments (everything after our custom flags)
-  const claudeArgs = process.argv.slice(2).filter(arg => {
-    return !arg.startsWith('--provider') &&
-           !arg.startsWith('--port') &&
-           !arg.startsWith('--model') &&
-           !arg.startsWith('--keep-proxy') &&
-           !arg.startsWith('--no-auto-start') &&
-           arg !== options.provider &&
-           arg !== options.port &&
-           arg !== options.model;
-  });
+  // Get Claude Code arguments (filter out wrapper-specific flags only)
+  const wrapperFlags = new Set(['--provider', '--port', '--model', '--keep-proxy', '--no-auto-start']);
+  const wrapperValues = new Set([options.provider, options.port, options.model]);
 
-  let proxyProcess: ChildProcess | null = null;
+  const claudeArgs: string[] = [];
+  let skipNext = false;
+
+  for (let i = 2; i < process.argv.length; i++) {
+    const arg = process.argv[i];
+
+    if (skipNext) {
+      skipNext = false;
+      continue;
+    }
+
+    // Check if this is a wrapper flag
+    const isWrapperFlag = Array.from(wrapperFlags).some(flag => arg.startsWith(flag));
+
+    if (isWrapperFlag) {
+      // Skip this flag and its value if it has one
+      if (!arg.includes('=') && i + 1 < process.argv.length && !process.argv[i + 1].startsWith('-')) {
+        skipNext = true;
+      }
+      continue;
+    }
+
+    // Keep all other arguments
+    claudeArgs.push(arg);
+  }
+
+  // Auto-detect non-interactive mode: if there's a task string and no -p flag, add it
+  // Claude expects: claude [prompt] [flags], not claude [flags] [prompt]
+  const hasTaskString = claudeArgs.some(arg => !arg.startsWith('-'));
+  const hasPrintFlag = claudeArgs.includes('-p') || claudeArgs.includes('--print');
+
+  if (hasTaskString && !hasPrintFlag) {
+    // Find the prompt (first non-flag argument)
+    const promptIndex = claudeArgs.findIndex(arg => !arg.startsWith('-'));
+    if (promptIndex !== -1) {
+      // Insert -p after the prompt
+      claudeArgs.splice(promptIndex + 1, 0, '-p');
+    }
+  }
+
+  let proxyServer: any = null;
 
   try {
     // Start proxy if needed and auto-start is enabled
     if (options.autoStart) {
-      proxyProcess = await startProxyServer(config);
+      proxyServer = await startProxyServer(config);
     }
 
     // Spawn Claude Code
@@ -285,9 +339,11 @@ async function main() {
 
     // Handle cleanup on exit
     const cleanup = () => {
-      if (proxyProcess && !options.keepProxy) {
+      if (proxyServer && !options.keepProxy) {
         logger.info('Stopping proxy server...');
-        proxyProcess.kill();
+        if (proxyServer.stop) {
+          proxyServer.stop();
+        }
       }
     };
 
@@ -308,8 +364,8 @@ async function main() {
 
   } catch (error: any) {
     console.error('❌ Error:', error.message);
-    if (proxyProcess) {
-      proxyProcess.kill();
+    if (proxyServer && proxyServer.stop) {
+      proxyServer.stop();
     }
     process.exit(1);
   }

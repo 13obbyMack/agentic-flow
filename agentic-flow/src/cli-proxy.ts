@@ -61,6 +61,12 @@ class AgenticFlowCLI {
       process.exit(0);
     }
 
+    // If no mode and no agent specified, show help
+    if (!options.agent && options.mode !== 'list' && !['config', 'agent-manager', 'mcp-manager', 'proxy', 'claude-code', 'mcp'].includes(options.mode)) {
+      this.printHelp();
+      process.exit(0);
+    }
+
     if (options.mode === 'list') {
       this.listAgents();
       process.exit(0);
@@ -878,7 +884,9 @@ PROXY MODE (Claude Code CLI Integration):
   • Leaderboard tracking on OpenRouter
   • No code changes to Claude Code itself
 
-For more information: https://github.com/ruvnet/agentic-flow
+DOCUMENTATION:
+  https://github.com/ruvnet/agentic-flow
+  https://ruv.io
     `);
   }
 }
