@@ -1,4 +1,12 @@
 node_modules/
-dist/
+# dist/
 .env
 *.log
+*.tgz
+models/
+.DS_Store
+*.swp
+*.swo
+*~
+.vscode/
+.idea/

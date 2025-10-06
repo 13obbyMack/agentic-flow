@@ -5,8 +5,6 @@
  * Compatible with Phi-3, Llama, and other ONNX models
  */
 
-import * as ort from 'onnxruntime-node';
-import { pipeline, env } from '@xenova/transformers';
 import type {
   LLMProvider,
   ChatParams,
@@ -17,8 +15,29 @@ import type {
   ContentBlock
 } from '../types.js';
 
-env.allowLocalModels = true;
-env.allowRemoteModels = true;
+// Dynamic imports for optional ONNX dependencies
+let ort: any;
+let transformers: any;
+
+async function ensureOnnxDependencies() {
+  if (!ort) {
+    try {
+      const ortModule = await import('onnxruntime-node' as any);
+      ort = ortModule;
+    } catch (e) {
+      throw new Error('onnxruntime-node not installed. Run: npm install onnxruntime-node');
+    }
+  }
+  if (!transformers) {
+    try {
+      const transformersModule = await import('@xenova/transformers' as any);
+      transformers = transformersModule;
+      transformers.env.allowLocalModels = true;
+    } catch (e) {
+      throw new Error('@xenova/transformers not installed. Run: npm install @xenova/transformers');
+    }
+  }
+}
 
 export interface ONNXConfig {
   modelPath?: string;
@@ -36,7 +55,7 @@ export class ONNXProvider implements LLMProvider {
   supportsTools = false;
   supportsMCP = false;
 
-  private session: ort.InferenceSession | null = null;
+  private session: any = null;
   private generator: any = null;
   private config: ONNXConfig;
   private executionProviders: string[] = [];
@@ -92,10 +111,12 @@ export class ONNXProvider implements LLMProvider {
     if (this.generator) return;
 
     try {
+      await ensureOnnxDependencies();
+
       console.log(`📦 Loading ONNX model: ${this.config.modelId}`);
 
       // Use Transformers.js for easier model loading
-      this.generator = await pipeline(
+      this.generator = await transformers.pipeline(
         'text-generation',
         this.config.modelId,
         {

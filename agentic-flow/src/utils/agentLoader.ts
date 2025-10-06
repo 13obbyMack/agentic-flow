@@ -1,7 +1,14 @@
 // Agent loader for .claude/agents integration
-import { readFileSync, readdirSync, statSync } from 'fs';
-import { join, extname } from 'path';
+import { readFileSync, readdirSync, statSync, existsSync } from 'fs';
+import { join, extname, dirname } from 'path';
+import { fileURLToPath } from 'url';
 import { logger } from './logger.js';
+
+// Get the package root directory
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+const packageRoot = join(__dirname, '../..');
+const defaultAgentsDir = join(packageRoot, '.claude/agents');
 
 export interface AgentDefinition {
   name: string;
@@ -97,25 +104,80 @@ function findAgentFiles(dir: string): string[] {
 }
 
 /**
- * Load all agents from .claude/agents directory
+ * Load all agents from .claude/agents directory with deduplication
+ * Local agents (.claude/agents in CWD) override package agents
  */
-export function loadAgents(agentsDir: string = process.env.AGENTS_DIR || '/app/.claude/agents'): Map<string, AgentDefinition> {
+export function loadAgents(agentsDir?: string): Map<string, AgentDefinition> {
   const agents = new Map<string, AgentDefinition>();
+  const agentsByRelativePath = new Map<string, AgentDefinition>();
 
-  logger.info('Loading agents from directory', { agentsDir });
+  // If explicit directory is provided, use only that
+  if (agentsDir) {
+    logger.info('Loading agents from explicit directory', { agentsDir });
+    const agentFiles = findAgentFiles(agentsDir);
+    for (const filePath of agentFiles) {
+      const agent = parseAgentFile(filePath);
+      if (agent) {
+        agents.set(agent.name, agent);
+      }
+    }
+    return agents;
+  }
 
-  const agentFiles = findAgentFiles(agentsDir);
-  logger.debug('Found agent files', { count: agentFiles.length });
+  // Otherwise, load from both package and local with deduplication
+  const localAgentsDir = join(process.cwd(), '.claude/agents');
 
-  for (const filePath of agentFiles) {
-    const agent = parseAgentFile(filePath);
-    if (agent) {
-      agents.set(agent.name, agent);
-      logger.debug('Loaded agent', { name: agent.name, description: agent.description.substring(0, 100) });
+  // 1. Load package agents first (if they exist)
+  if (existsSync(defaultAgentsDir)) {
+    logger.info('Loading package agents', { agentsDir: defaultAgentsDir });
+    const packageFiles = findAgentFiles(defaultAgentsDir);
+    logger.debug('Found package agent files', { count: packageFiles.length });
+
+    for (const filePath of packageFiles) {
+      const agent = parseAgentFile(filePath);
+      if (agent) {
+        const relativePath = filePath.substring(defaultAgentsDir.length + 1);
+        agentsByRelativePath.set(relativePath, agent);
+        agents.set(agent.name, agent);
+        logger.debug('Loaded package agent', { name: agent.name, path: relativePath });
+      }
     }
   }
 
-  logger.info('Agents loaded successfully', { count: agents.size });
+  // 2. Load local agents (override package agents with same relative path)
+  if (existsSync(localAgentsDir) && localAgentsDir !== defaultAgentsDir) {
+    logger.info('Loading local agents', { agentsDir: localAgentsDir });
+    const localFiles = findAgentFiles(localAgentsDir);
+    logger.debug('Found local agent files', { count: localFiles.length });
+
+    for (const filePath of localFiles) {
+      const agent = parseAgentFile(filePath);
+      if (agent) {
+        const relativePath = filePath.substring(localAgentsDir.length + 1);
+        const existingAgent = agentsByRelativePath.get(relativePath);
+
+        if (existingAgent) {
+          logger.info('Local agent overrides package agent', {
+            name: agent.name,
+            path: relativePath
+          });
+          // Remove old agent
+          agents.delete(existingAgent.name);
+        }
+
+        agentsByRelativePath.set(relativePath, agent);
+        agents.set(agent.name, agent);
+        logger.debug('Loaded local agent', { name: agent.name, path: relativePath });
+      }
+    }
+  }
+
+  logger.info('Agents loaded successfully', {
+    total: agents.size,
+    package: existsSync(defaultAgentsDir) ? findAgentFiles(defaultAgentsDir).length : 0,
+    local: existsSync(localAgentsDir) ? findAgentFiles(localAgentsDir).length : 0
+  });
+
   return agents;
 }
 

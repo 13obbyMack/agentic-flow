@@ -1,20 +1,20 @@
-# Validation & Testing Reports
+# Validation & Testing
 
-Test results, validation reports, and quality assurance documentation.
+This directory contains validation reports and testing documentation for agentic-flow.
 
-## System Validation
+## Current Status
 
-- [Final System Validation](FINAL_SYSTEM_VALIDATION.md) - Complete system validation results
-- [Final Validation Summary](FINAL_VALIDATION_SUMMARY.md) - Summary of validation outcomes
+All validation files have been archived. The current validation status can be found in:
+- Main project README.md
+- CHANGELOG.md for version-specific validation notes
 
-## Component Testing
+## Archived Reports
 
-- [Docker MCP Validation](DOCKER_MCP_VALIDATION.md) - Docker MCP integration tests
-- [Docker OpenRouter Validation](DOCKER_OPENROUTER_VALIDATION.md) - OpenRouter Docker validation
-- [MCP CLI Tools Validation](MCP_CLI_TOOLS_VALIDATION.md) - MCP command-line tools testing
-- [Model Validation Report](MODEL_VALIDATION_REPORT.md) - Language model validation results
+Historical validation reports have been moved to `../archived/` including:
+- Version-specific validation reports (v1.1.10, v1.1.11)
+- MCP proxy validation
+- OpenRouter integration validation
+- Docker deployment validation
+- SDK integration reports
 
-## Integration Testing
-
-- [OpenRouter Validation Complete](OPENROUTER_VALIDATION_COMPLETE.md) - OpenRouter integration validation
-- [Router Validation](ROUTER_VALIDATION.md) - Multi-model router validation tests
+For historical context, see the archived directory.

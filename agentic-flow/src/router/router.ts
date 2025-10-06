@@ -15,6 +15,7 @@ import {
 import { OpenRouterProvider } from './providers/openrouter.js';
 import { AnthropicProvider } from './providers/anthropic.js';
 import { ONNXLocalProvider } from './providers/onnx-local.js';
+import { GeminiProvider } from './providers/gemini.js';
 
 export class ModelRouter {
   private config: RouterConfig;
@@ -33,6 +34,7 @@ export class ModelRouter {
       process.env.AGENTIC_FLOW_ROUTER_CONFIG,
       join(homedir(), '.agentic-flow', 'router.config.json'),
       join(process.cwd(), 'router.config.json'),
+      join(process.cwd(), 'config', 'router.config.json'),
       join(process.cwd(), 'router.config.example.json')
     ].filter(Boolean) as string[];
 
@@ -46,7 +48,49 @@ export class ModelRouter {
       }
     }
 
-    throw new Error('No router configuration file found');
+    // If no config file found, create config from environment variables
+    return this.createConfigFromEnv();
+  }
+
+  private createConfigFromEnv(): RouterConfig {
+    // Create minimal config from environment variables
+    const config: any = {
+      version: '1.0',
+      defaultProvider: (process.env.PROVIDER as any) || 'anthropic',
+      routing: { mode: 'manual' as const },
+      providers: {} as any
+    };
+
+    // Add Anthropic if API key exists
+    if (process.env.ANTHROPIC_API_KEY) {
+      config.providers.anthropic = {
+        apiKey: process.env.ANTHROPIC_API_KEY,
+        baseUrl: process.env.ANTHROPIC_BASE_URL
+      };
+    }
+
+    // Add OpenRouter if API key exists
+    if (process.env.OPENROUTER_API_KEY) {
+      config.providers.openrouter = {
+        apiKey: process.env.OPENROUTER_API_KEY,
+        baseUrl: process.env.OPENROUTER_BASE_URL
+      };
+    }
+
+    // Add Gemini if API key exists
+    if (process.env.GOOGLE_GEMINI_API_KEY) {
+      config.providers.gemini = {
+        apiKey: process.env.GOOGLE_GEMINI_API_KEY
+      };
+    }
+
+    // ONNX is always available (no API key needed)
+    config.providers.onnx = {
+      modelPath: process.env.ONNX_MODEL_PATH,
+      executionProviders: ['cpu']
+    };
+
+    return config as RouterConfig;
   }
 
   private substituteEnvVars(obj: any): any {
@@ -74,14 +118,16 @@ export class ModelRouter {
   }
 
   private initializeProviders(): void {
+    const verbose = process.env.ROUTER_VERBOSE === 'true';
+
     // Initialize Anthropic
     if (this.config.providers.anthropic) {
       try {
         const provider = new AnthropicProvider(this.config.providers.anthropic);
         this.providers.set('anthropic', provider);
-        console.log('✅ Anthropic provider initialized');
+        if (verbose) console.log('✅ Anthropic provider initialized');
       } catch (error) {
-        console.error('❌ Failed to initialize Anthropic:', error);
+        if (verbose) console.error('❌ Failed to initialize Anthropic:', error);
       }
     }
 
@@ -90,9 +136,9 @@ export class ModelRouter {
       try {
         const provider = new OpenRouterProvider(this.config.providers.openrouter);
         this.providers.set('openrouter', provider);
-        console.log('✅ OpenRouter provider initialized');
+        if (verbose) console.log('✅ OpenRouter provider initialized');
       } catch (error) {
-        console.error('❌ Failed to initialize OpenRouter:', error);
+        if (verbose) console.error('❌ Failed to initialize OpenRouter:', error);
       }
     }
 
@@ -106,9 +152,20 @@ export class ModelRouter {
           temperature: this.config.providers.onnx.temperature || 0.7
         });
         this.providers.set('onnx', provider);
-        console.log('✅ ONNX Local provider initialized');
+        if (verbose) console.log('✅ ONNX Local provider initialized');
       } catch (error) {
-        console.error('❌ Failed to initialize ONNX:', error);
+        if (verbose) console.error('❌ Failed to initialize ONNX:', error);
+      }
+    }
+
+    // Initialize Gemini
+    if (this.config.providers.gemini) {
+      try {
+        const provider = new GeminiProvider(this.config.providers.gemini);
+        this.providers.set('gemini', provider);
+        if (verbose) console.log('✅ Gemini provider initialized');
+      } catch (error) {
+        if (verbose) console.error('❌ Failed to initialize Gemini:', error);
       }
     }
 
@@ -167,6 +224,15 @@ export class ModelRouter {
   }
 
   private async selectProvider(params: ChatParams, agentType?: string): Promise<LLMProvider> {
+    // If provider is explicitly specified in params, use it
+    if (params.provider) {
+      const forcedProvider = this.providers.get(params.provider as ProviderType);
+      if (forcedProvider) {
+        return forcedProvider;
+      }
+      console.warn(`⚠️  Requested provider '${params.provider}' not available, falling back to routing logic`);
+    }
+
     const routingMode = this.config.routing?.mode || 'manual';
 
     switch (routingMode) {

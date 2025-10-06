@@ -7,7 +7,8 @@ Complete documentation for the Agentic Flow multi-agent orchestration system.
 ### 🚀 Start Here
 - **[README](../README.md)** - Project overview and getting started
 - **[CLAUDE.md](CLAUDE.md)** - Claude Code configuration and SPARC methodology
-- **[CHANGELOG.md](CHANGELOG.md)** - Version history and updates
+- **[PACKAGE_STRUCTURE.md](PACKAGE_STRUCTURE.md)** - Package organization and structure
+- **[STANDALONE_PROXY_GUIDE.md](STANDALONE_PROXY_GUIDE.md)** - Standalone proxy server setup
 
 ---
 
@@ -21,6 +22,9 @@ Practical guides and tutorials for using the system.
 - [Alternative LLM Models](guides/ALTERNATIVE_LLM_MODELS.md) - Using different language models
 - [Implementation Examples](guides/IMPLEMENTATION_EXAMPLES.md) - Real-world patterns
 - [NPM Publishing Guide](guides/NPM-PUBLISH.md) - Package publishing
+- [ONNX CLI Usage](guides/ONNX_CLI_USAGE.md) - ONNX command-line interface
+- [ONNX Optimization Guide](guides/ONNX_OPTIMIZATION_GUIDE.md) - Performance optimization
+- [OpenRouter Deployment](guides/OPENROUTER_DEPLOYMENT.md) - OpenRouter setup
 
 ### 🏗️ [Architecture](architecture/)
 System design, planning, and technical architecture.
@@ -48,33 +52,44 @@ Multi-model router configuration and usage.
 - [Router Overview](router/README.md) - Router system overview
 - [Router User Guide](router/ROUTER_USER_GUIDE.md) - Using the router
 - [Router Config Reference](router/ROUTER_CONFIG_REFERENCE.md) - Configuration options
-- [ONNX Runtime Integration Plan](router/ONNX_RUNTIME_INTEGRATION_PLAN.md) - ONNX integration
-- [ONNX Phi4 Research](router/ONNX_PHI4_RESEARCH.md) - Phi4 model research
-- [Phi4 Hyperoptimization Plan](router/PHI4_HYPEROPTIMIZATION_PLAN.md) - Performance optimization
+- [Top 20 Models Matrix](router/TOP20_MODELS_MATRIX.md) - Model comparison guide
 
 ### ✅ [Validation & Testing](validation/)
 Test results and quality assurance reports.
 
-- [Final System Validation](validation/FINAL_SYSTEM_VALIDATION.md) - Complete system tests
-- [Final Validation Summary](validation/FINAL_VALIDATION_SUMMARY.md) - Summary of results
-- [Model Validation Report](validation/MODEL_VALIDATION_REPORT.md) - Model testing results
-- [Router Validation](validation/ROUTER_VALIDATION.md) - Router testing
-- [Docker MCP Validation](validation/DOCKER_MCP_VALIDATION.md) - Docker MCP tests
-- [Docker OpenRouter Validation](validation/DOCKER_OPENROUTER_VALIDATION.md) - OpenRouter tests
-- [MCP CLI Tools Validation](validation/MCP_CLI_TOOLS_VALIDATION.md) - CLI tool tests
-- [OpenRouter Validation Complete](validation/OPENROUTER_VALIDATION_COMPLETE.md) - OpenRouter validation
+- [Validation README](validation/README.md) - Overview and archived reports
 
 ### 📦 [Archived](archived/)
-Historical documentation and completed implementation reports.
+Historical documentation, completed implementations, and validation reports.
 
+#### Validation Reports (Archived)
+- Version-specific validation (v1.1.10, v1.1.11)
+- MCP proxy validation
+- OpenRouter integration validation
+- Docker deployment validation
+- SDK integration reports
+- Model validation reports
+
+#### Completed Implementations
 - [Research Complete](archived/RESEARCH_COMPLETE.txt) - Historical research
 - [FastMCP Complete](archived/FASTMCP_COMPLETE.md) - FastMCP completion
 - [Flow Nexus Complete](archived/FLOW-NEXUS-COMPLETE.md) - Flow Nexus completion
 - [OpenRouter Proxy Complete](archived/OPENROUTER_PROXY_COMPLETE.md) - OpenRouter completion
 - [Package Complete](archived/PACKAGE-COMPLETE.md) - Package completion
 - [SDK Setup Complete](archived/SDK-SETUP-COMPLETE.md) - SDK setup completion
-- [ONNX Implementation Reports](archived/) - ONNX implementation history
-- [Integration Confirmed](archived/INTEGRATION_CONFIRMED.md) - Integration confirmation
+- ONNX implementation reports
+- Integration confirmation reports
+
+#### Historical Guides
+- ONNX integration guides (superseded by current guides)
+- Optimization summaries (superseded)
+- Provider instruction optimization
+- Tool instruction enhancements
+
+#### Research & Planning
+- ONNX Phi4 research
+- ONNX Runtime integration planning
+- Phi4 hyperoptimization plans
 
 ---
 
@@ -94,7 +109,7 @@ Historical documentation and completed implementation reports.
 1. [Research Summary](architecture/RESEARCH_SUMMARY.md) - Technical findings (30 min)
 2. [Multi-Model Router Plan](architecture/MULTI_MODEL_ROUTER_PLAN.md) - Router architecture (45 min)
 3. [Integration Status](architecture/INTEGRATION-STATUS.md) - Current state (30 min)
-4. [Validation Reports](validation/) - Quality assurance (15 min)
+4. [Router Documentation](router/) - Configuration and usage (15 min)
 
 ---
 
@@ -113,7 +128,7 @@ Historical documentation and completed implementation reports.
 - Neural pattern learning
 
 ### Model Router
-- Multi-model support (Claude, OpenRouter, ONNX)
+- Multi-model support (Claude, OpenRouter, ONNX, Gemini)
 - Intelligent model selection
 - Cost optimization
 - Performance monitoring
@@ -131,12 +146,11 @@ Historical documentation and completed implementation reports.
 ### Official Documentation
 - [Claude Agent SDK](https://docs.claude.com/en/api/agent-sdk/overview)
 - [Model Context Protocol](https://modelcontextprotocol.io/)
-- [Claude Flow GitHub](https://github.com/ruvnet/claude-flow)
+- [Agentic Flow GitHub](https://github.com/ruvnet/agentic-flow)
 - [Flow Nexus Platform](https://flow-nexus.ruv.io)
 
 ### Community
-- [GitHub Issues](https://github.com/ruvnet/claude-flow/issues)
-- [Discord Community](https://discord.gg/claude-flow)
+- [GitHub Issues](https://github.com/ruvnet/agentic-flow/issues)
 
 ---
 
@@ -150,7 +164,7 @@ Historical documentation and completed implementation reports.
 ### Implementation Support
 1. Review [Implementation Examples](guides/IMPLEMENTATION_EXAMPLES.md)
 2. Check [Integration Guides](integrations/)
-3. Consult [Validation Reports](validation/)
+3. Consult [Router Documentation](router/)
 
 ### Architecture Questions
 1. Read [Architecture Documentation](architecture/)
@@ -162,22 +176,21 @@ Historical documentation and completed implementation reports.
 ## 🎯 Quick Links
 
 - **License**: [MIT License](LICENSE)
-- **Changelog**: [CHANGELOG.md](CHANGELOG.md)
+- **Changelog**: [CHANGELOG.md](../CHANGELOG.md)
 - **Contributing**: See main [README](../README.md)
-- **Issues**: [GitHub Issues](https://github.com/ruvnet/claude-flow/issues)
+- **Issues**: [GitHub Issues](https://github.com/ruvnet/agentic-flow/issues)
 
 ---
 
-## 📂 Recent Additions
+## 📂 Documentation Organization
 
-### New Documentation
-- **[ONNX Integration](ONNX_INTEGRATION.md)** - ONNX Runtime integration guide
-- **[ONNX CLI Usage](ONNX_CLI_USAGE.md)** - Command-line interface for ONNX
-- **[ONNX vs Claude Quality](ONNX_VS_CLAUDE_QUALITY.md)** - Quality comparison analysis
-- **[OpenRouter Deployment](OPENROUTER_DEPLOYMENT.md)** - OpenRouter deployment guide
-- **[Complete Validation Summary](COMPLETE_VALIDATION_SUMMARY.md)** - Comprehensive validation results
+### Active Documentation
+All current and actively maintained documentation is organized in the category directories above.
+
+### Archived Content
+Historical reports, completed implementations, and superseded guides are in the [archived/](archived/) directory for reference.
 
 ---
 
 **Documentation Status**: ✅ Organized and up-to-date
-**Last Updated**: October 4, 2025
+**Last Updated**: October 5, 2025

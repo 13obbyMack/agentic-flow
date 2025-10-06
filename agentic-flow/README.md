@@ -1,297 +1,835 @@
 # 🤖 Agentic Flow
 
-**Ephemeral AI Agent Orchestration Framework with Multi-Model Router, OpenRouter Integration & Free Local Inference**
-
-Deploy autonomous multi-agent swarms with **99% cost savings** via OpenRouter integration. Features intelligent multi-model routing with **100+ LLM models** at 1/100th the cost, plus **100% free local CPU/GPU inference** via ONNX Runtime for privacy-sensitive workloads. Agents spin up on-demand, execute complex tasks, and automatically terminate.
-
-Built on **[Claude Agent SDK](https://docs.claude.com/en/api/agent-sdk)** by Anthropic, powered by **[Claude Flow](https://github.com/ruvnet/claude-flow)** (101 MCP tools), **[Flow Nexus](https://github.com/ruvnet/flow-nexus)** (96 cloud tools), **[OpenRouter](https://openrouter.ai)** (100+ LLM models), **[Agentic Payments](https://www.npmjs.com/package/agentic-payments)** (payment authorization), and **ONNX Runtime** (free local CPU or GPU inference).
-
 [![npm version](https://img.shields.io/npm/v/agentic-flow.svg)](https://www.npmjs.com/package/agentic-flow)
+[![npm downloads](https://img.shields.io/npm/dm/agentic-flow.svg)](https://www.npmjs.com/package/agentic-flow)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![Node.js Version](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen)](https://nodejs.org/)
+[![rUv](https://img.shields.io/badge/by-rUv-purple.svg)](https://github.com/ruvnet/)
+
+**Production-ready AI agent orchestration with 66+ specialized agents, 213 MCP tools, and multi-model routing (Anthropic, OpenRouter, Gemini, ONNX).**
 
 ---
 
-## Why Agentic Flow?
+## 📖 Introduction
 
-Traditional AI frameworks require persistent infrastructure and complex orchestration. **Agentic Flow** takes a different approach by combining the power of Anthropic's **Claude Agent SDK**, the orchestration capabilities of **Claude Flow**, OpenRouter's **100+ LLM models**, and the cloud infrastructure of **Flow Nexus**:
+Agentic Flow is a framework for running AI agents at scale with intelligent cost optimization. It runs any Claude Code agent through the [Claude Agent SDK](https://docs.claude.com/en/api/agent-sdk), automatically routing tasks to the cheapest model that meets quality requirements.
 
-- **99% Cost Savings** - OpenRouter integration with Llama 3.1, DeepSeek, Gemini
-- **Deploy Anywhere** - Local development, Docker containers, or cloud sandboxes
-- **Ephemeral by Design** - Agents exist only while working, minimizing costs
-- **Full MCP Support** - 203+ tools locally and in containers, cloud-ready
-- **Auto-Scaling** - Spawn 1 or 100 agents based on workload
-- **Zero Infrastructure** - No databases, queues, or persistent services required
-- **Production-Ready** - Built on battle-tested Claude Agent SDK v0.1.5
-- **Model Flexibility** - Use Claude, OpenRouter, or free local ONNX models
+**Key Capabilities:**
+- ✅ **66 Specialized Agents** - Pre-built experts for coding, research, review, testing, DevOps
+- ✅ **213 MCP Tools** - Memory, GitHub, neural networks, sandboxes, workflows, payments
+- ✅ **Multi-Model Router** - Anthropic, OpenRouter (100+ models), Gemini, ONNX (free local)
+- ✅ **Cost Optimization** - 85-99% savings with DeepSeek, Llama, Gemini vs Claude
+- ✅ **Standalone Proxy** - Use Gemini/OpenRouter with Claude Code at 85% cost savings
 
-> **Deploy your way:** Run locally for development (all 203 tools), containerize for production (Docker/Kubernetes), or scale in cloud sandboxes (Flow Nexus E2B). **Use OpenRouter for 99% cost savings** or ONNX for 100% free local inference.
-
-### Built on Industry Standards
-
-- **[Claude Agent SDK](https://docs.claude.com/en/api/agent-sdk)** - Anthropic's official SDK for building AI agents
-- **[Claude Flow](https://github.com/ruvnet/claude-flow)** - 101 MCP tools for orchestration, memory, GitHub, neural networks
-- **[Flow Nexus](https://github.com/ruvnet/flow-nexus)** - 96 cloud tools for sandboxes, distributed swarms, workflows
-- **[OpenRouter](https://openrouter.ai)** - Access to 100+ LLM models at 99% cost savings (Llama, DeepSeek, Gemini, etc.)
-- **[Agentic Payments](https://www.npmjs.com/package/agentic-payments)** - Multi-agent payment authorization with Ed25519 cryptography
-- **[ONNX Runtime](https://onnxruntime.ai)** - Free local CPU/GPU inference with Microsoft Phi-4
+**Built On:**
+- [Claude Agent SDK](https://docs.claude.com/en/api/agent-sdk) by Anthropic
+- [Claude Flow](https://github.com/ruvnet/claude-flow) - 101 MCP tools
+- [Flow Nexus](https://github.com/ruvnet/flow-nexus) - 96 cloud tools
+- [OpenRouter](https://openrouter.ai) - 100+ LLM models
+- [Agentic Payments](https://www.npmjs.com/package/agentic-payments) - Multi-agent payments
 
 ---
 
 ## 🚀 Quick Start
 
-### Local Installation (Recommended for Development)
+### Option 1: CLI Agent Execution (Fastest)
+
+Run specialized agents for coding, research, testing, and more:
 
 ```bash
-# Global installation
+# Install globally
 npm install -g agentic-flow
 
-# Or use directly with npx (no installation)
-npx agentic-flow --help
-
-# Set your API key
+# Run with Claude (Anthropic)
 export ANTHROPIC_API_KEY=sk-ant-...
-```
+npx agentic-flow --agent coder --task "Build a REST API with authentication"
 
-### Your First Agent (Local Execution)
-
-```bash
-# Run locally with full 203 MCP tool access (Claude)
-npx agentic-flow \
-  --agent researcher \
-  --task "Analyze microservices architecture trends in 2025"
-
-# Run with OpenRouter for 99% cost savings
+# Run with OpenRouter (99% cost savings)
 export OPENROUTER_API_KEY=sk-or-v1-...
-npx agentic-flow \
-  --agent coder \
-  --task "Build a REST API with authentication" \
-  --model "meta-llama/llama-3.1-8b-instruct"
+npx agentic-flow --agent coder --task "Build REST API" --model "meta-llama/llama-3.1-8b-instruct"
 
-# The agent executes on your machine, uses all MCP tools, and terminates
+# Run with Gemini (free tier)
+export GOOGLE_GEMINI_API_KEY=AIza...
+npx agentic-flow --agent coder --task "Build REST API" --provider gemini
+
+# Enable real-time streaming output
+npx agentic-flow --agent coder --task "Build REST API" --stream
+
+# List all 66 available agents
+npx agentic-flow --list
 ```
 
-### Multi-Agent Swarm (Local)
+**Available Agents:**
+- `coder`, `reviewer`, `tester`, `planner`, `researcher`
+- `backend-dev`, `mobile-dev`, `ml-developer`, `cicd-engineer`
+- `pr-manager`, `code-review-swarm`, `release-manager`
+- `perf-analyzer`, `production-validator`, `system-architect`
+- And 50+ more...
+
+---
+
+### Option 2: MCP Tools (Direct Access)
+
+Access 213 MCP tools for memory, swarms, GitHub, neural networks, and cloud sandboxes:
 
 ```bash
-# 3 agents work in parallel on your machine
+# Start all MCP servers (213 tools) - stdio transport
+npx agentic-flow mcp start
+
+# List all available tools
+npx agentic-flow mcp list
+
+# Check server status
+npx agentic-flow mcp status
+
+# Use tools in any agent automatically
+export ENABLE_CLAUDE_FLOW_SDK=true
+npx agentic-flow --agent coder --task "Store config in memory using memory_store"
+```
+
+**MCP Transports:**
+- **stdio** (default): Standard input/output for Claude Desktop integration
+- **HTTP/SSE** (new): HTTP server with Server-Sent Events for web apps
+
+```bash
+# Start HTTP/SSE server on port 8080
+npm run mcp:http
+# Endpoints:
+# - HTTP: http://localhost:8080/mcp
+# - SSE: http://localhost:8080/sse
+# - Health: http://localhost:8080/health
+
+# Start stdio server (default)
+npm run mcp:stdio
+```
+
+**MCP Tool Categories:**
+- **Agentic Flow** (6 tools): Agent execution, creation, optimization, model selection
+- **Claude Flow SDK** (6 tools): In-process memory and swarm coordination
+- **Claude Flow** (101 tools): Neural networks, GitHub, workflows, performance, DAA
+- **Flow Nexus** (96 tools): E2B sandboxes, distributed swarms, templates, storage
+- **Agentic Payments** (10 tools): Payment authorization, Ed25519 signatures, consensus
+
+---
+
+### Option 3: Claude Code Integration (NEW in v1.1.13)
+
+**Auto-start proxy + spawn Claude Code with one command:**
+
+```bash
+# OpenRouter (99% cost savings)
+npx agentic-flow claude-code --provider openrouter "Write a Python function"
+
+# Gemini (FREE tier)
+npx agentic-flow claude-code --provider gemini "Create a REST API"
+
+# Anthropic (direct, no proxy)
+npx agentic-flow claude-code --provider anthropic "Help me debug"
+```
+
+**How it works:**
+1. ✅ Auto-detects if proxy is running
+2. ✅ Auto-starts proxy if needed (background)
+3. ✅ Sets `ANTHROPIC_BASE_URL` to proxy endpoint
+4. ✅ Configures provider-specific API keys
+5. ✅ Spawns Claude Code with environment configured
+6. ✅ Cleans up proxy on exit (optional)
+
+**Alternative: Manual Proxy (v1.1.11)**
+
+```bash
+# Terminal 1: Start proxy server
+export GOOGLE_GEMINI_API_KEY=your-key-here
+npx agentic-flow proxy
+
+# Terminal 2: Use Claude Code with proxy
+export ANTHROPIC_BASE_URL=http://localhost:3000
+export ANTHROPIC_API_KEY=sk-ant-proxy-dummy-key
+claude  # Now uses Gemini instead of Anthropic!
+
+# Or use OpenRouter (90% savings)
+npx agentic-flow proxy --provider openrouter --model "openai/gpt-4o-mini"
+```
+
+**Features:**
+- ✅ MCP tools work through proxy (all 213 tools)
+- ✅ Compatible with Claude Code official CLI
+- ✅ Context-aware instruction injection (v1.1.13)
+- ✅ Model-specific max_tokens optimization
+- ✅ Future Cursor IDE support (waiting for ANTHROPIC_BASE_URL)
+- ✅ 85-90% cost savings vs direct Anthropic API
+
+**Cost Savings:**
+| Provider | Model | Cost per 1M tokens | Savings |
+|----------|-------|-------------------|---------|
+| Anthropic | Claude Sonnet 4.5 | $3.00 | Baseline |
+| Gemini (proxy) | gemini-2.0-flash | $0.00 (free tier) | **100%** |
+| OpenRouter (proxy) | gpt-4o-mini | $0.15 | **95%** |
+| OpenRouter (proxy) | deepseek-v3 | $0.014 | **99.5%** |
+
+📚 **See [Standalone Proxy Guide](docs/STANDALONE_PROXY_GUIDE.md) for details**
+
+---
+
+## 📚 Tutorial: Agent Execution
+
+### 1. Basic Agent Usage
+
+**What it does:** Runs a specialized agent with Claude SDK and all 213 MCP tools.
+
+**When to use:** Quick tasks that need one expert (code review, API generation, testing).
+
+```bash
+# Code generation
+npx agentic-flow --agent coder --task "Create a REST API with OAuth2 authentication"
+
+# Security review
+npx agentic-flow --agent reviewer --task "Review this code for security vulnerabilities"
+
+# Test generation
+npx agentic-flow --agent tester --task "Write comprehensive tests for this API"
+
+# Enable real-time streaming output (see responses token-by-token)
+npx agentic-flow --agent coder --task "Build a web scraper" --stream
+```
+
+**Technical Details:**
+- Uses Claude Agent SDK's `query()` function
+- Automatically loads agent's system prompt from `.claude/agents/`
+- All 213 MCP tools available via `mcpServers` configuration
+- **Streams output in real-time with `--stream` flag** - see responses token-by-token as they're generated
+
+---
+
+### 2. Multi-Agent Swarms
+
+**What it does:** Runs 3 agents in parallel for complex workflows.
+
+**When to use:** Multi-faceted tasks requiring research + coding + analysis.
+
+```bash
+# Set environment variables
 export TOPIC="API security best practices"
 export DIFF="feat: add OAuth2 authentication"
 export DATASET="API response times last 30 days"
 
-npx agentic-flow  # Spawns: researcher + code-reviewer + data-analyst
+# Run parallel swarm (researcher + code-reviewer + data-analyst)
+npx agentic-flow
 ```
 
-**Local Benefits:**
-- ✅ All 203 MCP tools work (full subprocess support)
-- ✅ Fast iteration and debugging
-- ✅ No cloud costs during development
-- ✅ Full access to local filesystem and resources
+**Technical Details:**
+- Spawns 3 agents concurrently: `researcher`, `code-review`, `data-analyst`
+- Agents coordinate via Claude Flow memory tools
+- Each agent has access to all 213 MCP tools
+- Results aggregated and returned together
 
-### Docker Deployment (Production)
+---
+
+### 3. Cost Optimization with OpenRouter
+
+**What it does:** Uses OpenRouter models for 90-99% cost savings vs Claude.
+
+**When to use:** Development, testing, or budget-conscious production workloads.
 
 ```bash
-# Build container
-docker build -f deployment/Dockerfile -t agentic-flow .
+# Ultra-low cost with Llama 3.1 8B (99% savings)
+export OPENROUTER_API_KEY=sk-or-v1-...
+npx agentic-flow --agent coder --task "Build REST API" --model "meta-llama/llama-3.1-8b-instruct"
 
-# Run agent with Claude (Anthropic)
+# Balanced cost/quality with DeepSeek (97% savings)
+npx agentic-flow --agent coder --task "Production code" --model "deepseek/deepseek-chat-v3.1"
+
+# Fast responses with Gemini (95% savings)
+npx agentic-flow --agent researcher --task "Analyze trends" --model "google/gemini-2.5-flash-preview"
+```
+
+**Technical Details:**
+- Proxy auto-starts on port 3000 when OpenRouter model detected
+- Translates Anthropic Messages API ↔ OpenAI Chat Completions API
+- All 213 MCP tools work through proxy
+- No code changes needed - transparent to Claude SDK
+
+**Cost Comparison:**
+```
+Task: Generate 100K tokens (200 functions)
+
+Anthropic Claude Sonnet 4.5: $1.80
+DeepSeek V3 (OpenRouter):    $0.028  (98% savings)
+Llama 3.1 8B (OpenRouter):   $0.011  (99% savings)
+```
+
+---
+
+### 4. Free Local Inference with ONNX
+
+**What it does:** Runs agents completely offline with zero API costs.
+
+**When to use:** Privacy-sensitive data, air-gapped environments, development without API costs.
+
+```bash
+# Auto-downloads Phi-4 model (~4.9GB one-time)
+npx agentic-flow --agent coder --task "Build REST API" --provider onnx
+
+# Privacy-first routing (auto-selects ONNX)
+npx agentic-flow --agent researcher --task "Analyze medical records" --privacy high --local-only
+```
+
+**Technical Details:**
+- Uses Microsoft Phi-4 (INT4 quantized) via ONNX Runtime
+- CPU: ~6 tokens/sec, GPU: 60-300 tokens/sec
+- 100% offline after model download
+- Limited to 6 in-SDK tools (no subprocess MCP servers)
+- Zero API costs forever
+
+---
+
+### 5. Model Optimization (Auto-Select Best Model)
+
+**What it does:** Automatically picks optimal model based on task complexity and priorities.
+
+**When to use:** You want best quality/cost/speed balance without manual selection.
+
+```bash
+# Let optimizer choose (balanced quality vs cost)
+npx agentic-flow --agent coder --task "Build REST API" --optimize
+
+# Optimize for lowest cost
+npx agentic-flow --agent coder --task "Simple function" --optimize --priority cost
+
+# Optimize for highest quality
+npx agentic-flow --agent reviewer --task "Security audit" --optimize --priority quality
+
+# Set budget cap ($0.001 per task max)
+npx agentic-flow --agent coder --task "Code cleanup" --optimize --max-cost 0.001
+```
+
+**Technical Details:**
+- Analyzes agent requirements (coder needs 85+ quality score)
+- Evaluates task complexity via keyword analysis
+- Scores 10+ models across quality, cost, speed, privacy
+- Returns recommendation with reasoning
+
+**Optimization Priorities:**
+- `quality` - Best results (70% quality, 20% speed, 10% cost)
+- `balanced` - Default mix (40% quality, 40% cost, 20% speed)
+- `cost` - Cheapest (70% cost, 20% quality, 10% speed)
+- `speed` - Fastest (70% speed, 20% quality, 10% cost)
+- `privacy` - Local-only (ONNX models, zero cloud API calls)
+
+---
+
+## 📚 Tutorial: MCP Tools
+
+### What are MCP Tools?
+
+MCP (Model Context Protocol) tools extend agent capabilities beyond text generation. They provide:
+- **Memory** - Persistent storage across sessions
+- **GitHub** - Repository operations, PR management, code review
+- **Sandboxes** - Isolated execution environments in the cloud
+- **Neural Networks** - Training, inference, model management
+- **Workflows** - Event-driven automation with message queues
+- **Payments** - Multi-agent payment authorization
+
+### Starting MCP Servers
+
+**stdio Transport (default for Claude Desktop):**
+```bash
+# Start all 213 tools (4 servers)
+npx agentic-flow mcp start
+
+# Start specific server
+npx agentic-flow mcp start claude-flow      # 101 tools
+npx agentic-flow mcp start flow-nexus       # 96 tools (requires registration)
+npx agentic-flow mcp start agentic-payments # 10 tools
+
+# List all tools
+npx agentic-flow mcp list
+
+# Check status
+npx agentic-flow mcp status
+
+# Stop servers
+npx agentic-flow mcp stop
+```
+
+**HTTP/SSE Transport (new for web applications):**
+```bash
+# Start HTTP/SSE MCP server on port 8080
+npm run mcp:http
+
+# Or manually:
+node dist/mcp/fastmcp/servers/http-sse.js
+
+# Server provides 3 endpoints:
+# - http://localhost:8080/mcp (MCP protocol)
+# - http://localhost:8080/sse (Server-Sent Events)
+# - http://localhost:8080/health (health check)
+```
+
+**When to use each transport:**
+- **stdio**: Claude Desktop, Cursor IDE, command-line tools
+- **HTTP/SSE**: Web apps, browser extensions, REST APIs, mobile apps
+
+### Add Custom MCP Servers (No Code Required)
+
+Add your own MCP servers via CLI without editing code:
+
+```bash
+# Add MCP server (Claude Desktop style JSON config)
+npx agentic-flow mcp add weather '{"command":"npx","args":["-y","weather-mcp"],"env":{"API_KEY":"xxx"}}'
+
+# Add MCP server (flag-based)
+npx agentic-flow mcp add github --npm @modelcontextprotocol/server-github --env "GITHUB_TOKEN=ghp_xxx"
+
+# Add local MCP server
+npx agentic-flow mcp add my-tools --local /path/to/server.js
+
+# List configured servers
+npx agentic-flow mcp list
+
+# Enable/disable servers
+npx agentic-flow mcp enable weather
+npx agentic-flow mcp disable weather
+
+# Remove server
+npx agentic-flow mcp remove weather
+```
+
+**Configuration stored in:** `~/.agentic-flow/mcp-config.json`
+
+**Usage:** Once configured, all enabled MCP servers automatically load in agents. No need to specify which server to use - tools are available by name (e.g., `mcp__weather__get_forecast`).
+
+**Example:** After adding weather MCP:
+```bash
+npx agentic-flow --agent researcher --task "Get weather forecast for Tokyo"
+```
+
+**Popular MCP Servers:**
+- `@modelcontextprotocol/server-filesystem` - File system access
+- `@modelcontextprotocol/server-github` - GitHub operations
+- `@modelcontextprotocol/server-brave-search` - Web search
+- `weather-mcp` - Weather data
+- `database-mcp` - Database operations
+
+**Documentation:** See [docs/guides/ADDING-MCP-SERVERS-CLI.md](docs/guides/ADDING-MCP-SERVERS-CLI.md) for complete guide.
+
+### Using MCP Tools in Agents
+
+**Automatic (Recommended):**
+```bash
+# Tools available automatically when ENABLE_CLAUDE_FLOW_SDK=true
+export ENABLE_CLAUDE_FLOW_SDK=true
+npx agentic-flow --agent coder --task "Store config in memory_store"
+```
+
+**Manual (Advanced):**
+```javascript
+import { query } from '@anthropic-ai/claude-agent-sdk';
+
+const result = await query({
+  prompt: 'Store API key in memory',
+  options: {
+    mcpServers: {
+      'claude-flow-sdk': {
+        command: 'npx',
+        args: ['claude-flow', 'mcp', 'start'],
+        env: { ENABLE_CLAUDE_FLOW_SDK: 'true' }
+      }
+    }
+  }
+});
+```
+
+### MCP Tool Categories
+
+**1. Memory & Storage (claude-flow-sdk)**
+- `memory_store` - Store persistent key-value data
+- `memory_retrieve` - Retrieve stored data
+- `memory_search` - Search memory by pattern
+- `memory_list` - List all stored keys
+- `memory_delete` - Delete stored data
+
+**2. Swarm Coordination (claude-flow)**
+- `swarm_init` - Initialize multi-agent swarm
+- `agent_spawn` - Create specialized agents
+- `task_orchestrate` - Distribute work across agents
+- `swarm_status` - Monitor swarm health
+- `coordination_sync` - Synchronize agent state
+
+**3. GitHub Integration (claude-flow)**
+- `github_repo_analyze` - Repository analysis
+- `github_pr_manage` - PR lifecycle management
+- `github_code_review` - Automated code review
+- `github_issue_track` - Issue triage and tracking
+- `github_workflow_auto` - CI/CD automation
+
+**4. Cloud Sandboxes (flow-nexus)**
+- `sandbox_create` - Isolated execution environments
+- `sandbox_execute` - Run code in sandbox
+- `sandbox_upload` - Upload files to sandbox
+- `sandbox_status` - Check sandbox health
+- `sandbox_delete` - Cleanup sandbox
+
+**5. Neural Networks (claude-flow)**
+- `neural_train` - Train models with WASM acceleration
+- `neural_predict` - Run inference
+- `neural_patterns` - Analyze cognitive patterns
+- `neural_status` - Model metrics
+
+**6. Workflows (flow-nexus)**
+- `workflow_create` - Event-driven automation
+- `workflow_execute` - Run workflow with message queues
+- `workflow_status` - Monitor execution
+- `workflow_agent_assign` - Optimal agent assignment
+
+**7. Payments (agentic-payments)**
+- `create_active_mandate` - Payment authorization with spend caps
+- `sign_mandate` - Ed25519 cryptographic signing
+- `verify_mandate` - Signature verification
+- `verify_consensus` - Multi-agent Byzantine consensus
+
+---
+
+## 📚 Tutorial: Claude Code Integration
+
+### What is Claude Code Integration?
+
+**One command to use Claude Code with any provider** - OpenRouter, Gemini, ONNX, or Anthropic.
+
+No need to manually:
+- Start proxy servers
+- Export environment variables
+- Configure base URLs
+- Manage API keys
+
+Just run `npx agentic-flow claude-code --provider <name> "your task"` and everything is handled automatically.
+
+### Quick Examples
+
+```bash
+# OpenRouter - 99% cost savings, wide model selection
+npx agentic-flow claude-code --provider openrouter \
+  "Write a Python function to parse JSON"
+
+# Gemini - FREE tier available, fast responses
+npx agentic-flow claude-code --provider gemini \
+  "Create a simple REST API with Flask"
+
+# Anthropic - Direct API, highest quality
+npx agentic-flow claude-code --provider anthropic \
+  "Help me implement OAuth2 authentication"
+
+# ONNX - 100% offline, no API costs
+npx agentic-flow claude-code --provider onnx \
+  "Write a sorting algorithm"
+```
+
+### How It Works
+
+**Behind the scenes:**
+
+1. **Checks if proxy is running** on port 3000 (or custom `--port`)
+2. **Auto-starts proxy** if needed (OpenRouter/Gemini/ONNX)
+3. **Sets environment variables:**
+   ```bash
+   ANTHROPIC_BASE_URL=http://localhost:3000
+   ANTHROPIC_API_KEY=sk-ant-proxy-dummy
+   OPENROUTER_API_KEY=<your-key>  # Or GOOGLE_GEMINI_API_KEY
+   ```
+4. **Spawns Claude Code** with configured environment
+5. **Cleans up proxy** on exit (unless `--keep-proxy`)
+
+### Advanced Options
+
+```bash
+# Use specific model
+npx agentic-flow claude-code \
+  --provider openrouter \
+  --model "meta-llama/llama-3.3-70b-instruct" \
+  "Write complex code"
+
+# Custom proxy port
+npx agentic-flow claude-code \
+  --provider gemini \
+  --port 8080 \
+  "Generate code"
+
+# Keep proxy running for multiple sessions
+npx agentic-flow claude-code \
+  --provider openrouter \
+  --keep-proxy \
+  "First task"
+
+# Reuse running proxy (no auto-start)
+npx agentic-flow claude-code \
+  --provider openrouter \
+  --no-auto-start \
+  "Second task"
+```
+
+### Alternative: Bash Wrapper Script
+
+For frequent use, copy the wrapper script to your PATH:
+
+```bash
+# Install wrapper
+cp node_modules/agentic-flow/scripts/claude-code ~/bin/
+chmod +x ~/bin/claude-code
+
+# Usage - cleaner syntax
+claude-code openrouter "Write a function"
+claude-code gemini "Create an API"
+claude-code anthropic "Debug my code"
+```
+
+### Validation
+
+Test that all providers work correctly:
+
+```bash
+# Test OpenRouter
+npx agentic-flow claude-code --provider openrouter \
+  "print hello world in python"
+
+# Test Gemini
+npx agentic-flow claude-code --provider gemini \
+  "print hello world in python"
+
+# Test Anthropic
+npx agentic-flow claude-code --provider anthropic \
+  "print hello world in python"
+```
+
+**Expected output:** Clean Python code with no XML tags:
+```python
+print("Hello, World!")
+```
+
+### Cost Comparison
+
+| Provider | Cost/Task | Speed | Quality | Free Tier |
+|----------|-----------|-------|---------|-----------|
+| Anthropic (direct) | $0.015 | Fast | Excellent | No |
+| OpenRouter GPT-4o-mini | $0.0001 | Very Fast | Excellent | No |
+| Gemini 2.0 Flash | $0.00 | Fastest | Excellent | **Yes** |
+| ONNX (local) | $0.00 | Moderate | Good | **Yes** |
+
+**Savings:** 99% with OpenRouter, 100% with Gemini/ONNX
+
+### Troubleshooting
+
+**Proxy won't start:**
+```bash
+# Check if port is in use
+lsof -i :3000
+
+# Use custom port
+npx agentic-flow claude-code --provider openrouter --port 3001 "task"
+```
+
+**API key not found:**
+```bash
+# Set key before running
+export OPENROUTER_API_KEY=sk-or-v1-xxxxx
+
+# Or inline
+OPENROUTER_API_KEY=sk-or-v1-xxxxx \
+npx agentic-flow claude-code --provider openrouter "task"
+```
+
+**Claude Code not installed:**
+```bash
+# Install official Claude Code CLI
+npm install -g @anthropic-ai/claude-code
+
+# Verify installation
+claude --version
+```
+
+### Full Guide
+
+See [docs/guides/CLAUDE-CODE-INTEGRATION.md](docs/guides/CLAUDE-CODE-INTEGRATION.md) for:
+- Architecture diagrams
+- Request flow details
+- Custom proxy configuration
+- Environment variable presets
+- Advanced usage patterns
+
+---
+
+## 📚 Tutorial: Standalone Proxy
+
+### What is the Standalone Proxy?
+
+The standalone proxy lets you use **cheaper models** (Gemini, OpenRouter) with tools that expect the **Anthropic API** (Claude Code, future Cursor).
+
+**How it works:**
+1. Proxy server translates Anthropic API ↔ Gemini/OpenRouter API
+2. Claude Code sends requests to proxy instead of Anthropic
+3. Proxy forwards to cheaper provider and translates responses
+4. MCP tools work seamlessly through proxy
+
+### Setup: Gemini Proxy (85% savings)
+
+```bash
+# Terminal 1: Start Gemini proxy
+export GOOGLE_GEMINI_API_KEY=your-key-here
+npx agentic-flow proxy
+
+# Proxy starts on http://localhost:3000
+# Instructions displayed for configuring Claude Code
+
+# Terminal 2: Configure Claude Code to use proxy
+export ANTHROPIC_BASE_URL=http://localhost:3000
+export ANTHROPIC_API_KEY=sk-ant-proxy-dummy-key  # Any value works
+
+# Now use Claude Code normally
+claude
+
+# Or run agent directly
+claude --agent coder --task "Build REST API"
+```
+
+**Cost Savings:**
+- Gemini free tier: 100% savings vs Anthropic
+- All MCP tools work through proxy
+- Real-time streaming supported
+
+### Setup: OpenRouter Proxy (90-99% savings)
+
+```bash
+# Terminal 1: Start OpenRouter proxy
+export OPENROUTER_API_KEY=sk-or-v1-...
+npx agentic-flow proxy --provider openrouter --model "openai/gpt-4o-mini"
+
+# Terminal 2: Use Claude Code
+export ANTHROPIC_BASE_URL=http://localhost:3000
+export ANTHROPIC_API_KEY=sk-ant-proxy-dummy-key
+claude --agent coder --task "Build web scraper"
+```
+
+**Popular OpenRouter Models:**
+- `openai/gpt-4o-mini` - $0.15/1M tokens (95% savings)
+- `deepseek/deepseek-chat-v3.1` - $0.014/1M tokens (99.5% savings)
+- `meta-llama/llama-3.3-70b-instruct` - $0.30/1M tokens (90% savings)
+
+### Proxy Command Reference
+
+```bash
+# Start Gemini proxy (default)
+npx agentic-flow proxy
+
+# Start OpenRouter proxy
+npx agentic-flow proxy --provider openrouter
+
+# Custom port
+npx agentic-flow proxy --port 8080
+
+# Specific model
+npx agentic-flow proxy --provider openrouter --model "anthropic/claude-3.5-sonnet"
+
+# Help
+npx agentic-flow proxy --help
+```
+
+### How MCP Tools Work Through Proxy
+
+**Technical Implementation:**
+
+1. **Tool Schema Forwarding**
+   - Anthropic format: `{ name, description, input_schema }`
+   - OpenRouter format: `{ type: 'function', function: {...} }`
+   - Gemini format: `{ functionDeclarations: [{...}] }`
+
+2. **Schema Cleaning for Gemini**
+   - Removes unsupported fields: `$schema`, `additionalProperties`
+   - Recursively cleans nested objects
+
+3. **Response Conversion**
+   - OpenRouter: `tool_calls` → `tool_use`
+   - Gemini: `functionCall` → `tool_use`
+
+**Example:**
+```bash
+# MCP tools work automatically through proxy
+export ENABLE_CLAUDE_FLOW_SDK=true
+export ANTHROPIC_BASE_URL=http://localhost:3000
+export ANTHROPIC_API_KEY=sk-ant-proxy-dummy-key
+
+# memory_store MCP tool works with Gemini (85% cost savings)
+npx agentic-flow --agent coder --task "Store API config in memory_store"
+```
+
+---
+
+## 📚 Tutorial: Deployment Options
+
+### Local Development (Best for Prototyping)
+
+**What it does:** Runs agents directly on your machine with full MCP tool access.
+
+**When to use:** Development, testing, debugging, low-cost experimentation.
+
+```bash
+# Install globally
+npm install -g agentic-flow
+
+# Run locally
+export ANTHROPIC_API_KEY=sk-ant-...
+npx agentic-flow --agent coder --task "Build REST API"
+```
+
+**Benefits:**
+- ✅ All 213 MCP tools work
+- ✅ Fast iteration (<500ms warm start)
+- ✅ Free infrastructure (API costs only)
+- ✅ Full filesystem access
+- ✅ Git integration
+
+**Requirements:**
+- Node.js ≥18.0.0
+- 2GB RAM minimum (4GB for swarms)
+- macOS, Linux, or Windows
+
+---
+
+### Docker Containers (Best for Production)
+
+**What it does:** Packages agents in containers for Kubernetes, ECS, Cloud Run.
+
+**When to use:** CI/CD pipelines, production deployments, reproducible environments.
+
+```bash
+# Build image
+docker build -t agentic-flow .
+
+# Run agent in container
 docker run --rm \
   -e ANTHROPIC_API_KEY=sk-ant-... \
   agentic-flow \
   --agent researcher \
   --task "Analyze cloud patterns"
 
-# Run agent with OpenRouter (99% cost savings)
+# Run with OpenRouter (99% cost savings)
 docker run --rm \
   -e OPENROUTER_API_KEY=sk-or-v1-... \
   agentic-flow \
   --agent coder \
-  --task "Build REST API" \
+  --task "Build API" \
   --model "meta-llama/llama-3.1-8b-instruct"
 ```
 
-**Container Benefits:**
-- ✅ All 203 MCP tools work (full subprocess support)
-- ✅ OpenRouter proxy auto-starts in container
-- ✅ Reproducible builds and deployments
+**Benefits:**
+- ✅ All 213 MCP tools work
+- ✅ Reproducible builds
 - ✅ Works on Kubernetes, ECS, Cloud Run, Fargate
-- ✅ Isolated execution environment
+- ✅ Process isolation
+- ✅ CI/CD integration
 
----
+**Orchestration Examples:**
 
-## ✨ Key Features
-
-### 🔄 Ephemeral Architecture
-- **On-Demand Spawning** - Agents created only when needed
-- **Automatic Cleanup** - Terminate after task completion
-- **Stateless Execution** - No persistent state between runs
-- **Cost-Optimized** - Pay only for actual compute time
-
-### 🤖 Multi-Model Router with ONNX Local Inference
-- **Intelligent Provider Routing** - Automatic selection between Anthropic, OpenRouter, and ONNX based on task requirements
-- **100% Free Local Inference** - ONNX Runtime CPU/GPU execution with Microsoft Phi-4 (zero API costs)
-- **Privacy-First Processing** - GDPR/HIPAA-compliant local processing for sensitive workloads
-- **Cost Optimization** - Route privacy tasks to free ONNX, complex reasoning to cloud APIs
-- **Rule-Based Routing** - Automatic provider selection based on privacy, cost, and performance
-- **GPU Acceleration Ready** - CPU inference at 6 tokens/sec, GPU capable of 60-300 tokens/sec
-- **Zero-Cost Agents** - Run agents entirely offline with local ONNX models
-
-### 💻 Local Development (Full Features)
-- **Native Execution** - Run directly on macOS, Linux, Windows
-- **All 203 MCP Tools** - Full subprocess support, no restrictions
-- **Fast Iteration** - Instant feedback, no cold starts
-- **Persistent Memory** - Claude Flow memory persists across runs
-- **File System Access** - Full access to local files and directories
-- **Git Integration** - Direct GitHub operations and repository management
-- **Zero Cloud Costs** - Free during development
-
-### 🐳 Container Deployment (Production Ready)
-- **Docker Support** - Complete feature set for ECS, Cloud Run, Kubernetes
-- **All 203 MCP Tools** - Full subprocess support in containers
-- **Reproducible Builds** - Same environment across dev/staging/prod
-- **Orchestration Ready** - Works with Kubernetes Jobs, ECS Tasks, Cloud Run
-- **Health Checks Built-in** - `/health` endpoint for load balancers
-- **Resource Controls** - CPU/memory limits via container configs
-
-### ☁️ Cloud Sandboxes (Scalable Execution)
-- **Flow Nexus E2B Sandboxes** - Fully isolated execution environments
-- **All 203 MCP Tools** - Complete tool access in cloud sandboxes
-- **Multi-Language Templates** - Node.js, Python, React, Next.js
-- **Real-Time Streaming** - Live output and monitoring
-- **Auto-Scaling** - Spin up 1 to 100+ sandboxes on demand
-- **Pay-Per-Use** - Only pay for actual sandbox runtime (≈$1/hour)
-
-### 🤖 Intelligent Agents
-- **75 Pre-Built Specialists** - Researchers, coders, testers, reviewers, architects
-- **Swarm Coordination** - Agents collaborate via shared memory
-- **Tool Access** - 200+ MCP tools for GitHub, neural networks, workflows
-- **Custom Agents** - Define your own in YAML with system prompts
-
-### 📊 Observability
-- **Real-Time Streaming** - See agent output as it happens
-- **Structured Logging** - JSON logs for aggregation and analysis
-- **Performance Metrics** - Track agent duration, tool usage, token consumption
-- **Health Checks** - Built-in healthcheck endpoint for orchestrators
-
----
-
-## 🚀 Deployment Options
-
-### 💻 Local Execution (Best for Development)
-
-**Full-featured, all 203 MCP tools work:**
-
-```bash
-# Install globally
-npm install -g agentic-flow
-
-# Set API key
-export ANTHROPIC_API_KEY=sk-ant-...
-
-# Run any agent locally
-npx agentic-flow --agent coder --task "Build REST API"
-
-# Multi-agent swarm (3 agents in parallel)
-npx agentic-flow  # Uses TOPIC, DIFF, DATASET env vars
-```
-
-**Why Local Development?**
-- ✅ **All 203 MCP Tools**: Full subprocess support (claude-flow, flow-nexus, agentic-payments)
-- ✅ **Fast Iteration**: No cold starts, instant feedback
-- ✅ **Free**: No cloud costs during development
-- ✅ **File Access**: Direct access to local filesystem
-- ✅ **Git Integration**: Full GitHub operations
-- ✅ **Memory Persistence**: Claude Flow memory persists across runs
-- ✅ **Easy Debugging**: Standard Node.js debugging tools work
-
-**System Requirements:**
-- Node.js ≥18.0.0
-- npm or pnpm
-- 2GB RAM minimum (4GB recommended for swarms)
-- macOS, Linux, or Windows
-
----
-
-### 🎯 Flow Nexus Cloud Sandboxes (Best for Production Scale)
-```javascript
-// Create isolated sandbox and execute agent with full MCP tool access
-const { query } = require('@anthropic-ai/claude-agent-sdk');
-
-// 1. Login to Flow Nexus
-await flowNexus.login({ email: 'user@example.com', password: 'secure' });
-
-// 2. Create E2B sandbox with Node.js template
-const sandbox = await flowNexus.sandboxCreate({
-  template: 'node',
-  name: 'agent-execution',
-  env_vars: { ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY }
-});
-
-// 3. Execute agent in sandbox with all 203 MCP tools
-const result = await flowNexus.sandboxExecute({
-  sandbox_id: sandbox.id,
-  code: `
-    const { query } = require('@anthropic-ai/claude-agent-sdk');
-    const result = await query({
-      prompt: "Analyze API security patterns",
-      options: {
-        mcpServers: { /* all 3 MCP servers available */ }
-      }
-    });
-    console.log(result);
-  `
-});
-
-// 4. Automatic cleanup
-await flowNexus.sandboxDelete({ sandbox_id: sandbox.id });
-```
-
-**Why Flow Nexus?**
-- ✅ Full 203 MCP tool support (all subprocess servers work)
-- ✅ Persistent memory across sandbox instances
-- ✅ Multi-language templates (Node.js, Python, React, Next.js)
-- ✅ Real-time output streaming
-- ✅ Secure process isolation
-- ✅ Pay-per-use pricing (10 credits/hour)
-
----
-
-### 🐳 Docker Containers (Best for Production Deployments)
-
-**Full 203 MCP tool support in containers:**
-
-```bash
-# Build image
-docker build -t agentic-flow .
-
-# Run single agent
-docker run --rm \
-  -e ANTHROPIC_API_KEY=sk-ant-... \
-  agentic-flow \
-  --agent researcher \
-  --task "Analyze microservices patterns"
-
-# Multi-agent swarm in container
-docker run --rm \
-  -e ANTHROPIC_API_KEY=sk-ant-... \
-  -e TOPIC="API security" \
-  -e DIFF="feat: auth" \
-  -e DATASET="logs.json" \
-  agentic-flow
-```
-
-**Why Docker?**
-- ✅ **All 203 MCP Tools**: Full subprocess support
-- ✅ **Production Ready**: Works on Kubernetes, ECS, Cloud Run, Fargate
-- ✅ **Reproducible**: Same environment everywhere
-- ✅ **Isolated**: Process isolation and security
-- ✅ **Orchestration**: Integrates with container orchestrators
-- ✅ **CI/CD**: Perfect for automated workflows
-
-**Container Orchestration Examples:**
-
+**Kubernetes Job:**
 ```yaml
-# Kubernetes Job
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -310,942 +848,206 @@ spec:
               name: anthropic
               key: api-key
       restartPolicy: Never
+```
 
-# GitHub Actions
+**GitHub Actions:**
+```yaml
 - name: AI Code Review
   run: |
     docker run -e ANTHROPIC_API_KEY=${{ secrets.ANTHROPIC_API_KEY }} \
       agentic-flow:latest \
       --agent code-review \
       --task "${{ github.event.pull_request.diff }}"
-
-# AWS ECS Task Definition
-{
-  "family": "agentic-flow-task",
-  "containerDefinitions": [{
-    "name": "agent",
-    "image": "agentic-flow:latest",
-    "command": ["--agent", "researcher", "--task", "$(TASK)"],
-    "environment": [
-      {"name": "ANTHROPIC_API_KEY", "value": "from-secrets-manager"}
-    ]
-  }]
-}
-```
-
-### ⚠️ AWS Lambda (Limited - Not Recommended)
-```javascript
-// Lambda limitations: No MCP subprocesses, only 6 in-SDK tools
-exports.handler = async (event) => {
-  // ❌ claude-flow MCP server won't work (subprocess not allowed)
-  // ❌ flow-nexus MCP server won't work (subprocess not allowed)
-  // ✅ Only claude-flow-sdk in-SDK tools available (6 tools)
-
-  const result = await query({
-    prompt: event.query,
-    options: {
-      mcpServers: {
-        'claude-flow-sdk': claudeFlowSdkServer // Only 6 tools work
-        // 'claude-flow': subprocess blocked by Lambda
-        // 'flow-nexus': subprocess blocked by Lambda
-      }
-    }
-  });
-
-  return { statusCode: 200, body: JSON.stringify(result) };
-};
-```
-
-**Why Lambda Doesn't Work Well:**
-- ❌ Cannot spawn MCP subprocess servers (npx blocked)
-- ❌ No access to 197 tools (101 claude-flow + 96 flow-nexus)
-- ❌ No persistent memory (Claude Flow memory unavailable)
-- ❌ Limited to 6 in-SDK tools only
-- ✅ **Solution**: Use Flow Nexus sandboxes instead for full functionality
-
----
-
-## 🎯 Use Cases & Costs
-
-| Use Case | Agent Type | Execution Time | Local Cost | Docker Cost | Flow Nexus Cost |
-|----------|-----------|----------------|------------|-------------|-----------------|
-| **Code Review** | `code-review` | 15-45s | Free* | Self-hosted | 0.13-0.38 credits |
-| **API Testing** | `tester` | 10-30s | Free* | Self-hosted | 0.08-0.25 credits |
-| **Documentation** | `api-docs` | 20-60s | Free* | Self-hosted | 0.17-0.50 credits |
-| **Data Analysis** | `data-analyst` | 30-90s | Free* | Self-hosted | 0.25-0.75 credits |
-| **Security Audit** | `reviewer` | 45-120s | Free* | Self-hosted | 0.38-1.00 credits |
-| **Microservice Generation** | `backend-dev` | 60-180s | Free* | Self-hosted | 0.50-1.50 credits |
-| **Performance Analysis** | `perf-analyzer` | 20-60s | Free* | Self-hosted | 0.17-0.50 credits |
-
-*Local: Free infrastructure, Claude API costs only ($0.003-0.015 per input 1K tokens, $0.015-0.075 per output 1K tokens)
-Flow Nexus: 10 credits/hour sandbox (≈$1/hour) + Claude API costs. 1 credit ≈ $0.10.
-Docker: Infrastructure costs (AWS/GCP/Azure) + Claude API costs.*
-
-**Recommendation by Scenario:**
-- **Development/Testing**: Use **Local** - free, fast, full tools
-- **CI/CD Pipelines**: Use **Docker** - reproducible, isolated
-- **Production Scale**: Use **Flow Nexus** - auto-scaling, cloud-native
-
----
-
-## 🤖 Agent Types
-
-### Core Development Agents
-- **`coder`** - Implementation specialist for writing clean, efficient code
-- **`reviewer`** - Code review and quality assurance
-- **`tester`** - Comprehensive testing with 90%+ coverage
-- **`planner`** - Strategic planning and task decomposition
-- **`researcher`** - Deep research and information gathering
-
-### Specialized Agents
-- **`backend-dev`** - REST/GraphQL API development
-- **`mobile-dev`** - React Native mobile apps
-- **`ml-developer`** - Machine learning model creation
-- **`system-architect`** - System design and architecture
-- **`cicd-engineer`** - CI/CD pipeline creation
-- **`api-docs`** - OpenAPI/Swagger documentation
-
-### Swarm Coordinators
-- **`hierarchical-coordinator`** - Tree-based leadership
-- **`mesh-coordinator`** - Peer-to-peer coordination
-- **`adaptive-coordinator`** - Dynamic topology switching
-- **`swarm-memory-manager`** - Cross-agent memory sync
-
-### GitHub Integration
-- **`pr-manager`** - Pull request lifecycle management
-- **`code-review-swarm`** - Multi-agent code review
-- **`issue-tracker`** - Intelligent issue management
-- **`release-manager`** - Automated release coordination
-- **`workflow-automation`** - GitHub Actions specialist
-
-### Performance & Analysis
-- **`perf-analyzer`** - Performance bottleneck detection
-- **`production-validator`** - Deployment readiness checks
-- **`tdd-london-swarm`** - Test-driven development
-
-*Use `npx agentic-flow --list` to see all 75 agents*
-
----
-
-## 📋 Commands
-
-### Basic Operations (Works Locally, Docker, Cloud)
-
-```bash
-# List all available agents (75 total)
-npx agentic-flow --list
-
-# Run specific agent (local execution)
-npx agentic-flow --agent <name> --task "<description>"
-
-# Enable real-time streaming
-npx agentic-flow --agent coder --task "Build API" --stream
-
-# Run parallel mode (3 agents simultaneously)
-npx agentic-flow  # Requires TOPIC, DIFF, DATASET env vars
-```
-
-### Environment Configuration
-
-```bash
-# Required
-export ANTHROPIC_API_KEY=sk-ant-...
-
-# Agent mode (optional)
-export AGENT=researcher
-export TASK="Your task description"
-
-# Parallel mode (optional)
-export TOPIC="research topic"
-export DIFF="code changes"
-export DATASET="data to analyze"
-
-# Options
-export ENABLE_STREAMING=true
-export HEALTH_PORT=8080
-```
-
-### Docker Deployment
-
-```bash
-# Build image
-docker build -t agentic-flow .
-
-# Run agent in container
-docker run --rm \
-  -e ANTHROPIC_API_KEY=sk-ant-... \
-  agentic-flow \
-  --agent researcher \
-  --task "Analyze cloud patterns"
-
-# Run with streaming
-docker run --rm \
-  -e ANTHROPIC_API_KEY=sk-ant-... \
-  -e ENABLE_STREAMING=true \
-  agentic-flow \
-  --agent coder --task "Build REST API" --stream
 ```
 
 ---
 
----
+### Cloud Sandboxes (Best for Scale)
 
-## 🎛️ Using the Multi-Model Router
+**What it does:** Isolated E2B sandboxes with auto-scaling and cloud-native features.
 
-### Quick Start with Router
+**When to use:** Production scale, multi-tenant workloads, distributed processing.
 
 ```javascript
-import { ModelRouter } from 'agentic-flow/router';
+// Requires Flow Nexus registration (https://flow-nexus.ruv.io)
+const { flowNexus } = require('flow-nexus');
 
-// Initialize router (auto-loads configuration)
-const router = new ModelRouter();
+// 1. Login
+await flowNexus.login({ email: 'user@example.com', password: '***' });
 
-// Use default provider (Anthropic)
-const response = await router.chat({
-  model: 'claude-3-5-sonnet-20241022',
-  messages: [{ role: 'user', content: 'Your prompt here' }]
+// 2. Create sandbox
+const sandbox = await flowNexus.sandboxCreate({
+  template: 'node',
+  name: 'agent-execution',
+  env_vars: { ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY }
 });
 
-console.log(response.content[0].text);
-console.log(`Cost: $${response.metadata.cost}`);
-```
-
-### Available Providers
-
-The router supports multiple LLM providers with automatic fallback:
-
-**Anthropic (Cloud)**
-- Models: Claude 3.5 Sonnet, Claude 3.5 Haiku, Claude 3 Opus
-- Cost: $0.003/1K input tokens, $0.015/1K output tokens
-- Best for: Complex reasoning, advanced coding, long conversations
-
-**OpenRouter (Multi-Model Gateway)**
-- Models: 100+ models from multiple providers
-- Cost: $0.002-0.10/1K tokens (varies by model)
-- Best for: Cost optimization, model diversity, fallback
-
-**ONNX Runtime (Free Local)**
-- Models: Microsoft Phi-4-mini-instruct (INT4 quantized)
-- Cost: **$0.00** (100% free)
-- Best for: Privacy-sensitive data, offline operation, zero-cost development
-
-**Ollama (Local Server - Coming Soon)**
-- Models: Any Ollama-supported model
-- Cost: Free (requires local Ollama server)
-- Best for: Local development with larger models
-
-**LiteLLM (Gateway - Coming Soon)**
-- Models: Unified API for 100+ providers
-- Cost: Varies by provider
-- Best for: Multi-cloud deployments
-
-**Configuration Example:**
-```json
-// router.config.json
-{
-  "defaultProvider": "anthropic",
-  "fallbackChain": ["anthropic", "onnx", "openrouter"],
-  "providers": {
-    "anthropic": {
-      "apiKey": "sk-ant-...",
-      "models": { "default": "claude-3-5-sonnet-20241022" }
-    },
-    "openrouter": {
-      "apiKey": "sk-or-...",
-      "baseUrl": "https://openrouter.ai/api/v1",
-      "models": { "default": "anthropic/claude-3.5-sonnet" }
-    },
-    "onnx": {
-      "modelPath": "./models/phi-4/.../model.onnx",
-      "executionProviders": ["cpu"],
-      "localInference": true
-    }
-  }
-}
-```
-
-### OpenRouter Integration (99% Cost Savings)
-
-Access 100+ LLM models through OpenRouter for dramatic cost savings while maintaining full functionality:
-
-```bash
-# Set OpenRouter API key
-export OPENROUTER_API_KEY=sk-or-v1-...
-
-# Use any OpenRouter model (proxy auto-starts)
-npx agentic-flow \
-  --agent coder \
-  --task "Build REST API" \
-  --model "meta-llama/llama-3.1-8b-instruct"
-
-# Or force OpenRouter mode
-export USE_OPENROUTER=true
-npx agentic-flow --agent coder --task "Build REST API"
-```
-
-**Popular OpenRouter Models:**
-- `meta-llama/llama-3.1-8b-instruct` - 99% cost savings, excellent coding
-- `deepseek/deepseek-chat-v3.1` - Superior code generation at 97% savings
-- `google/gemini-2.5-flash-preview-09-2025` - Fastest responses, 95% savings
-- `anthropic/claude-3.5-sonnet` - Full Claude via OpenRouter
-
-**Cost Comparison:**
-| Provider | Model | Input (1K tokens) | Output (1K tokens) | Savings |
-|----------|-------|-------------------|-------------------|---------|
-| Anthropic Direct | Claude 3.5 Sonnet | $0.003 | $0.015 | Baseline |
-| OpenRouter | Llama 3.1 8B | $0.00003 | $0.00006 | **99%** |
-| OpenRouter | DeepSeek V3.1 | $0.00014 | $0.00028 | **97%** |
-| OpenRouter | Gemini 2.5 Flash | $0.000075 | $0.0003 | **95%** |
-
-**How It Works:**
-1. Detects OpenRouter model (contains "/") or USE_OPENROUTER=true
-2. Auto-starts integrated proxy server on port 3000
-3. Translates Anthropic Messages API ↔ OpenAI Chat Completions API
-4. Claude Agent SDK transparently uses OpenRouter via ANTHROPIC_BASE_URL
-5. Full MCP tool support (all 203 tools work)
-
-**Environment Variables:**
-```bash
-# Required for OpenRouter
-export OPENROUTER_API_KEY=sk-or-v1-...
-
-# Optional configuration
-export USE_OPENROUTER=true              # Force OpenRouter usage
-export COMPLETION_MODEL=meta-llama/...  # Default OpenRouter model
-export PROXY_PORT=3000                  # Proxy server port
-```
-
-### Free ONNX Local Inference
-
-Run agents with **zero API costs** using local ONNX models:
-
-```javascript
-// CPU Inference (6 tokens/sec, 100% free)
-const router = new ModelRouter();
-const onnxProvider = router.providers.get('onnx');
-
-const response = await onnxProvider.chat({
-  model: 'phi-4',
-  messages: [{ role: 'user', content: 'Analyze this sensitive data...' }],
-  maxTokens: 100
+// 3. Execute agent with all 213 MCP tools
+const result = await flowNexus.sandboxExecute({
+  sandbox_id: sandbox.id,
+  code: `
+    const { query } = require('@anthropic-ai/claude-agent-sdk');
+    await query({ prompt: "Analyze API security", options: { mcpServers: {...} } });
+  `
 });
 
-console.log(response.content[0].text);
-console.log(`Cost: $${response.metadata.cost}`);  // $0.00
-console.log(`Latency: ${response.metadata.latency}ms`);
-console.log(`Privacy: 100% local processing`);
+// 4. Cleanup
+await flowNexus.sandboxDelete({ sandbox_id: sandbox.id });
 ```
 
-### Privacy-Based Routing
+**Benefits:**
+- ✅ All 213 MCP tools work
+- ✅ Auto-scaling (1 to 100+ sandboxes)
+- ✅ Multi-language templates (Node, Python, React, Next.js)
+- ✅ Real-time streaming
+- ✅ Pay-per-use (10 credits/hour ≈ $1/hour)
 
-Automatically route privacy-sensitive workloads to free local ONNX inference:
+---
 
-```javascript
-// Configure privacy routing in router.config.json
-{
-  "routing": {
-    "mode": "rule-based",
-    "rules": [
-      {
-        "condition": { "privacy": "high", "localOnly": true },
-        "action": { "provider": "onnx" },
-        "reason": "Privacy-sensitive tasks use free ONNX local models"
-      }
-    ]
-  }
-}
+## 📊 Cost Analysis
 
-// Router automatically uses ONNX for privacy workloads
-const response = await router.chat({
-  model: 'any-model',
-  messages: [{ role: 'user', content: 'Process medical records...' }],
-  metadata: { privacy: 'high', localOnly: true }
-});
+### Monthly Costs for 100 Daily Code Reviews
 
-// Routed to ONNX automatically (zero cost, 100% local)
-console.log(response.metadata.provider);  // "onnx-local"
-```
+| Provider | Model | Cost per Review | Monthly Total | Savings |
+|----------|-------|----------------|---------------|---------|
+| Anthropic | Claude Sonnet 4.5 | $0.08 | **$240** | Baseline |
+| DeepSeek (OpenRouter) | deepseek-chat-v3.1 | $0.012 | **$36** | **85%** |
+| Llama (OpenRouter) | llama-3.1-8b | $0.003 | **$9** | **96%** |
+| Gemini (Proxy) | gemini-2.0-flash | $0.00 (free tier) | **$0** | **100%** |
+| ONNX (Local) | phi-4 | $0.00 | **$0** | **100%** |
 
-### GPU Acceleration
+**Real Savings:**
+- **$204/month** switching to DeepSeek
+- **$231/month** switching to Llama 3.1
+- **$240/month** using Gemini free tier or ONNX
 
-Enable GPU acceleration for 10-50x performance boost:
+---
 
-```json
-// router.config.json
-{
-  "providers": {
-    "onnx": {
-      "executionProviders": ["cuda"],  // or ["dml"] for Windows
-      "gpuAcceleration": true,
-      "modelPath": "./models/phi-4/...",
-      "maxTokens": 100
-    }
-  }
-}
-```
+## 🛠️ Configuration
 
-**Performance Comparison:**
-- CPU: 6 tokens/sec (free)
-- GPU (CUDA): 60-300 tokens/sec (free)
-- Cloud API: Variable (costs $0.002-0.003/request)
-
-### Zero-Cost Agent Execution
-
-Run agents entirely offline with local ONNX models:
+### Environment Variables
 
 ```bash
-# Use ONNX provider for free inference
-npx agentic-flow \
-  --agent researcher \
-  --task "Analyze this privacy-sensitive data" \
-  --provider onnx \
-  --local-only
+# Required (choose one provider)
+export ANTHROPIC_API_KEY=sk-ant-...        # For Claude models
+export OPENROUTER_API_KEY=sk-or-v1-...     # For OpenRouter models
+export GOOGLE_GEMINI_API_KEY=AIza...        # For Gemini models
 
-# Result: $0.00 cost, 100% local processing
+# MCP Tools (optional)
+export ENABLE_CLAUDE_FLOW_SDK=true          # Enable in-SDK MCP tools
+
+# Proxy (optional)
+export ANTHROPIC_BASE_URL=http://localhost:3000  # For proxy usage
+
+# Model Selection (optional)
+export COMPLETION_MODEL=meta-llama/llama-3.1-8b-instruct  # Override default
+
+# Execution (optional)
+export ENABLE_STREAMING=true                # Enable real-time streaming
+export HEALTH_PORT=8080                     # Health check port
 ```
 
-### Cost Comparison
-
-| Workload Type | Provider | Cost per Request | Privacy | Performance |
-|---------------|----------|------------------|---------|-------------|
-| **Privacy-Sensitive** | ONNX (CPU) | **$0.00** | 100% local | 6 tokens/sec |
-| **Privacy-Sensitive** | ONNX (GPU) | **$0.00** | 100% local | 60-300 tokens/sec |
-| **Complex Reasoning** | Anthropic Claude | $0.003 | Cloud | Fast |
-| **General Tasks** | OpenRouter | $0.002 | Cloud | Variable |
-
-**Example Monthly Costs (1000 requests/day):**
-- 100% ONNX: **$0** (free local inference)
-- 50% ONNX, 50% cloud: **$30-45** (50% savings)
-- 100% cloud APIs: **$60-90**
-
----
-
-## 🔧 MCP Tools (203+)
-
-Agentic Flow integrates with **four MCP servers** providing 203+ tools:
-
-### Core Orchestration (claude-flow - 101 tools)
-
-| Category | Tools | Capabilities |
-|----------|-------|--------------|
-| **Swarm Management** | 12 | Initialize, spawn, coordinate multi-agent swarms |
-| **Memory & Storage** | 10 | Persistent memory with TTL and namespaces |
-| **Neural Networks** | 12 | Training, inference, WASM-accelerated computation |
-| **GitHub Integration** | 8 | PR management, code review, repository analysis |
-| **Performance** | 11 | Metrics, bottleneck detection, optimization |
-| **Workflow Automation** | 9 | Task orchestration, CI/CD integration |
-| **Dynamic Agents** | 7 | Runtime agent creation and coordination |
-| **System Utilities** | 8 | Health checks, diagnostics, feature detection |
-
-### Cloud Platform (flow-nexus - 96 tools)
-
-| Category | Tools | Capabilities |
-|----------|-------|--------------|
-| **☁️ E2B Sandboxes** | 12 | Isolated execution environments (Node, Python, React) |
-| **☁️ Distributed Swarms** | 8 | Cloud-based multi-agent deployment |
-| **☁️ Neural Training** | 10 | Distributed model training clusters |
-| **☁️ Workflows** | 9 | Event-driven automation with message queues |
-| **☁️ Templates** | 8 | Pre-built project templates and marketplace |
-| **☁️ Challenges** | 6 | Coding challenges with leaderboards |
-| **☁️ User Management** | 7 | Authentication, profiles, credit management |
-| **☁️ Storage** | 5 | Cloud file storage with real-time sync |
-
-### Payment Authorization (agentic-payments - MCP tools)
-
-Multi-agent payment infrastructure for autonomous AI commerce:
-
-| Category | Tools | Capabilities |
-|----------|-------|--------------|
-| **💳 Active Mandates** | MCP | Create spending limits, time windows, merchant restrictions |
-| **🔐 Ed25519 Signatures** | MCP | Cryptographic transaction signing (<1ms verification) |
-| **🤝 Multi-Agent Consensus** | MCP | Byzantine fault-tolerant transaction approval |
-| **📊 Payment Tracking** | MCP | Authorization to settlement lifecycle monitoring |
-| **🛡️ Security** | MCP | Spend caps, revocation, audit trails |
-
-**Use Cases:**
-- E-commerce: AI shopping agents with weekly budgets
-- Finance: Robo-advisors executing trades within portfolios
-- Enterprise: Multi-agent procurement with consensus approval
-- Accounting: Automated AP/AR with policy-based workflows
-
-**Protocols:**
-- **AP2**: Agent Payments Protocol with Ed25519 signatures
-- **ACP**: Agentic Commerce Protocol (Stripe-compatible)
-- **MCP**: Natural language interface for AI assistants
-
-### In-Process Tools (claude-flow-sdk - 6 tools)
-
-Fast, zero-latency tools running in-process:
-- `memory_store`, `memory_retrieve`, `memory_list`
-- `swarm_init`, `agent_spawn`, `coordination_sync`
-
----
-
-## ⚡ FastMCP Integration (New)
-
-Agentic Flow now supports **[FastMCP](https://github.com/QuantGeekDev/fastmcp)**, a modern TypeScript framework for building high-performance MCP servers with:
-
-- **Dual Transport**: stdio (local/subprocess) + HTTP streaming (cloud/network)
-- **Type Safety**: Full TypeScript + Zod schema validation
-- **Progress Reporting**: Real-time execution feedback
-- **Authentication**: JWT, API keys, OAuth 2.0 support
-- **Rate Limiting**: Built-in abuse prevention
-
-### POC Server (Phase 0 - Completed ✅)
-
-Basic stdio server with 2 tools to validate fastmcp integration:
+### Configuration File (.env)
 
 ```bash
-# Test the POC server
-npm run test:fastmcp
-
-# Or run directly
-npm run mcp:fastmcp-poc
-```
-
-### Using with Claude Code
-
-Add to your MCP config (`~/.config/claude/mcp.json`):
-
-```json
-{
-  "mcpServers": {
-    "fastmcp-poc": {
-      "command": "node",
-      "args": ["/path/to/agentic-flow/dist/mcp/fastmcp/servers/poc-stdio.js"]
-    }
-  }
-}
-```
-
-### Available FastMCP Tools (POC)
-
-| Tool | Description | Status |
-|------|-------------|--------|
-| `memory_store` | Store value in persistent memory | ✅ Working |
-| `memory_retrieve` | Retrieve value from memory | ✅ Working |
-
-**Coming Soon (Phase 1):**
-- Migration of 6 claude-flow-sdk tools to fastmcp
-- HTTP streaming transport with authentication
-- Direct in-process execution (no execSync)
-- Comprehensive test suite
-
-**Documentation:**
-- [FastMCP Implementation Plan](docs/mcp/fastmcp-implementation-plan.md) - 10-week migration strategy
-- [FastMCP POC Integration](docs/mcp/fastmcp-poc-integration.md) - Usage and testing guide
-
----
-
-## 🔍 Deployment Comparison
-
-| Feature | Local | Docker | Flow Nexus Sandboxes | AWS Lambda |
-|---------|-------|--------|----------------------|------------|
-| **MCP Tools Available** | 203 (100%) | 203 (100%) | 203 (100%) | 6 (3%) |
-| **Setup Complexity** | Low | Medium | Medium | High |
-| **Cold Start Time** | <500ms | <2s | <2s | <800ms |
-| **Cost (Development)** | Free* | Free* | $1/hour | $0.20/1M |
-| **Cost (Production)** | Free* | Infra costs | $1/hour | Limited tools |
-| **Scaling** | Manual | Orchestrator | Automatic | Automatic |
-| **Best For** | Dev/Testing | CI/CD/Prod | Cloud-Scale | ❌ Not Recommended |
-
-*Free infrastructure, Claude API costs only
-
----
-
-## 📦 Advanced Deployment Patterns
-
-### ☁️ Flow Nexus Cloud Sandboxes (Scalable Production)
-
-**Best for cloud-native, auto-scaling workloads:**
-
-```javascript
-// Full-featured agent execution in isolated E2B sandboxes
-import { flowNexus } from 'flow-nexus';
-
-// Setup: One-time authentication
-await flowNexus.login({
-  email: process.env.FLOW_NEXUS_EMAIL,
-  password: process.env.FLOW_NEXUS_PASSWORD
-});
-
-// Deploy: Create sandbox and execute
-async function deployAgent(task) {
-  // 1. Create isolated sandbox
-  const sandbox = await flowNexus.sandboxCreate({
-    template: 'node', // or 'python', 'react', 'nextjs'
-    name: `agent-${Date.now()}`,
-    env_vars: {
-      ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY
-    },
-    install_packages: ['@anthropic-ai/claude-agent-sdk'],
-    timeout: 3600 // 1 hour max
-  });
-
-  // 2. Execute agent with ALL 203 MCP tools
-  const result = await flowNexus.sandboxExecute({
-    sandbox_id: sandbox.id,
-    code: `
-      const { query } = require('@anthropic-ai/claude-agent-sdk');
-      const result = await query({
-        prompt: "${task}",
-        options: {
-          permissionMode: 'bypassPermissions',
-          mcpServers: {
-            'claude-flow-sdk': /* 6 tools */,
-            'claude-flow': /* 101 tools */,
-            'flow-nexus': /* 96 tools */
-          }
-        }
-      });
-      console.log(JSON.stringify(result));
-    `,
-    language: 'javascript',
-    capture_output: true
-  });
-
-  // 3. Cleanup (automatic after timeout)
-  await flowNexus.sandboxDelete({ sandbox_id: sandbox.id });
-
-  return result;
-}
-```
-
-**Why Flow Nexus is Recommended:**
-- ✅ **Full MCP Support**: All 203 tools work (subprocess servers supported)
-- ✅ **Persistent Memory**: Claude Flow memory persists across sandboxes
-- ✅ **Security**: Complete process isolation per sandbox
-- ✅ **Multi-Language**: Node.js, Python, React, Next.js templates
-- ✅ **Real-Time**: Live output streaming and monitoring
-- ✅ **Cost-Effective**: Pay per use (10 credits/hour ≈ $1/hour)
-
-**Flow Nexus Pricing:**
-| Resource | Cost | Notes |
-|----------|------|-------|
-| Sandbox (hourly) | 10 credits | ≈ $1/hour per sandbox |
-| Storage | 1 credit/GB/month | Files and environment data |
-| Credits Package | $10 = 100 credits | 10+ hours of sandbox time |
-
----
-
-### 🐳 Container Platforms (Production Orchestration)
-
-#### Docker (ECS, Cloud Run, Fargate, Kubernetes)
-
-```dockerfile
-FROM node:20-slim
-WORKDIR /app
-COPY package*.json ./
-RUN npm ci --production
-COPY . .
-CMD ["npm", "start", "--", "--agent", "${AGENT}", "--task", "${TASK}"]
-```
-
-**Best Practices:**
-- Use multi-stage builds for smaller images
-- Enable health checks for orchestrators
-- Set resource limits (CPU/memory)
-- All 203 MCP tools available (subprocess servers work)
-- Use secrets managers for API keys
-
-#### Kubernetes
-
-```yaml
-apiVersion: batch/v1
-kind: Job
-metadata:
-  name: agentic-flow-job
-spec:
-  template:
-    spec:
-      containers:
-      - name: agent
-        image: agentic-flow:latest
-        args: ["--agent", "researcher", "--task", "$(TASK)"]
-        env:
-        - name: ANTHROPIC_API_KEY
-          valueFrom:
-            secretKeyRef:
-              name: anthropic-secret
-              key: api-key
-      restartPolicy: Never
-```
-
-**Best Practices:**
-- Use Jobs for ephemeral executions
-- Set activeDeadlineSeconds for timeouts
-- Use node selectors for cost optimization
-- Implement PodDisruptionBudgets
-- All 203 MCP tools available
-
-### ⚠️ Serverless Functions (Limited - Not Recommended)
-
-#### AWS Lambda (Restricted)
-
-```javascript
-// ❌ THIS WON'T WORK AS EXPECTED
-// Lambda blocks subprocess spawning, breaking MCP servers
-
-import { query } from '@anthropic-ai/claude-agent-sdk';
-import { claudeFlowSdkServer } from './mcp/claudeFlowSdkServer.js';
-
-export const handler = async (event) => {
-  const result = await query({
-    prompt: event.task,
-    options: {
-      permissionMode: 'bypassPermissions',
-      mcpServers: {
-        // ✅ Works: In-SDK server (6 tools)
-        'claude-flow-sdk': claudeFlowSdkServer,
-
-        // ❌ Blocked: Cannot spawn subprocess
-        // 'claude-flow': { command: 'npx', args: [...] },
-
-        // ❌ Blocked: Cannot spawn subprocess
-        // 'flow-nexus': { command: 'npx', args: [...] }
-      }
-    }
-  });
-
-  return { statusCode: 200, body: JSON.stringify(result) };
-};
-```
-
-**Lambda Limitations:**
-| Feature | Status | Notes |
-|---------|--------|-------|
-| Claude Agent SDK | ✅ Works | Core SDK functions normally |
-| In-SDK MCP Tools | ✅ Works | 6 tools from claude-flow-sdk |
-| Claude Flow MCP | ❌ Blocked | Cannot spawn `npx claude-flow` subprocess |
-| Flow Nexus MCP | ❌ Blocked | Cannot spawn `npx flow-nexus` subprocess |
-| Persistent Memory | ❌ Unavailable | Claude Flow memory requires subprocess |
-| Total Tools | 6/203 | Only 3% of tools work |
-
-**Why Lambda Fails:**
-1. **Subprocess Restrictions**: Lambda blocks `child_process.spawn()` for security
-2. **No npx**: Cannot run `npx claude-flow` or `npx flow-nexus`
-3. **Memory Architecture**: Persistent memory requires subprocess MCP server
-4. **File System**: Read-only `/tmp` prevents MCP server file operations
-
-**Solution: Use Flow Nexus sandboxes instead** - Full 203 tool support with Lambda-triggered sandbox execution:
-
-```javascript
-// ✅ RECOMMENDED: Lambda triggers Flow Nexus sandbox
-import { flowNexus } from 'flow-nexus';
-
-export const handler = async (event) => {
-  // Lambda just orchestrates - execution happens in sandbox
-  const sandbox = await flowNexus.sandboxCreate({
-    template: 'node',
-    env_vars: { ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY }
-  });
-
-  const result = await flowNexus.sandboxExecute({
-    sandbox_id: sandbox.id,
-    code: `/* Full agent code with all 203 tools */`
-  });
-
-  await flowNexus.sandboxDelete({ sandbox_id: sandbox.id });
-
-  return { statusCode: 200, body: JSON.stringify(result) };
-};
+# .env file (auto-loaded)
+ANTHROPIC_API_KEY=sk-ant-...
+OPENROUTER_API_KEY=sk-or-v1-...
+GOOGLE_GEMINI_API_KEY=AIza...
+ENABLE_CLAUDE_FLOW_SDK=true
+COMPLETION_MODEL=deepseek/deepseek-chat-v3.1
 ```
 
 ---
 
-## 📊 Architecture
+## 📚 Complete Agent List
 
-### Ephemeral Agent Lifecycle
+### Core Development (5 agents)
+- `coder` - Implementation specialist
+- `reviewer` - Code review and QA
+- `tester` - Comprehensive testing
+- `planner` - Strategic planning
+- `researcher` - Research and analysis
 
-```
-1. REQUEST → Agent definition loaded from YAML
-2. SPAWN → Agent initialized with system prompt + tools
-3. EXECUTE → Task processed using Claude SDK + MCP tools
-4. STREAM → Real-time output (optional)
-5. COMPLETE → Result returned to caller
-6. TERMINATE → Agent process exits, memory released
-```
+### Specialized Development (8 agents)
+- `backend-dev` - REST/GraphQL APIs
+- `mobile-dev` - React Native
+- `ml-developer` - Machine learning
+- `system-architect` - Architecture design
+- `cicd-engineer` - CI/CD pipelines
+- `api-docs` - API documentation
+- `production-validator` - Deployment checks
+- `base-template-generator` - Boilerplate generation
 
-**Key Characteristics:**
-- **Cold Start**: <2s (includes MCP server initialization)
-- **Warm Start**: <500ms (MCP servers cached)
-- **Memory Usage**: 100-200MB per agent
-- **Concurrent Agents**: Limited only by host resources
+### GitHub Integration (10 agents)
+- `pr-manager` - PR lifecycle
+- `code-review-swarm` - Multi-agent review
+- `issue-tracker` - Issue management
+- `release-manager` - Release coordination
+- `workflow-automation` - GitHub Actions
+- `repo-architect` - Repository structure
+- `multi-repo-swarm` - Multi-repo coordination
+- `sync-coordinator` - Cross-repo sync
+- `project-board-sync` - Project boards
+- `swarm-pr`, `swarm-issue` - Issue/PR swarms
 
-### Multi-Agent Coordination
+### Performance & Analysis (3 agents)
+- `perf-analyzer` - Bottleneck detection
+- `performance-benchmarker` - Benchmarking
+- `code-analyzer` - Code quality
 
-```
-┌─────────────┐     ┌─────────────┐     ┌─────────────┐
-│  Researcher │────▶│   Memory    │◀────│ Code Review │
-│   Agent     │     │   Storage   │     │   Agent     │
-└─────────────┘     └─────────────┘     └─────────────┘
-                           │
-                           ▼
-                    ┌─────────────┐
-                    │    Data     │
-                    │   Analyst   │
-                    └─────────────┘
-```
+### Swarm Coordinators (5 agents)
+- `hierarchical-coordinator` - Tree structure
+- `mesh-coordinator` - Peer-to-peer
+- `adaptive-coordinator` - Dynamic topology
+- `swarm-memory-manager` - Memory sync
+- `collective-intelligence-coordinator` - Hive mind
 
-**Coordination via:**
-- Shared memory (in-process or external)
-- Claude Flow MCP tools
-- File system (for batch jobs)
-- Message queues (for async workflows)
+### Consensus & Distributed (6 agents)
+- `byzantine-coordinator` - Byzantine fault tolerance
+- `raft-manager` - Raft consensus
+- `gossip-coordinator` - Gossip protocol
+- `crdt-synchronizer` - CRDT sync
+- `quorum-manager` - Quorum management
+- `security-manager` - Security protocols
 
----
+### SPARC Methodology (6 agents)
+- `sparc-coord` - SPARC orchestration
+- `sparc-coder` - TDD implementation
+- `specification` - Requirements analysis
+- `pseudocode` - Algorithm design
+- `architecture` - System design
+- `refinement` - Iterative improvement
 
-## 🔍 Advanced Usage
+### Testing (2 agents)
+- `tdd-london-swarm` - Mock-driven TDD
+- `production-validator` - Deployment validation
 
-### Custom Agent Definition
+### Planning (4 agents)
+- `goal-planner` - GOAP planning
+- `code-goal-planner` - Code-centric planning
+- `task-orchestrator` - Task coordination
+- `smart-agent` - Intelligent spawning
 
-Create `.claude/agents/custom/my-agent.md`:
+### Specialized (7+ agents)
+- `migration-planner` - Code migration
+- `swarm-init` - Topology optimization
+- `memory-coordinator` - Cross-session memory
+- And 20+ more...
 
-```markdown
----
-name: my-agent
-description: Custom agent for specific tasks
----
-
-# System Prompt
-
-You are a specialized agent for [your use case].
-
-## Capabilities
-- [List capabilities]
-
-## Guidelines
-- [Execution guidelines]
-```
-
-### Programmatic API
-
-```javascript
-import { query } from '@anthropic-ai/claude-agent-sdk';
-import { getAgent } from 'agentic-flow/utils';
-
-const agent = getAgent('researcher');
-const result = await query({
-  prompt: 'Analyze AI trends',
-  options: {
-    systemPrompt: agent.systemPrompt,
-    permissionMode: 'bypassPermissions'
-  }
-});
-
-console.log(result.output);
-```
-
-### Flow Nexus Integration
-
-Requires registration for cloud features:
-
-```bash
-# Register account
-npx agentic-flow --agent flow-nexus-auth \
-  --task "Register with email: user@example.com"
-
-# Login
-npx agentic-flow --agent flow-nexus-auth \
-  --task "Login with email: user@example.com, password: ***"
-
-# Create cloud sandbox
-npx agentic-flow --agent flow-nexus-sandbox \
-  --task "Create Node.js sandbox and execute: console.log('Hello')"
-```
+**Total: 66+ agents** | Use `npx agentic-flow --list` to see all
 
 ---
 
-## 📈 Performance & Scaling
+## 🔗 Links & Resources
 
-### Benchmarks
-
-| Metric | Result |
-|--------|--------|
-| **Cold Start** | <2s (including MCP initialization) |
-| **Warm Start** | <500ms (cached MCP servers) |
-| **Agent Spawn** | 75 agents loaded in <2s |
-| **Tool Discovery** | 203 tools accessible in <1s |
-| **Memory Footprint** | 100-200MB per agent process |
-| **Concurrent Agents** | 10+ on t3.small, 100+ on c6a.xlarge |
-| **Token Efficiency** | 32% reduction via swarm coordination |
-
-### Cost Analysis (AWS Lambda arm64)
-
-| Memory | Duration | Cost per Invocation | Monthly (10K requests) |
-|--------|----------|---------------------|------------------------|
-| 1GB | 30s | $0.0008 | $8 |
-| 2GB | 30s | $0.0016 | $16 |
-| 2GB | 60s | $0.0032 | $32 |
-| 4GB | 60s | $0.0064 | $64 |
-
-*Free tier: 400,000 GB-seconds/month*
-
----
-
-## 🛠️ Development
-
-### Build from Source
-
-```bash
-# Clone repository
-git clone https://github.com/ruvnet/agentic-flow.git
-cd agentic-flow
-
-# Install dependencies
-npm install
-
-# Build TypeScript
-npm run build
-
-# Test locally
-node dist/cli.js --help
-```
-
-### Testing
-
-```bash
-# Run all tests
-npm test
-
-# Test specific agent
-node dist/cli.js --agent researcher --task "Test task"
-
-# Validate MCP tools
-npm run validate
-```
-
-### Adding Custom Agents
-
-1. Create agent definition: `.claude/agents/custom/my-agent.md`
-2. Define system prompt and capabilities
-3. Test: `npx agentic-flow --agent my-agent --task "Test"`
-4. Deploy: `npm run build && docker build -t my-agents .`
-
----
-
-## 🔗 Links
-
-- **Documentation**: [docs/](docs/)
-- **GitHub**: [github.com/ruvnet/agentic-flow](https://github.com/ruvnet/agentic-flow)
-- **npm Package**: [npmjs.com/package/agentic-flow](https://www.npmjs.com/package/agentic-flow)
-- **Claude Agent SDK**: [docs.claude.com/en/api/agent-sdk](https://docs.claude.com/en/api/agent-sdk)
-- **Flow Nexus Platform**: [github.com/ruvnet/flow-nexus](https://github.com/ruvnet/flow-nexus)
-
----
-
-## 🤝 Contributing
-
-We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
-
-### Development Setup
-1. Fork the repository
-2. Create feature branch: `git checkout -b feature/amazing-feature`
-3. Make changes and add tests
-4. Ensure tests pass: `npm test`
-5. Commit: `git commit -m "feat: add amazing feature"`
-6. Push: `git push origin feature/amazing-feature`
-7. Open Pull Request
+- **📦 NPM Package**: [npmjs.com/package/agentic-flow](https://www.npmjs.com/package/agentic-flow)
+- **🐙 GitHub**: [github.com/ruvnet/agentic-flow](https://github.com/ruvnet/agentic-flow)
+- **📖 Documentation**: [docs/](docs/)
+- **🤖 Claude Agent SDK**: [docs.claude.com/en/api/agent-sdk](https://docs.claude.com/en/api/agent-sdk)
+- **⚡ Claude Flow**: [github.com/ruvnet/claude-flow](https://github.com/ruvnet/claude-flow)
+- **☁️ Flow Nexus**: [github.com/ruvnet/flow-nexus](https://github.com/ruvnet/flow-nexus)
+- **🔀 OpenRouter**: [openrouter.ai](https://openrouter.ai)
 
 ---
 
@@ -1265,16 +1067,8 @@ Built with:
 
 ---
 
-## 💬 Support
-
-- **Documentation**: See [docs/](docs/) folder
-- **Issues**: [GitHub Issues](https://github.com/ruvnet/agentic-flow/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/ruvnet/agentic-flow/discussions)
-
----
-
-**Deploy ephemeral AI agents in seconds. Scale to thousands. Pay only for what you use.** 🚀
+**Deploy AI agents in seconds. Scale to thousands. Pay only for what you use.** 🚀
 
 ```bash
-npx agentic-flow --agent researcher --task "Your task here"
+npx agentic-flow --agent coder --task "Your task here"
 ```

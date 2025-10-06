@@ -1,10 +1,6 @@
 # 🤖 Agentic Flow
 
-**Deploy autonomous AI agents that complete long-running tasks while you sleep.**
-
-Stop babysitting AI. Deploy specialized agents that handle complex workflows end-to-end - code reviews, API generation, data analysis, security audits. They work independently, use the right tools, collaborate when needed, and report results. Run heavy tasks on cheap models, scale to hundreds of agents without infrastructure overhead, or go completely offline. Real agents doing real work at a fraction of the cost.
-
-Built on **[Claude Agent SDK](https://docs.claude.com/en/api/agent-sdk)** by Anthropic, powered by **[Claude Flow](https://github.com/ruvnet/claude-flow)** (101 MCP tools), **[Flow Nexus](https://github.com/ruvnet/flow-nexus)** (96 cloud tools), **[OpenRouter](https://openrouter.ai)** (100+ LLM models), **[Agentic Payments](https://www.npmjs.com/package/agentic-payments)** (payment authorization), and **ONNX Runtime** (free local CPU or GPU inference).
+**Production-Ready AI Agent Orchestration with Multi-Model Router, OpenRouter Integration & Free Local Inference**
 
 [![npm version](https://img.shields.io/npm/v/agentic-flow.svg)](https://www.npmjs.com/package/agentic-flow)
 [![npm downloads](https://img.shields.io/npm/dm/agentic-flow.svg)](https://www.npmjs.com/package/agentic-flow)
@@ -13,6 +9,20 @@ Built on **[Claude Agent SDK](https://docs.claude.com/en/api/agent-sdk)** by Ant
 [![Node.js Version](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen)](https://nodejs.org/)
 [![rUv](https://img.shields.io/badge/by-rUv-purple.svg)](https://github.com/ruvnet/)
 [![Agentic Engineering](https://img.shields.io/badge/Agentic-Engineering-orange.svg)](https://github.com/ruvnet/agentic-flow#-agent-types)
+---
+Agentic Flow runs Claude Code agents at near zero cost without rewriting a thing. It routes every task to the cheapest lane that still meets the bar. Local ONNX when privacy or price wins. OpenRouter for breadth. Gemini for speed. Anthropic when quality matters most. One agent. Any model. Lowest viable cost.
+
+Agentic Flow works with any agent or command built or used in Claude Code. It automatically runs through the Claude Agent SDK, forming swarms of intelligent, cost and performance-optimized agents that decide how to execute each task. Built for business, government, and commercial use where cost, traceability, and reliability matter.
+
+The system takes the Claude SDK's logic and merges it with Claude Flow memory to give every agent a durable brain. Each run logs inputs, outputs, and route decisions with artifacts, manifests, and checksums for proof and reproducibility. It self-optimizes in real time, balancing price, latency, and accuracy through a simple policy file.
+
+Strict mode keeps sensitive data offline. Economy mode prefers ONNX or OpenRouter. Premium mode goes Anthropic first. The policy defines the rules, and the swarm enforces them automatically.
+
+It runs anywhere: local for dev, Docker for CI, or Flow Nexus for scale. With project-scoped settings, explicit tool allowlists, and an offline privacy lane, it stays secure by default.
+
+**Agentic Flow is the framework for autonomous efficiency—one unified runner for every Claude Code agent, self-tuning, self-routing, and built for real-world deployment.**
+
+Built on **[Claude Agent SDK](https://docs.claude.com/en/api/agent-sdk)** by Anthropic, powered by **[Claude Flow](https://github.com/ruvnet/claude-flow)** (101 MCP tools), **[Flow Nexus](https://github.com/ruvnet/flow-nexus)** (96 cloud tools), **[OpenRouter](https://openrouter.ai)** (100+ LLM models), **Google Gemini** (fast, cost-effective inference), **[Agentic Payments](https://www.npmjs.com/package/agentic-payments)** (payment authorization), and **ONNX Runtime** (free local CPU or GPU inference).
 
 ---
 
@@ -33,7 +43,7 @@ Built on **[Claude Agent SDK](https://docs.claude.com/en/api/agent-sdk)** by Ant
 - **Multi-Agent Swarms** - Deploy 3, 10, or 100 agents that collaborate via shared memory to complete complex projects
 - **Long-Running Tasks** - Agents persist through hours-long operations: full codebase refactors, comprehensive audits, dataset processing
 - **213 MCP Tools** - Agents have real capabilities: GitHub operations, neural network training, workflow automation, memory persistence
-- **Intelligent Cost Routing** - $0.0003 per code review with OpenRouter vs $0.08 with Claude. Save $2,400/month on 100 daily reviews
+- **Auto Model Optimization** - `--optimize` flag intelligently selects best model for each task. DeepSeek R1 costs 85% less than Claude with similar quality. Save $2,400/month on 100 daily reviews.
 - **Deploy Anywhere** - Same agentic capabilities locally, in Docker/Kubernetes, or cloud sandboxes
 
 **Real Agentic Use Cases:**
@@ -66,6 +76,9 @@ npm install -g agentic-flow
 # Or use directly with npx (no installation)
 npx agentic-flow --help
 
+# MCP server management
+npx agentic-flow mcp start
+
 # Set your API key
 export ANTHROPIC_API_KEY=sk-ant-...
 ```
@@ -84,6 +97,12 @@ npx agentic-flow \
   --agent coder \
   --task "Build a REST API with authentication" \
   --model "meta-llama/llama-3.1-8b-instruct"
+
+# Enable real-time streaming to see output as it's generated
+npx agentic-flow \
+  --agent coder \
+  --task "Build a web scraper" \
+  --stream
 
 # The agent executes on your machine, uses all MCP tools, and terminates
 ```
@@ -185,7 +204,7 @@ docker run --rm \
 - **Custom Agents** - Define your own in YAML with system prompts
 
 ### 📊 Observability
-- **Real-Time Streaming** - See agent output as it happens
+- **Real-Time Streaming** - See agent output token-by-token as it's generated with `--stream` flag
 - **Structured Logging** - JSON logs for aggregation and analysis
 - **Performance Metrics** - Track agent duration, tool usage, token consumption
 - **Health Checks** - Built-in healthcheck endpoint for orchestrators
@@ -443,6 +462,137 @@ Docker: Infrastructure costs (AWS/GCP/Azure) + Claude API costs.*
 
 ---
 
+## 🎯 Model Optimization (NEW!)
+
+**Automatically select the optimal model for any agent and task**, balancing quality, cost, and speed based on your priorities.
+
+### Why Model Optimization?
+
+Different tasks need different models:
+- **Production code** → Claude Sonnet 4.5 (highest quality)
+- **Code reviews** → DeepSeek R1 (85% cheaper, nearly same quality)
+- **Simple functions** → Llama 3.1 8B (99% cheaper)
+- **Privacy-critical** → ONNX Phi-4 (free, local, offline)
+
+**The optimizer analyzes your agent type + task complexity and recommends the best model automatically.**
+
+### Quick Examples
+
+```bash
+# Let the optimizer choose (balanced quality vs cost)
+npx agentic-flow --agent coder --task "Build REST API" --optimize
+
+# Optimize for lowest cost
+npx agentic-flow --agent coder --task "Simple function" --optimize --priority cost
+
+# Optimize for highest quality
+npx agentic-flow --agent reviewer --task "Security audit" --optimize --priority quality
+
+# Optimize for speed
+npx agentic-flow --agent researcher --task "Quick analysis" --optimize --priority speed
+
+# Set maximum budget ($0.001 per task)
+npx agentic-flow --agent coder --task "Code cleanup" --optimize --max-cost 0.001
+```
+
+### Optimization Priorities
+
+- **`quality`** (70% quality, 20% speed, 10% cost) - Best results, production code
+- **`balanced`** (40% quality, 40% cost, 20% speed) - Default, good mix
+- **`cost`** (70% cost, 20% quality, 10% speed) - Cheapest, development/testing
+- **`speed`** (70% speed, 20% quality, 10% cost) - Fastest responses
+- **`privacy`** - Local-only models (ONNX), zero cloud API calls
+
+### Model Tier Examples
+
+The optimizer chooses from 10+ models across 5 tiers:
+
+**Tier 1: Flagship** (premium quality)
+- Claude Sonnet 4.5 - $3/$15 per 1M tokens
+- GPT-4o - $2.50/$10 per 1M tokens
+- Gemini 2.5 Pro - $0.00/$2.00 per 1M tokens
+
+**Tier 2: Cost-Effective** (2025 breakthrough models)
+- **DeepSeek R1** - $0.55/$2.19 per 1M tokens (85% cheaper, flagship quality)
+- **DeepSeek Chat V3** - $0.14/$0.28 per 1M tokens (98% cheaper)
+
+**Tier 3: Balanced**
+- Gemini 2.5 Flash - $0.07/$0.30 per 1M tokens (fastest)
+- Llama 3.3 70B - $0.30/$0.30 per 1M tokens (open-source)
+
+**Tier 4: Budget**
+- Llama 3.1 8B - $0.055/$0.055 per 1M tokens (ultra-low cost)
+
+**Tier 5: Local/Privacy**
+- **ONNX Phi-4** - FREE (offline, private, no API)
+
+### Agent-Specific Recommendations
+
+The optimizer knows what each agent needs:
+
+```bash
+# Coder agent → prefers high quality (min 85/100)
+npx agentic-flow --agent coder --task "Production API" --optimize
+# → Selects: DeepSeek R1 (quality 90, cost 85)
+
+# Researcher agent → flexible, can use cheaper models
+npx agentic-flow --agent researcher --task "Trend analysis" --optimize --priority cost
+# → Selects: Gemini 2.5 Flash (quality 78, cost 98)
+
+# Reviewer agent → needs reasoning (min 85/100)
+npx agentic-flow --agent reviewer --task "Security review" --optimize
+# → Selects: DeepSeek R1 (quality 90, reasoning-optimized)
+
+# Tester agent → simple tasks, use budget models
+npx agentic-flow --agent tester --task "Unit tests" --optimize --priority cost
+# → Selects: Llama 3.1 8B (cost 95)
+```
+
+### Cost Savings Examples
+
+**Without Optimization** (always using Claude Sonnet 4.5):
+- 100 code reviews/day × $0.08 each = **$8/day = $240/month**
+
+**With Optimization** (DeepSeek R1 for reviews):
+- 100 code reviews/day × $0.012 each = **$1.20/day = $36/month**
+- **Savings: $204/month (85% reduction)**
+
+### Comprehensive Model Guide
+
+For detailed analysis of all 10 models, see:
+📖 **[Model Capabilities Guide](docs/agentic-flow/benchmarks/MODEL_CAPABILITIES.md)**
+
+Includes:
+- Full benchmark results across 6 task types
+- Cost comparison tables
+- Use case decision matrices
+- Performance characteristics
+- Best practices by model
+
+### MCP Tool for Optimization
+
+```javascript
+// Get model recommendation via MCP tool
+await query({
+  mcp: {
+    server: 'agentic-flow',
+    tool: 'agentic_flow_optimize_model',
+    params: {
+      agent: 'coder',
+      task: 'Build REST API with auth',
+      priority: 'balanced',  // quality | balanced | cost | speed | privacy
+      max_cost: 0.01         // optional budget cap in dollars
+    }
+  }
+});
+```
+
+**Learn More:**
+- See [benchmarks/README.md](docs/agentic-flow/benchmarks/README.md) for quick results
+- Run your own tests: `cd docs/agentic-flow/benchmarks && ./quick-benchmark.sh`
+
+---
+
 ## 📋 Commands
 
 ### MCP Server Management (Direct Tool Access)
@@ -472,6 +622,49 @@ npx agentic-flow mcp stop [server]
 - **agentic-payments** (10 tools): Payment authorization, Ed25519 signatures, consensus
 - **claude-flow-sdk** (6 tools): In-process memory and swarm coordination
 
+### Add Custom MCP Servers (No Code Required)
+
+Add your own MCP servers via CLI without editing code:
+
+```bash
+# Add MCP server (Claude Desktop style JSON config)
+npx agentic-flow mcp add weather '{"command":"npx","args":["-y","weather-mcp"],"env":{"API_KEY":"xxx"}}'
+
+# Add MCP server (flag-based)
+npx agentic-flow mcp add github --npm @modelcontextprotocol/server-github --env "GITHUB_TOKEN=ghp_xxx"
+
+# Add local MCP server
+npx agentic-flow mcp add my-tools --local /path/to/server.js
+
+# List configured servers
+npx agentic-flow mcp list
+
+# Enable/disable servers
+npx agentic-flow mcp enable weather
+npx agentic-flow mcp disable weather
+
+# Remove server
+npx agentic-flow mcp remove weather
+```
+
+**Configuration stored in:** `~/.agentic-flow/mcp-config.json`
+
+**Usage:** Once configured, all enabled MCP servers automatically load in agents. No need to specify which server to use - tools are available by name (e.g., `mcp__weather__get_forecast`).
+
+**Example:** After adding weather MCP:
+```bash
+npx agentic-flow --agent researcher --task "Get weather forecast for Tokyo"
+```
+
+**Popular MCP Servers:**
+- `@modelcontextprotocol/server-filesystem` - File system access
+- `@modelcontextprotocol/server-github` - GitHub operations
+- `@modelcontextprotocol/server-brave-search` - Web search
+- `weather-mcp` - Weather data
+- `database-mcp` - Database operations
+
+**Documentation:** See [docs/guides/ADDING-MCP-SERVERS-CLI.md](agentic-flow/docs/guides/ADDING-MCP-SERVERS-CLI.md) for complete guide.
+
 ### Basic Operations (Works Locally, Docker, Cloud)
 
 ```bash
@@ -481,7 +674,7 @@ npx agentic-flow --list
 # Run specific agent (local execution)
 npx agentic-flow --agent <name> --task "<description>"
 
-# Enable real-time streaming
+# Enable real-time streaming output (see responses token-by-token)
 npx agentic-flow --agent coder --task "Build API" --stream
 
 # Run parallel mode (3 agents simultaneously)
@@ -521,7 +714,7 @@ docker run --rm \
   --agent researcher \
   --task "Analyze cloud patterns"
 
-# Run with streaming
+# Run with real-time streaming output
 docker run --rm \
   -e ANTHROPIC_API_KEY=sk-ant-... \
   -e ENABLE_STREAMING=true \
@@ -566,6 +759,11 @@ The router supports multiple LLM providers with automatic fallback:
 - Models: 100+ models from multiple providers
 - Cost: $0.002-0.10/1K tokens (varies by model)
 - Best for: Cost optimization, model diversity, fallback
+
+**Google Gemini (Cloud)**
+- Models: Gemini 2.0 Flash Exp, Gemini 2.5 Flash, Gemini 2.5 Pro
+- Cost: $0.075/1M input tokens, $0.30/1M output tokens (Flash), Free up to rate limits
+- Best for: Speed-optimized tasks, cost-effective inference, rapid prototyping
 
 **ONNX Runtime (Free Local)**
 - Models: Microsoft Phi-4-mini-instruct (INT4 quantized)
@@ -656,6 +854,89 @@ export OPENROUTER_API_KEY=sk-or-v1-...
 export USE_OPENROUTER=true              # Force OpenRouter usage
 export COMPLETION_MODEL=meta-llama/...  # Default OpenRouter model
 export PROXY_PORT=3000                  # Proxy server port
+```
+
+### Google Gemini Integration (Speed & Cost Optimization)
+
+Access Google's Gemini models for fast, cost-effective inference with native integration:
+
+```bash
+# Set Gemini API key
+export GOOGLE_GEMINI_API_KEY=xxxxx
+
+# Use Gemini directly (no proxy needed)
+npx agentic-flow \
+  --agent coder \
+  --task "Build REST API" \
+  --provider gemini \
+  --model "gemini-2.0-flash-exp"
+
+# Or force Gemini mode
+export USE_GEMINI=true
+npx agentic-flow --agent researcher --task "Analyze trends"
+```
+
+**Available Gemini Models:**
+- `gemini-2.0-flash-exp` - Experimental, fast responses, free up to rate limits
+- `gemini-2.5-flash` - Production-ready, 95% cost savings vs Claude
+- `gemini-2.5-pro` - Premium quality with competitive pricing
+
+**Cost Comparison (Gemini vs Others):**
+| Provider | Model | Input (1M tokens) | Output (1M tokens) | Savings vs Claude |
+|----------|-------|-------------------|-------------------|-------------------|
+| Anthropic | Claude Sonnet 4.5 | $3.00 | $15.00 | Baseline |
+| Google | Gemini 2.0 Flash Exp | **FREE** | **FREE** | **100%** (up to limits) |
+| Google | Gemini 2.5 Flash | $0.075 | $0.30 | **98%** |
+| Google | Gemini 2.5 Pro | $1.25 | $5.00 | **70%** |
+
+**Performance Characteristics:**
+- **Latency**: Gemini 2.5 Flash is fastest (avg 1.5s for 500 tokens)
+- **Quality**: Gemini 2.5 Pro comparable to Claude Sonnet 3.5
+- **Streaming**: Full support for real-time output
+- **MCP Tools**: All 213 tools work seamlessly
+
+**How It Works:**
+1. Detects `--provider gemini` or `GOOGLE_GEMINI_API_KEY` environment variable
+2. Uses native Gemini API (no proxy needed, unlike OpenRouter)
+3. Automatic message format conversion (Anthropic → Gemini)
+4. Full MCP tool support (all 213 tools work)
+5. Cost tracking and usage metrics built-in
+
+**Environment Variables:**
+```bash
+# Required for Gemini
+export GOOGLE_GEMINI_API_KEY=xxxxx
+
+# Optional configuration
+export USE_GEMINI=true          # Force Gemini usage
+export PROVIDER=gemini          # Set default provider
+```
+
+**Use Cases Where Gemini Excels:**
+- ✅ **Speed-critical tasks** - Fastest inference of all cloud providers
+- ✅ **Prototyping** - Free tier excellent for development
+- ✅ **High-volume workloads** - 98% cost savings at scale
+- ✅ **Real-time applications** - Low latency streaming responses
+- ✅ **Cost-conscious production** - Balance quality and price
+
+**Programmatic Usage:**
+```javascript
+import { ModelRouter } from 'agentic-flow/router';
+
+const router = new ModelRouter();
+
+// Direct Gemini usage
+const response = await router.chat({
+  model: 'gemini-2.5-flash',
+  messages: [{ role: 'user', content: 'Analyze this code...' }],
+  temperature: 0.7,
+  maxTokens: 2048
+});
+
+console.log(response.content[0].text);
+console.log(`Provider: ${response.metadata.provider}`);  // "gemini"
+console.log(`Cost: $${response.metadata.cost}`);         // ~$0.0003 per request
+console.log(`Latency: ${response.metadata.latency}ms`);  // ~1200ms avg
 ```
 
 ### Free ONNX Local Inference

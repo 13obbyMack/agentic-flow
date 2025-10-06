@@ -1,9 +1,65 @@
-// Generic agent that uses .claude/agents definitions
+// Generic agent that uses .claude/agents definitions with multi-provider SDK routing
 import { query } from "@anthropic-ai/claude-agent-sdk";
 import { logger } from "../utils/logger.js";
 import { withRetry } from "../utils/retry.js";
 import { AgentDefinition } from "../utils/agentLoader.js";
 import { claudeFlowSdkServer } from "../mcp/claudeFlowSdkServer.js";
+
+function getCurrentProvider(): string {
+  // Determine provider from environment
+  if (process.env.PROVIDER === 'gemini' || process.env.USE_GEMINI === 'true') {
+    return 'gemini';
+  }
+  if (process.env.PROVIDER === 'openrouter' || process.env.USE_OPENROUTER === 'true') {
+    return 'openrouter';
+  }
+  if (process.env.PROVIDER === 'onnx' || process.env.USE_ONNX === 'true') {
+    return 'onnx';
+  }
+  return 'anthropic'; // Default
+}
+
+function getModelForProvider(provider: string): {
+  model: string;
+  apiKey: string;
+  baseURL?: string;
+} {
+  switch (provider) {
+    case 'gemini':
+      return {
+        model: process.env.COMPLETION_MODEL || 'gemini-2.0-flash-exp',
+        apiKey: process.env.GOOGLE_GEMINI_API_KEY || process.env.ANTHROPIC_API_KEY || '',
+        baseURL: process.env.PROXY_URL || undefined
+      };
+
+    case 'openrouter':
+      return {
+        model: process.env.COMPLETION_MODEL || 'meta-llama/llama-3.1-8b-instruct',
+        apiKey: process.env.OPENROUTER_API_KEY || process.env.ANTHROPIC_API_KEY || '',
+        baseURL: process.env.PROXY_URL || undefined
+      };
+
+    case 'onnx':
+      return {
+        model: 'onnx-local',
+        apiKey: 'local',
+        baseURL: process.env.PROXY_URL || undefined
+      };
+
+    case 'anthropic':
+    default:
+      // For anthropic provider, require ANTHROPIC_API_KEY
+      const apiKey = process.env.ANTHROPIC_API_KEY;
+      if (!apiKey) {
+        throw new Error('ANTHROPIC_API_KEY is required but not set for Anthropic provider');
+      }
+      return {
+        model: process.env.COMPLETION_MODEL || 'claude-sonnet-4-5-20250929',
+        apiKey,
+        // No baseURL for direct Anthropic
+      };
+  }
+}
 
 export async function claudeAgent(
   agent: AgentDefinition,
@@ -12,77 +68,204 @@ export async function claudeAgent(
   modelOverride?: string
 ) {
   const startTime = Date.now();
-  logger.info('Starting Claude agent', {
+  const provider = getCurrentProvider();
+
+  logger.info('Starting Claude Agent SDK with multi-provider support', {
     agent: agent.name,
+    provider,
     input: input.substring(0, 100),
     model: modelOverride || 'default'
   });
 
   return withRetry(async () => {
-    // Quad MCP server setup: in-SDK + claude-flow + flow-nexus + agentic-payments
-    const result = query({
-      prompt: input,
-      options: {
-        systemPrompt: agent.systemPrompt,
-        model: modelOverride, // Support custom models like OpenRouter
-        permissionMode: 'bypassPermissions', // Auto-approve all tool usage for Docker automation
-        mcpServers: {
-          // In-SDK server: 6 basic tools (memory + swarm)
-          'claude-flow-sdk': claudeFlowSdkServer,
+    // Get model configuration for the selected provider
+    const modelConfig = getModelForProvider(provider);
+    const finalModel = modelOverride || modelConfig.model;
 
-          // Full MCP server: 101 tools via subprocess (neural, analysis, workflow, github, daa, system)
-          'claude-flow': {
-            command: 'npx',
-            args: ['claude-flow@alpha', 'mcp', 'start'],
-            env: {
-              ...process.env,
-              MCP_AUTO_START: 'true'
-            }
-          },
+    // Configure environment for Claude Agent SDK with proxy routing
+    // The SDK internally uses Anthropic client which reads ANTHROPIC_BASE_URL and ANTHROPIC_API_KEY
+    const envOverrides: Record<string, string> = {};
 
-          // Flow Nexus MCP server: 96 cloud tools (sandboxes, swarms, neural, workflows)
-          'flow-nexus': {
-            command: 'npx',
-            args: ['flow-nexus@latest', 'mcp', 'start'],
-            env: {
-              ...process.env,
-              FLOW_NEXUS_AUTO_START: 'true'
-            }
-          },
+    if (provider === 'gemini' && process.env.GOOGLE_GEMINI_API_KEY) {
+      // Use ANTHROPIC_BASE_URL if already set by CLI (proxy mode)
+      envOverrides.ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY || 'proxy-key';
+      envOverrides.ANTHROPIC_BASE_URL = process.env.ANTHROPIC_BASE_URL || process.env.GEMINI_PROXY_URL || 'http://localhost:3000';
 
-          // Agentic Payments MCP server: Payment authorization and multi-agent consensus
-          'agentic-payments': {
-            command: 'npx',
-            args: ['-y', 'agentic-payments', 'mcp'],
-            env: {
-              ...process.env,
-              AGENTIC_PAYMENTS_AUTO_START: 'true'
+      logger.info('Using Gemini proxy', {
+        proxyUrl: envOverrides.ANTHROPIC_BASE_URL,
+        model: finalModel
+      });
+    } else if (provider === 'openrouter' && process.env.OPENROUTER_API_KEY) {
+      // Use ANTHROPIC_BASE_URL if already set by CLI (proxy mode)
+      envOverrides.ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY || 'proxy-key';
+      envOverrides.ANTHROPIC_BASE_URL = process.env.ANTHROPIC_BASE_URL || process.env.OPENROUTER_PROXY_URL || 'http://localhost:3000';
+
+      logger.info('Using OpenRouter proxy', {
+        proxyUrl: envOverrides.ANTHROPIC_BASE_URL,
+        model: finalModel
+      });
+    } else if (provider === 'onnx') {
+      // For ONNX: Local inference (TODO: implement ONNX proxy)
+      envOverrides.ANTHROPIC_API_KEY = 'local';
+      if (modelConfig.baseURL) {
+        envOverrides.ANTHROPIC_BASE_URL = modelConfig.baseURL;
+      }
+    }
+    // For Anthropic provider, use existing ANTHROPIC_API_KEY (no proxy needed)
+
+    logger.info('Multi-provider configuration', {
+      provider,
+      model: finalModel,
+      hasApiKey: !!envOverrides.ANTHROPIC_API_KEY || !!process.env.ANTHROPIC_API_KEY,
+      hasBaseURL: !!envOverrides.ANTHROPIC_BASE_URL
+    });
+
+    try {
+      // MCP server setup - enable in-SDK server and optional external servers
+      const mcpServers: any = {};
+
+      // Enable in-SDK MCP server for custom tools
+      if (process.env.ENABLE_CLAUDE_FLOW_SDK === 'true') {
+        mcpServers['claude-flow-sdk'] = claudeFlowSdkServer;
+      }
+
+      // Optional external MCP servers (disabled by default to avoid subprocess failures)
+      // Enable by setting ENABLE_CLAUDE_FLOW_MCP=true or ENABLE_FLOW_NEXUS_MCP=true
+      if (process.env.ENABLE_CLAUDE_FLOW_MCP === 'true') {
+        mcpServers['claude-flow'] = {
+          type: 'stdio',
+          command: 'npx',
+          args: ['claude-flow@alpha', 'mcp', 'start'],
+          env: {
+            ...process.env,
+            MCP_AUTO_START: 'true',
+            PROVIDER: provider
+          }
+        };
+      }
+
+      if (process.env.ENABLE_FLOW_NEXUS_MCP === 'true') {
+        mcpServers['flow-nexus'] = {
+          type: 'stdio',
+          command: 'npx',
+          args: ['flow-nexus@latest', 'mcp', 'start'],
+          env: {
+            ...process.env,
+            FLOW_NEXUS_AUTO_START: 'true'
+          }
+        };
+      }
+
+      if (process.env.ENABLE_AGENTIC_PAYMENTS_MCP === 'true') {
+        mcpServers['agentic-payments'] = {
+          type: 'stdio',
+          command: 'npx',
+          args: ['-y', 'agentic-payments', 'mcp'],
+          env: {
+            ...process.env,
+            AGENTIC_PAYMENTS_AUTO_START: 'true'
+          }
+        };
+      }
+
+      // Load MCP servers from user config file (~/.agentic-flow/mcp-config.json)
+      try {
+        const fs = await import('fs');
+        const path = await import('path');
+        const os = await import('os');
+
+        const configPath = path.join(os.homedir(), '.agentic-flow', 'mcp-config.json');
+
+        if (fs.existsSync(configPath)) {
+          const configContent = fs.readFileSync(configPath, 'utf-8');
+          const config = JSON.parse(configContent);
+
+          // Add enabled user-configured servers
+          for (const [name, server] of Object.entries(config.servers || {})) {
+            const serverConfig = server as any;
+            if (serverConfig.enabled) {
+              mcpServers[name] = {
+                type: 'stdio',
+                command: serverConfig.command,
+                args: serverConfig.args || [],
+                env: {
+                  ...process.env,
+                  ...serverConfig.env
+                }
+              };
+              console.log(`[agentic-flow] Loaded MCP server: ${name}`);
             }
           }
         }
-        // allowedTools: removed to enable ALL tools from all servers
+      } catch (error) {
+        // Silently fail if config doesn't exist or can't be read
+        console.log('[agentic-flow] No user MCP config found (this is normal)');
       }
-    });
 
-    let output = '';
-    for await (const msg of result) {
-      if (msg.type === 'assistant') {
-        const chunk = msg.message.content?.map((c: any) => c.type === 'text' ? c.text : '').join('') || '';
-        output += chunk;
+      const queryOptions: any = {
+        systemPrompt: agent.systemPrompt,
+        model: finalModel, // Claude Agent SDK handles model selection
+        permissionMode: 'bypassPermissions', // Auto-approve all tool usage for Docker automation
+        // Enable all built-in tools by default (Read, Write, Edit, Bash, Glob, Grep, WebFetch, WebSearch)
+        // Based on SDK types, allowedTools and disallowedTools control which tools are available
+        // If not specified, all tools are enabled by default
+        allowedTools: [
+          'Read',
+          'Write',
+          'Edit',
+          'Bash',
+          'Glob',
+          'Grep',
+          'WebFetch',
+          'WebSearch',
+          'NotebookEdit',
+          'TodoWrite'
+        ],
+        // Add MCP servers if configured
+        mcpServers: Object.keys(mcpServers).length > 0 ? mcpServers : undefined
+      };
 
-        if (onStream && chunk) {
-          onStream(chunk);
+      // Add environment overrides if present
+      if (Object.keys(envOverrides).length > 0) {
+        queryOptions.env = {
+          ...process.env,
+          ...envOverrides
+        };
+      }
+
+      const result = query({
+        prompt: input,
+        options: queryOptions
+      });
+
+      let output = '';
+      for await (const msg of result) {
+        if (msg.type === 'assistant') {
+          const chunk = msg.message.content?.map((c: any) => c.type === 'text' ? c.text : '').join('') || '';
+          output += chunk;
+
+          if (onStream && chunk) {
+            onStream(chunk);
+          }
         }
       }
+
+      const duration = Date.now() - startTime;
+      logger.info('Claude Agent SDK completed', {
+        agent: agent.name,
+        provider,
+        duration,
+        outputLength: output.length
+      });
+
+      return { output, agent: agent.name };
+    } catch (error: any) {
+      logger.error('Claude Agent SDK execution failed', {
+        provider,
+        model: finalModel,
+        error: error.message
+      });
+      throw error;
     }
-
-    const duration = Date.now() - startTime;
-    logger.info('Claude agent completed', {
-      agent: agent.name,
-      duration,
-      outputLength: output.length
-    });
-
-    return { output, agent: agent.name };
   });
 }

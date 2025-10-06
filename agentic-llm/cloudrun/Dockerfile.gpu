@@ -66,7 +66,9 @@ ENV CUDA_VISIBLE_DEVICES=0
 # Cloud Run requires listening on $PORT (default 8080)
 ENV PORT=8080
 
-# CRITICAL FIX: Start health server in foreground, training in background
-# Health server MUST respond on port 8080 for Cloud Run to mark container as ready
-# Training runs in background and writes to log file
-CMD ["sh", "-c", "python3 /app/cloudrun/cloud_runner.py > /app/logs/training.log 2>&1 & python3 /app/cloudrun/health_server.py"]
+# Copy and make entrypoint executable
+COPY cloudrun/entrypoint.sh /app/cloudrun/entrypoint.sh
+RUN chmod +x /app/cloudrun/entrypoint.sh
+
+# Start via entrypoint - health server first, then training
+CMD ["/app/cloudrun/entrypoint.sh"]
