@@ -54,10 +54,35 @@ Multi-model router configuration and usage.
 - [Router Config Reference](router/ROUTER_CONFIG_REFERENCE.md) - Configuration options
 - [Top 20 Models Matrix](router/TOP20_MODELS_MATRIX.md) - Model comparison guide
 
-### ✅ [Validation & Testing](validation/)
-Test results and quality assurance reports.
+### ✅ [Testing & Validation](testing/)
+Current test results, validation reports, and quality assurance.
 
-- [Validation README](validation/README.md) - Overview and archived reports
+- [Testing Overview](testing/README.md) - Current testing documentation
+- [Agent System Validation](testing/AGENT-SYSTEM-VALIDATION.md) - Multi-agent testing
+- [Final Testing Summary](testing/FINAL-TESTING-SUMMARY.md) - Comprehensive coverage
+- [Regression Test Results](testing/REGRESSION-TEST-RESULTS.md) - Regression testing
+- [Streaming & MCP Validation](testing/STREAMING-AND-MCP-VALIDATION.md) - Integration tests
+
+### 🔍 [MCP Validation](mcp-validation/)
+Model Context Protocol implementation and validation.
+
+- [MCP Validation Overview](mcp-validation/README.md) - MCP testing documentation
+- [Implementation Summary](mcp-validation/IMPLEMENTATION-SUMMARY.md) - MCP implementation
+- [CLI Validation Report](mcp-validation/MCP-CLI-VALIDATION-REPORT.md) - CLI tool testing
+- [Strange Loops Test](mcp-validation/strange-loops-test.md) - Advanced patterns
+
+### 📦 [Releases](releases/)
+Version-specific release notes and publishing documentation.
+
+- [Release Overview](releases/README.md) - Release documentation index
+- [v1.2.0 Release](releases/RELEASE-v1.2.0.md) - Latest stable release
+- [v1.2.0 Publishing Guide](releases/NPM-PUBLISH-GUIDE-v1.2.0.md) - Publishing process
+- [v1.2.1 Hotfix](releases/HOTFIX-v1.2.1.md) - Critical fixes
+
+### 🗄️ [Validation Archive](validation/)
+Historical validation reports and test archives.
+
+- [Validation Archive](validation/README.md) - Archived test reports
 
 ### 📦 [Archived](archived/)
 Historical documentation, completed implementations, and validation reports.
@@ -103,13 +128,15 @@ Historical documentation, completed implementations, and validation reports.
 ### Path 2: Developers (1.5 hours)
 1. [Architecture Overview](architecture/EXECUTIVE_SUMMARY.md) - System design (20 min)
 2. [Implementation Examples](guides/IMPLEMENTATION_EXAMPLES.md) - Code patterns (40 min)
-3. [Integration Guides](integrations/) - External services (30 min)
+3. [Integration Guides](integrations/) - External services (20 min)
+4. [Testing Documentation](testing/) - Quality assurance (10 min)
 
 ### Path 3: System Architects (2 hours)
 1. [Research Summary](architecture/RESEARCH_SUMMARY.md) - Technical findings (30 min)
 2. [Multi-Model Router Plan](architecture/MULTI_MODEL_ROUTER_PLAN.md) - Router architecture (45 min)
-3. [Integration Status](architecture/INTEGRATION-STATUS.md) - Current state (30 min)
+3. [Integration Status](architecture/INTEGRATION-STATUS.md) - Current state (20 min)
 4. [Router Documentation](router/) - Configuration and usage (15 min)
+5. [MCP Validation](mcp-validation/) - Protocol implementation (10 min)
 
 ---
 
@@ -192,5 +219,15 @@ Historical reports, completed implementations, and superseded guides are in the 
 
 ---
 
-**Documentation Status**: ✅ Organized and up-to-date
-**Last Updated**: October 5, 2025
+**Documentation Status**: ✅ Reorganized and up-to-date
+**Last Updated**: October 6, 2025
+
+## 📋 Recent Documentation Updates
+
+**v2.0 Reorganization (Oct 6, 2025)**:
+- Created dedicated `releases/` directory for version-specific documentation
+- Consolidated testing reports into `testing/` directory
+- Separated MCP validation into dedicated `mcp-validation/` section
+- Added comprehensive READMEs to all major sections
+- Archived historical v1.1.x releases for cleaner navigation
+- Improved documentation index with better categorization

@@ -12,7 +12,15 @@
 
 ## 📖 Introduction
 
-Agentic Flow is a framework for running AI agents at scale with intelligent cost optimization. It runs any Claude Code agent through the [Claude Agent SDK](https://docs.claude.com/en/api/agent-sdk), automatically routing tasks to the cheapest model that meets quality requirements.
+I built Agentic Flow to easily switch between alternative low-cost AI models in Claude Code/Agent SDK. For those comfortable using Claude agents and commands, it lets you take what you've created and deploy fully hosted agents for real business purposes. Use Claude Code to get the agent working, then deploy it in your favorite cloud.
+
+Agentic Flow runs Claude Code agents at near zero cost without rewriting a thing. The built-in model optimizer automatically routes every task to the cheapest option that meets your quality requirements—free local models for privacy, OpenRouter for 99% cost savings, Gemini for speed, or Anthropic when quality matters most. It analyzes each task and selects the optimal model from 27+ options with a single flag, reducing API costs dramatically compared to using Claude exclusively.
+
+The system spawns specialized agents on demand through Claude Code's Task tool and MCP coordination. It orchestrates swarms of 66+ pre-built agents (researchers, coders, reviewers, testers, architects) that work in parallel, coordinate through shared memory, and auto-scale based on workload. Transparent OpenRouter and Gemini proxies translate Anthropic API calls automatically—no code changes needed. Local models run direct without proxies for maximum privacy. Switch providers with environment variables, not refactoring.
+
+Extending agent capabilities is effortless. Add custom tools and integrations through the CLI—weather data, databases, search engines, or any external service—without touching config files. Your agents instantly gain new abilities across all projects. Every tool you add becomes available to the entire agent ecosystem automatically, and all operations are logged with full traceability for auditing, debugging, and compliance. This means your agents can connect to proprietary systems, third-party APIs, or internal tools in seconds, not hours.
+
+Define routing rules through flexible policy modes: Strict mode keeps sensitive data offline, Economy mode prefers free models (99% savings), Premium mode uses Anthropic for highest quality, or create custom cost/quality thresholds. The policy defines the rules; the swarm enforces them automatically. Runs local for development, Docker for CI/CD, or Flow Nexus cloud for production scale. Agentic Flow is the framework for autonomous efficiency—one unified runner for every Claude Code agent, self-tuning, self-routing, and built for real-world deployment.
 
 **Key Capabilities:**
 - ✅ **66 Specialized Agents** - Pre-built experts for coding, research, review, testing, DevOps
@@ -370,9 +378,9 @@ node dist/mcp/fastmcp/servers/http-sse.js
 - **stdio**: Claude Desktop, Cursor IDE, command-line tools
 - **HTTP/SSE**: Web apps, browser extensions, REST APIs, mobile apps
 
-### Add Custom MCP Servers (No Code Required)
+### Add Custom MCP Servers (No Code Required) ✨ NEW in v1.2.1
 
-Add your own MCP servers via CLI without editing code:
+Add your own MCP servers via CLI without editing code—extends agent capabilities in seconds:
 
 ```bash
 # Add MCP server (Claude Desktop style JSON config)
@@ -393,6 +401,13 @@ npx agentic-flow mcp disable weather
 
 # Remove server
 npx agentic-flow mcp remove weather
+
+# Test server configuration
+npx agentic-flow mcp test weather
+
+# Export/import configurations
+npx agentic-flow mcp export ./mcp-backup.json
+npx agentic-flow mcp import ./mcp-backup.json
 ```
 
 **Configuration stored in:** `~/.agentic-flow/mcp-config.json`
@@ -410,6 +425,13 @@ npx agentic-flow --agent researcher --task "Get weather forecast for Tokyo"
 - `@modelcontextprotocol/server-brave-search` - Web search
 - `weather-mcp` - Weather data
 - `database-mcp` - Database operations
+
+**v1.2.1 Improvements:**
+- ✅ CLI routing fixed - `mcp add/list/remove` commands now work correctly
+- ✅ Model optimizer filters models without tool support automatically
+- ✅ Full compatibility with Claude Desktop config format
+- ✅ Test command for validating server configurations
+- ✅ Export/import for backing up and sharing configurations
 
 **Documentation:** See [docs/guides/ADDING-MCP-SERVERS-CLI.md](docs/guides/ADDING-MCP-SERVERS-CLI.md) for complete guide.
 
