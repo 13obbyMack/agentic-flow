@@ -52,7 +52,7 @@ function getProxyConfig(provider: string, customPort?: number): ProxyConfig {
         provider: 'openrouter',
         port,
         baseUrl,
-        model: process.env.COMPLETION_MODEL || 'deepseek/deepseek-chat',
+        model: process.env.COMPLETION_MODEL || 'mistralai/mistral-small-3.1-24b-instruct',
         apiKey: process.env.OPENROUTER_API_KEY || '',
         requiresProxy: true
       };
@@ -139,7 +139,7 @@ async function startProxyServer(config: ProxyConfig): Promise<any> {
     proxy = new AnthropicToOpenRouterProxy({
       openrouterApiKey: config.apiKey,
       openrouterBaseUrl: process.env.ANTHROPIC_PROXY_BASE_URL,
-      defaultModel: config.model || 'deepseek/deepseek-chat'
+      defaultModel: config.model || 'mistralai/mistral-small-3.1-24b-instruct'
     });
   }
 
@@ -226,20 +226,20 @@ Examples:
 
   # Non-interactive mode - Execute task and exit
   $ agentic-flow claude-code --provider openrouter "Write a Python hello world function"
-  $ agentic-flow claude-code --provider openrouter --model "deepseek/deepseek-chat" "Create REST API"
+  $ agentic-flow claude-code --provider openrouter --model "mistralai/mistral-small-3.1-24b-instruct" "Create REST API"
 
   # Using different providers
-  $ agentic-flow claude-code --provider openrouter  # Uses DeepSeek (default, $0.14/M tokens)
+  $ agentic-flow claude-code --provider openrouter  # Uses Mistral Small (default, $0.02/M tokens)
   $ agentic-flow claude-code --provider gemini      # Uses Gemini 2.0 Flash
   $ agentic-flow claude-code --provider onnx        # Uses local ONNX models (free)
 
 Recommended Models:
   OpenRouter:
-    deepseek/deepseek-chat              (default, $0.14/M, 128k context, supports tools)
+    mistralai/mistral-small-3.1-24b-instruct  (default, $0.02/M, 128k context, optimized for tools)
     anthropic/claude-3.5-sonnet         ($3/M, highest quality, large context)
     google/gemini-2.0-flash-exp:free    (FREE tier, rate limited)
 
-  Note: Models with <128k context may fail with tool definitions (Mistral Small: 32k)
+  Note: Models with <128k context will fail with tool definitions (Claude sends 35k+ tokens)
 
 Environment Variables:
   OPENROUTER_API_KEY    Required for --provider openrouter
@@ -253,7 +253,7 @@ Documentation:
 `)
     .option('--provider <provider>', 'AI provider (anthropic, openrouter, gemini, onnx)', 'anthropic')
     .option('--port <port>', 'Proxy server port', '3000')
-    .option('--model <model>', 'Specific model to use (e.g., deepseek/deepseek-chat)')
+    .option('--model <model>', 'Specific model to use (e.g., mistralai/mistral-small-3.1-24b-instruct)')
     .option('--keep-proxy', 'Keep proxy running after Claude Code exits')
     .option('--no-auto-start', 'Skip proxy startup (use existing proxy)')
     .allowUnknownOption(true)
