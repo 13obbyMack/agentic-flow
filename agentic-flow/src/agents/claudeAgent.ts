@@ -127,14 +127,14 @@ export async function claudeAgent(
       // MCP server setup - enable in-SDK server and optional external servers
       const mcpServers: any = {};
 
-      // Enable in-SDK MCP server for custom tools
-      if (process.env.ENABLE_CLAUDE_FLOW_SDK === 'true') {
+      // Enable in-SDK MCP server for custom tools (enabled by default)
+      if (process.env.ENABLE_CLAUDE_FLOW_SDK !== 'false') {
         mcpServers['claude-flow-sdk'] = claudeFlowSdkServer;
       }
 
-      // Optional external MCP servers (disabled by default to avoid subprocess failures)
-      // Enable by setting ENABLE_CLAUDE_FLOW_MCP=true or ENABLE_FLOW_NEXUS_MCP=true
-      if (process.env.ENABLE_CLAUDE_FLOW_MCP === 'true') {
+      // External MCP servers (enabled by default for full 213-tool access)
+      // Disable by setting ENABLE_CLAUDE_FLOW_MCP=false
+      if (process.env.ENABLE_CLAUDE_FLOW_MCP !== 'false') {
         mcpServers['claude-flow'] = {
           type: 'stdio',
           command: 'npx',
@@ -147,7 +147,7 @@ export async function claudeAgent(
         };
       }
 
-      if (process.env.ENABLE_FLOW_NEXUS_MCP === 'true') {
+      if (process.env.ENABLE_FLOW_NEXUS_MCP !== 'false') {
         mcpServers['flow-nexus'] = {
           type: 'stdio',
           command: 'npx',
@@ -159,7 +159,7 @@ export async function claudeAgent(
         };
       }
 
-      if (process.env.ENABLE_AGENTIC_PAYMENTS_MCP === 'true') {
+      if (process.env.ENABLE_AGENTIC_PAYMENTS_MCP !== 'false') {
         mcpServers['agentic-payments'] = {
           type: 'stdio',
           command: 'npx',
