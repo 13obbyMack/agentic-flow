@@ -80,6 +80,32 @@ class AgenticFlowCLI {
       process.exit(0);
     }
 
+    if (options.mode === 'mcp-manager') {
+      // Handle MCP manager commands (add, list, remove, etc.)
+      const { spawn } = await import('child_process');
+      const { resolve, dirname } = await import('path');
+      const { fileURLToPath } = await import('url');
+
+      const __filename = fileURLToPath(import.meta.url);
+      const __dirname = dirname(__filename);
+      const mcpManagerPath = resolve(__dirname, './cli/mcp-manager.js');
+
+      // Pass all args after 'mcp' to mcp-manager
+      const mcpArgs = process.argv.slice(3); // Skip 'node', 'cli-proxy.js', 'mcp'
+
+      const proc = spawn('node', [mcpManagerPath, ...mcpArgs], {
+        stdio: 'inherit'
+      });
+
+      proc.on('exit', (code) => {
+        process.exit(code || 0);
+      });
+
+      process.on('SIGINT', () => proc.kill('SIGINT'));
+      process.on('SIGTERM', () => proc.kill('SIGTERM'));
+      return;
+    }
+
     if (options.mode === 'proxy') {
       // Run standalone proxy server for Claude Code/Cursor
       await this.runStandaloneProxy();
@@ -135,7 +161,8 @@ class AgenticFlowCLI {
         agent: options.agent,
         task: options.task,
         priority: options.optimizePriority || 'balanced',
-        maxCostPerTask: options.maxCost
+        maxCostPerTask: options.maxCost,
+        requiresTools: true // Agents have MCP tools available, so require tool support
       });
 
       // Display recommendation
