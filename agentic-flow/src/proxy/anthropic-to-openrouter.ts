@@ -4,6 +4,8 @@ import express, { Request, Response, NextFunction } from 'express';
 import { createProxyMiddleware, Options } from 'http-proxy-middleware';
 import { logger } from '../utils/logger.js';
 import { getInstructionsForModel, formatInstructions, taskRequiresFileOps, getMaxTokensForModel } from './provider-instructions.js';
+import { ModelCapabilities, detectModelCapabilities } from '../utils/modelCapabilities.js';
+import { ToolEmulator, executeEmulation, ToolCall } from './tool-emulation.js';
 
 interface AnthropicMessage {
   role: 'user' | 'assistant';
@@ -60,16 +62,28 @@ export class AnthropicToOpenRouterProxy {
   private openrouterApiKey: string;
   private openrouterBaseUrl: string;
   private defaultModel: string;
+  private capabilities?: ModelCapabilities;
 
   constructor(config: {
     openrouterApiKey: string;
     openrouterBaseUrl?: string;
     defaultModel?: string;
+    capabilities?: ModelCapabilities;
   }) {
     this.app = express();
     this.openrouterApiKey = config.openrouterApiKey;
     this.openrouterBaseUrl = config.openrouterBaseUrl || 'https://openrouter.ai/api/v1';
     this.defaultModel = config.defaultModel || 'meta-llama/llama-3.1-8b-instruct';
+    this.capabilities = config.capabilities;
+
+    // Debug logging
+    if (this.capabilities) {
+      logger.info('Proxy initialized with capabilities', {
+        model: this.defaultModel,
+        requiresEmulation: this.capabilities.requiresEmulation,
+        strategy: this.capabilities.emulationStrategy
+      });
+    }
 
     this.setupMiddleware();
     this.setupRoutes();
@@ -132,110 +146,10 @@ export class AnthropicToOpenRouterProxy {
           });
         }
 
-        // Convert Anthropic format to OpenAI format
-        const openaiReq = this.convertAnthropicToOpenAI(anthropicReq);
-
-        // VERBOSE LOGGING: Log converted OpenAI request
-        logger.info('=== CONVERTED OPENAI REQUEST ===', {
-          anthropicModel: anthropicReq.model,
-          openaiModel: openaiReq.model,
-          messageCount: openaiReq.messages.length,
-          systemPrompt: openaiReq.messages[0]?.content?.substring(0, 300),
-          toolCount: openaiReq.tools?.length || 0,
-          toolNames: openaiReq.tools?.map(t => t.function.name) || [],
-          maxTokens: openaiReq.max_tokens,
-          apiKeyPresent: !!this.openrouterApiKey,
-          apiKeyPrefix: this.openrouterApiKey?.substring(0, 10)
-        });
-
-        // Forward to OpenRouter
-        const response = await fetch(`${this.openrouterBaseUrl}/chat/completions`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${this.openrouterApiKey}`,
-            'Content-Type': 'application/json',
-            'HTTP-Referer': 'https://github.com/ruvnet/agentic-flow',
-            'X-Title': 'Agentic Flow'
-          },
-          body: JSON.stringify(openaiReq)
-        });
-
-        if (!response.ok) {
-          const error = await response.text();
-          logger.error('OpenRouter API error', { status: response.status, error });
-          return res.status(response.status).json({
-            error: {
-              type: 'api_error',
-              message: error
-            }
-          });
-        }
-
-        // VERBOSE LOGGING: Log OpenRouter response status
-        logger.info('=== OPENROUTER RESPONSE RECEIVED ===', {
-          status: response.status,
-          statusText: response.statusText,
-          headers: Object.fromEntries(response.headers.entries())
-        });
-
-        // Handle streaming vs non-streaming
-        if (anthropicReq.stream) {
-          logger.info('Handling streaming response...');
-          // Stream response
-          res.setHeader('Content-Type', 'text/event-stream');
-          res.setHeader('Cache-Control', 'no-cache');
-          res.setHeader('Connection', 'keep-alive');
-
-          const reader = response.body?.getReader();
-          if (!reader) {
-            throw new Error('No response body');
-          }
-
-          const decoder = new TextDecoder();
-          while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
-
-            const chunk = decoder.decode(value);
-            const anthropicChunk = this.convertOpenAIStreamToAnthropic(chunk);
-            res.write(anthropicChunk);
-          }
-
-          res.end();
-        } else {
-          logger.info('Handling non-streaming response...');
-          // Non-streaming response
-          const openaiRes = await response.json();
-
-          // VERBOSE LOGGING: Log raw OpenAI response
-          logger.info('=== RAW OPENAI RESPONSE ===', {
-            id: openaiRes.id,
-            model: openaiRes.model,
-            choices: openaiRes.choices?.length,
-            finishReason: openaiRes.choices?.[0]?.finish_reason,
-            hasToolCalls: !!(openaiRes.choices?.[0]?.message?.tool_calls),
-            toolCallCount: openaiRes.choices?.[0]?.message?.tool_calls?.length || 0,
-            toolCallNames: openaiRes.choices?.[0]?.message?.tool_calls?.map((tc: any) => tc.function.name) || [],
-            contentPreview: openaiRes.choices?.[0]?.message?.content?.substring(0, 300),
-            usage: openaiRes.usage
-          });
-
-          const anthropicRes = this.convertOpenAIToAnthropic(openaiRes);
-
-          // VERBOSE LOGGING: Log converted Anthropic response
-          logger.info('=== CONVERTED ANTHROPIC RESPONSE ===', {
-            id: anthropicRes.id,
-            model: anthropicRes.model,
-            role: anthropicRes.role,
-            stopReason: anthropicRes.stop_reason,
-            contentBlocks: anthropicRes.content?.length,
-            contentTypes: anthropicRes.content?.map((c: any) => c.type),
-            toolUseCount: anthropicRes.content?.filter((c: any) => c.type === 'tool_use').length,
-            textPreview: anthropicRes.content?.find((c: any) => c.type === 'text')?.text?.substring(0, 200),
-            usage: anthropicRes.usage
-          });
-
-          res.json(anthropicRes);
+        // Route to appropriate handler based on capabilities
+        const result = await this.handleRequest(anthropicReq, res);
+        if (result) {
+          res.json(result);
         }
       } catch (error: any) {
         logger.error('Proxy error', { error: error.message, stack: error.stack });
@@ -259,6 +173,196 @@ export class AnthropicToOpenRouterProxy {
       });
     });
   }
+
+  private async handleRequest(anthropicReq: AnthropicRequest, res: Response): Promise<any> {
+    const model = anthropicReq.model || this.defaultModel;
+    const capabilities = this.capabilities || detectModelCapabilities(model);
+
+    // Check if emulation is required
+    if (capabilities.requiresEmulation && anthropicReq.tools && anthropicReq.tools.length > 0) {
+      logger.info(`Using tool emulation for model: ${model}`);
+      return this.handleEmulatedRequest(anthropicReq, capabilities);
+    }
+
+    return this.handleNativeRequest(anthropicReq, res);
+  }
+
+  private async handleNativeRequest(anthropicReq: AnthropicRequest, res: Response): Promise<any> {
+    // Convert Anthropic format to OpenAI format
+    const openaiReq = this.convertAnthropicToOpenAI(anthropicReq);
+
+    // VERBOSE LOGGING: Log converted OpenAI request
+    logger.info('=== CONVERTED OPENAI REQUEST ===', {
+      anthropicModel: anthropicReq.model,
+      openaiModel: openaiReq.model,
+      messageCount: openaiReq.messages.length,
+      systemPrompt: openaiReq.messages[0]?.content?.substring(0, 300),
+      toolCount: openaiReq.tools?.length || 0,
+      toolNames: openaiReq.tools?.map(t => t.function.name) || [],
+      maxTokens: openaiReq.max_tokens,
+      apiKeyPresent: !!this.openrouterApiKey,
+      apiKeyPrefix: this.openrouterApiKey?.substring(0, 10)
+    });
+
+    // Forward to OpenRouter
+    const response = await fetch(`${this.openrouterBaseUrl}/chat/completions`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${this.openrouterApiKey}`,
+        'Content-Type': 'application/json',
+        'HTTP-Referer': 'https://github.com/ruvnet/agentic-flow',
+        'X-Title': 'Agentic Flow'
+      },
+      body: JSON.stringify(openaiReq)
+    });
+
+    if (!response.ok) {
+      const error = await response.text();
+      logger.error('OpenRouter API error', { status: response.status, error });
+      res.status(response.status).json({
+        error: {
+          type: 'api_error',
+          message: error
+        }
+      });
+      return null;
+    }
+
+    // VERBOSE LOGGING: Log OpenRouter response status
+    logger.info('=== OPENROUTER RESPONSE RECEIVED ===', {
+      status: response.status,
+      statusText: response.statusText,
+      headers: Object.fromEntries(response.headers.entries())
+    });
+
+    // Handle streaming vs non-streaming
+    if (anthropicReq.stream) {
+      logger.info('Handling streaming response...');
+      // Stream response
+      res.setHeader('Content-Type', 'text/event-stream');
+      res.setHeader('Cache-Control', 'no-cache');
+      res.setHeader('Connection', 'keep-alive');
+
+      const reader = response.body?.getReader();
+      if (!reader) {
+        throw new Error('No response body');
+      }
+
+      const decoder = new TextDecoder();
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value);
+        const anthropicChunk = this.convertOpenAIStreamToAnthropic(chunk);
+        res.write(anthropicChunk);
+      }
+
+      res.end();
+      return null; // Already sent response
+    } else {
+      logger.info('Handling non-streaming response...');
+      // Non-streaming response
+      const openaiRes = await response.json();
+
+      // VERBOSE LOGGING: Log raw OpenAI response
+      logger.info('=== RAW OPENAI RESPONSE ===', {
+        id: openaiRes.id,
+        model: openaiRes.model,
+        choices: openaiRes.choices?.length,
+        finishReason: openaiRes.choices?.[0]?.finish_reason,
+        hasToolCalls: !!(openaiRes.choices?.[0]?.message?.tool_calls),
+        toolCallCount: openaiRes.choices?.[0]?.message?.tool_calls?.length || 0,
+        toolCallNames: openaiRes.choices?.[0]?.message?.tool_calls?.map((tc: any) => tc.function.name) || [],
+        contentPreview: openaiRes.choices?.[0]?.message?.content?.substring(0, 300),
+        usage: openaiRes.usage
+      });
+
+      const anthropicRes = this.convertOpenAIToAnthropic(openaiRes);
+
+      // VERBOSE LOGGING: Log converted Anthropic response
+      logger.info('=== CONVERTED ANTHROPIC RESPONSE ===', {
+        id: anthropicRes.id,
+        model: anthropicRes.model,
+        role: anthropicRes.role,
+        stopReason: anthropicRes.stop_reason,
+        contentBlocks: anthropicRes.content?.length,
+        contentTypes: anthropicRes.content?.map((c: any) => c.type),
+        toolUseCount: anthropicRes.content?.filter((c: any) => c.type === 'tool_use').length,
+        textPreview: anthropicRes.content?.find((c: any) => c.type === 'text')?.text?.substring(0, 200),
+        usage: anthropicRes.usage
+      });
+
+      return anthropicRes;
+    }
+  }
+
+  private async handleEmulatedRequest(
+    anthropicReq: AnthropicRequest,
+    capabilities: ModelCapabilities
+  ): Promise<any> {
+    const emulator = new ToolEmulator(
+      anthropicReq.tools || [],
+      capabilities.emulationStrategy as 'react' | 'prompt'
+    );
+
+    const lastMessage = anthropicReq.messages[anthropicReq.messages.length - 1];
+    const userMessage = typeof lastMessage.content === 'string'
+      ? lastMessage.content
+      : (lastMessage.content.find(c => c.type === 'text')?.text || '');
+
+    const result = await executeEmulation(
+      emulator,
+      userMessage,
+      async (prompt) => {
+        // Call model with emulation prompt
+        const openaiReq = {
+          model: anthropicReq.model || this.defaultModel,
+          messages: [{ role: 'user', content: prompt }],
+          temperature: anthropicReq.temperature,
+          max_tokens: anthropicReq.max_tokens
+        };
+        const response = await this.callOpenRouter(openaiReq);
+        return response.choices[0].message.content;
+      },
+      async (toolCall: ToolCall) => {
+        logger.warn(`Tool execution not yet implemented: ${toolCall.name}`);
+        return { error: 'Tool execution not implemented in Phase 2' };
+      },
+      { maxIterations: 5, verbose: process.env.VERBOSE === 'true' }
+    );
+
+    return {
+      id: `emulated_${Date.now()}`,
+      type: 'message',
+      role: 'assistant',
+      content: [{ type: 'text', text: result.finalAnswer || 'No response' }],
+      model: anthropicReq.model || this.defaultModel,
+      stop_reason: 'end_turn',
+      usage: { input_tokens: 0, output_tokens: 0 }
+    };
+  }
+
+  private async callOpenRouter(openaiReq: any): Promise<any> {
+    const response = await fetch(`${this.openrouterBaseUrl}/chat/completions`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${this.openrouterApiKey}`,
+        'Content-Type': 'application/json',
+        'HTTP-Referer': 'https://github.com/ruvnet/agentic-flow',
+        'X-Title': 'Agentic Flow'
+      },
+      body: JSON.stringify(openaiReq)
+    });
+
+    if (!response.ok) {
+      const error = await response.text();
+      throw new Error(`OpenRouter API error: ${error}`);
+    }
+
+    return response.json();
+  }
+
 
   private convertAnthropicToOpenAI(anthropicReq: AnthropicRequest): OpenAIRequest {
     logger.info('=== STARTING ANTHROPIC TO OPENAI CONVERSION ===');
@@ -630,7 +734,13 @@ export class AnthropicToOpenRouterProxy {
       });
       console.log(`\n✅ Anthropic Proxy running at http://localhost:${port}`);
       console.log(`   OpenRouter Base URL: ${this.openrouterBaseUrl}`);
-      console.log(`   Default Model: ${this.defaultModel}\n`);
+      console.log(`   Default Model: ${this.defaultModel}`);
+
+      if (this.capabilities?.requiresEmulation) {
+        console.log(`\n   ⚙️  Tool Emulation: ${this.capabilities.emulationStrategy.toUpperCase()} pattern`);
+        console.log(`   📊 Expected reliability: ${this.capabilities.emulationStrategy === 'react' ? '70-85%' : '50-70%'}`);
+      }
+      console.log('');
     });
   }
 }
