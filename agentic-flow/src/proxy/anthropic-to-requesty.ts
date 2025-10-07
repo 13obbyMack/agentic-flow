@@ -358,25 +358,99 @@ export class AnthropicToRequestyProxy {
   }
 
   private async callRequesty(openaiReq: any): Promise<any> {
-    const response = await fetch(`${this.requestyBaseUrl}/chat/completions`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${this.requestyApiKey}`,
-        'Content-Type': 'application/json',
-        'HTTP-Referer': 'https://github.com/ruvnet/agentic-flow',
-        'X-Title': 'Agentic Flow'
-      },
-      body: JSON.stringify(openaiReq)
-    });
+    // Add timeout for Requesty API calls (60 seconds)
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 60000);
 
-    if (!response.ok) {
-      const error = await response.text();
-      throw new Error(`Requesty API error: ${error}`);
+    try {
+      const response = await fetch(`${this.requestyBaseUrl}/chat/completions`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${this.requestyApiKey}`,
+          'Content-Type': 'application/json',
+          'HTTP-Referer': 'https://github.com/ruvnet/agentic-flow',
+          'X-Title': 'Agentic Flow'
+        },
+        body: JSON.stringify(openaiReq),
+        signal: controller.signal
+      });
+
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        const error = await response.text();
+        throw new Error(`Requesty API error: ${error}`);
+      }
+
+      return response.json();
+    } catch (error: any) {
+      clearTimeout(timeoutId);
+      if (error.name === 'AbortError') {
+        throw new Error('Requesty API request timed out after 60 seconds');
+      }
+      throw error;
     }
-
-    return response.json();
   }
 
+
+  /**
+   * Sanitize JSON Schema to be OpenAI-compatible
+   * Fixes array properties without items, removes unsupported keywords
+   */
+  private sanitizeJsonSchema(schema: any, path: string = 'root'): any {
+    if (!schema || typeof schema !== 'object') {
+      return schema;
+    }
+
+    // Create a shallow copy to avoid mutations
+    const sanitized = { ...schema };
+
+    // Fix array types without items
+    if (sanitized.type === 'array' && !sanitized.items) {
+      logger.warn(`Schema sanitization: Adding missing 'items' for array at ${path}`);
+      sanitized.items = { type: 'string' };
+    }
+
+    // Remove JSON Schema 2020-12 keywords not supported by OpenAI
+    const unsupportedKeywords = [
+      '$schema', '$id', '$ref', '$defs', 'definitions',
+      'if', 'then', 'else', 'dependentSchemas', 'dependentRequired',
+      'prefixItems', 'unevaluatedItems', 'unevaluatedProperties',
+      'minContains', 'maxContains', 'patternProperties',
+      'additionalItems', 'contains'
+    ];
+
+    for (const keyword of unsupportedKeywords) {
+      if (keyword in sanitized) {
+        logger.warn(`Schema sanitization: Removing unsupported keyword '${keyword}' at ${path}`);
+        delete sanitized[keyword];
+      }
+    }
+
+    // Recursively sanitize nested properties
+    if (sanitized.properties && typeof sanitized.properties === 'object') {
+      sanitized.properties = {};
+      for (const [key, value] of Object.entries(schema.properties)) {
+        sanitized.properties[key] = this.sanitizeJsonSchema(value, `${path}.properties.${key}`);
+      }
+    }
+
+    // Recursively sanitize array items
+    if (sanitized.items && typeof sanitized.items === 'object') {
+      sanitized.items = this.sanitizeJsonSchema(sanitized.items, `${path}.items`);
+    }
+
+    // Recursively sanitize allOf, anyOf, oneOf
+    for (const combinator of ['allOf', 'anyOf', 'oneOf']) {
+      if (Array.isArray(sanitized[combinator])) {
+        sanitized[combinator] = sanitized[combinator].map((subschema: any, index: number) =>
+          this.sanitizeJsonSchema(subschema, `${path}.${combinator}[${index}]`)
+        );
+      }
+    }
+
+    return sanitized;
+  }
 
   private convertAnthropicToOpenAI(anthropicReq: AnthropicRequest): OpenAIRequest {
     logger.info('=== STARTING ANTHROPIC TO OPENAI CONVERSION ===');
@@ -501,31 +575,49 @@ export class AnthropicToRequestyProxy {
 
     // Convert MCP/Anthropic tools to OpenAI tools format
     if (anthropicReq.tools && anthropicReq.tools.length > 0) {
-      logger.info('Converting MCP tools to OpenAI format...');
-      openaiReq.tools = anthropicReq.tools.map(tool => {
-        const openaiTool = {
-          type: 'function' as const,
-          function: {
-            name: tool.name,
-            description: tool.description || '',
-            parameters: tool.input_schema || {
-              type: 'object',
-              properties: {},
-              required: []
-            }
-          }
-        };
-        logger.info(`Converted tool: ${tool.name}`, {
-          hasDescription: !!tool.description,
-          hasInputSchema: !!tool.input_schema
-        });
-        return openaiTool;
+      logger.info('Converting MCP tools to OpenAI format...', {
+        totalTools: anthropicReq.tools.length
       });
 
-      logger.info('Forwarding MCP tools to Requesty', {
-        toolCount: openaiReq.tools.length,
-        toolNames: openaiReq.tools.map(t => t.function.name)
-      });
+      // Requesty has strict limits - only send a subset of tools to avoid timeouts
+      // Requesty also rejects empty tools arrays, so we either send tools or omit the parameter
+      const MAX_TOOLS_FOR_REQUESTY = 10; // Very conservative limit - Requesty timeouts with more
+      const toolsToConvert = anthropicReq.tools.slice(0, MAX_TOOLS_FOR_REQUESTY);
+
+      if (anthropicReq.tools.length > MAX_TOOLS_FOR_REQUESTY) {
+        logger.warn(`Limiting tools to ${MAX_TOOLS_FOR_REQUESTY} for Requesty (${anthropicReq.tools.length} available)`);
+      }
+
+      // Only set tools if we have at least one (Requesty rejects empty arrays)
+      if (toolsToConvert.length > 0) {
+        openaiReq.tools = toolsToConvert.map(tool => {
+          // Sanitize the input schema to fix array properties without items
+          const rawSchema = tool.input_schema || {
+            type: 'object',
+            properties: {},
+            required: []
+          };
+          const sanitizedSchema = this.sanitizeJsonSchema(rawSchema, `tool.${tool.name}`);
+
+          const openaiTool = {
+            type: 'function' as const,
+            function: {
+              name: tool.name,
+              description: tool.description || '',
+              parameters: sanitizedSchema
+            }
+          };
+          return openaiTool;
+        });
+
+        logger.info('Forwarding MCP tools to Requesty', {
+          toolCount: openaiReq.tools.length,
+          toolNames: openaiReq.tools.map(t => t.function.name).slice(0, 5)
+        });
+      } else {
+        logger.info('No tools to send (omitting tools parameter entirely for Requesty)');
+        // Don't set openaiReq.tools at all - Requesty rejects empty arrays
+      }
     } else {
       logger.info('No MCP tools to convert');
     }
