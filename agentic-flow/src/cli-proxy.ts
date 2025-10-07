@@ -30,6 +30,7 @@ function loadEnvRecursive(startPath: string = process.cwd()): boolean {
 
 loadEnvRecursive();
 import { AnthropicToOpenRouterProxy } from "./proxy/anthropic-to-openrouter.js";
+import { AnthropicToRequestyProxy } from "./proxy/anthropic-to-requesty.js";
 import { logger } from "./utils/logger.js";
 import { parseArgs } from "./utils/cli.js";
 import { getAgent, listAgents } from "./utils/agentLoader.js";
@@ -190,6 +191,7 @@ class AgenticFlowCLI {
     const useONNX = this.shouldUseONNX(options);
     const useOpenRouter = this.shouldUseOpenRouter(options);
     const useGemini = this.shouldUseGemini(options);
+    const useRequesty = this.shouldUseRequesty(options);
 
     // Debug output for provider selection
     if (options.verbose || process.env.VERBOSE === 'true') {
@@ -199,16 +201,21 @@ class AgenticFlowCLI {
       console.log(`  Use ONNX: ${useONNX}`);
       console.log(`  Use OpenRouter: ${useOpenRouter}`);
       console.log(`  Use Gemini: ${useGemini}`);
+      console.log(`  Use Requesty: ${useRequesty}`);
       console.log(`  OPENROUTER_API_KEY: ${process.env.OPENROUTER_API_KEY ? '✓ set' : '✗ not set'}`);
       console.log(`  GOOGLE_GEMINI_API_KEY: ${process.env.GOOGLE_GEMINI_API_KEY ? '✓ set' : '✗ not set'}`);
+      console.log(`  REQUESTY_API_KEY: ${process.env.REQUESTY_API_KEY ? '✓ set' : '✗ not set'}`);
       console.log(`  ANTHROPIC_API_KEY: ${process.env.ANTHROPIC_API_KEY ? '✓ set' : '✗ not set'}\n`);
     }
 
     try {
-      // Start proxy if needed (ONNX, OpenRouter, or Gemini)
+      // Start proxy if needed (ONNX, OpenRouter, Gemini, or Requesty)
       if (useONNX) {
         console.log('🚀 Initializing ONNX local inference proxy...');
         await this.startONNXProxy(options.model);
+      } else if (useRequesty) {
+        console.log('🚀 Initializing Requesty proxy...');
+        await this.startRequestyProxy(options.model);
       } else if (useOpenRouter) {
         console.log('🚀 Initializing OpenRouter proxy...');
         await this.startOpenRouterProxy(options.model);
@@ -220,7 +227,7 @@ class AgenticFlowCLI {
       }
 
       // Run agent
-      await this.runAgent(options, useOpenRouter, useGemini, useONNX);
+      await this.runAgent(options, useOpenRouter, useGemini, useONNX, useRequesty);
 
       logger.info('Execution completed successfully');
       process.exit(0);
@@ -271,13 +278,33 @@ class AgenticFlowCLI {
     return false;
   }
 
+  private shouldUseRequesty(options: any): boolean {
+    // Use Requesty if:
+    // 1. Provider is explicitly set to requesty
+    // 2. PROVIDER env var is set to requesty
+    // 3. USE_REQUESTY env var is set
+    if (options.provider === 'requesty' || process.env.PROVIDER === 'requesty') {
+      return true;
+    }
+
+    if (process.env.USE_REQUESTY === 'true') {
+      return true;
+    }
+
+    return false;
+  }
+
   private shouldUseOpenRouter(options: any): boolean {
-    // Don't use OpenRouter if ONNX or Gemini is explicitly requested
+    // Don't use OpenRouter if ONNX, Gemini, or Requesty is explicitly requested
     if (options.provider === 'onnx' || process.env.USE_ONNX === 'true' || process.env.PROVIDER === 'onnx') {
       return false;
     }
 
     if (options.provider === 'gemini' || process.env.PROVIDER === 'gemini') {
+      return false;
+    }
+
+    if (options.provider === 'requesty' || process.env.PROVIDER === 'requesty') {
       return false;
     }
 
@@ -395,6 +422,58 @@ class AgenticFlowCLI {
     console.log(`🔗 Proxy Mode: Google Gemini`);
     console.log(`🔧 Proxy URL: http://localhost:${this.proxyPort}`);
     console.log(`🤖 Default Model: ${defaultModel}\n`);
+
+    // Wait for proxy to be ready
+    await new Promise(resolve => setTimeout(resolve, 1500));
+  }
+
+  private async startRequestyProxy(modelOverride?: string): Promise<void> {
+    const requestyKey = process.env.REQUESTY_API_KEY;
+
+    if (!requestyKey) {
+      console.error('❌ Error: REQUESTY_API_KEY required for Requesty models');
+      console.error('Set it in .env or export REQUESTY_API_KEY=sk-xxxxx');
+      process.exit(1);
+    }
+
+    logger.info('Starting integrated Requesty proxy');
+
+    const defaultModel = modelOverride ||
+                        process.env.COMPLETION_MODEL ||
+                        process.env.REASONING_MODEL ||
+                        'deepseek/deepseek-chat';
+
+    const capabilities = detectModelCapabilities(defaultModel);
+
+    const proxy = new AnthropicToRequestyProxy({
+      requestyApiKey: requestyKey,
+      requestyBaseUrl: process.env.REQUESTY_BASE_URL,
+      defaultModel,
+      capabilities: capabilities
+    });
+
+    // Start proxy in background
+    proxy.start(this.proxyPort);
+    this.proxyServer = proxy;
+
+    // Set ANTHROPIC_BASE_URL to proxy
+    process.env.ANTHROPIC_BASE_URL = `http://localhost:${this.proxyPort}`;
+
+    // Set dummy ANTHROPIC_API_KEY for proxy (actual auth uses REQUESTY_API_KEY)
+    if (!process.env.ANTHROPIC_API_KEY) {
+      process.env.ANTHROPIC_API_KEY = 'sk-ant-proxy-dummy-key';
+    }
+
+    console.log(`🔗 Proxy Mode: Requesty`);
+    console.log(`🔧 Proxy URL: http://localhost:${this.proxyPort}`);
+    console.log(`🤖 Default Model: ${defaultModel}`);
+
+    if (capabilities.requiresEmulation) {
+      console.log(`\n⚙️  Detected: Model lacks native tool support`);
+      console.log(`🔧 Using ${capabilities.emulationStrategy.toUpperCase()} emulation pattern`);
+      console.log(`📊 Expected reliability: ${capabilities.emulationStrategy === 'react' ? '70-85%' : '50-70%'}`);
+    }
+    console.log('');
 
     // Wait for proxy to be ready
     await new Promise(resolve => setTimeout(resolve, 1500));
@@ -592,7 +671,7 @@ EXAMPLES:
 `);
   }
 
-  private async runAgent(options: any, useOpenRouter: boolean, useGemini: boolean, useONNX: boolean = false): Promise<void> {
+  private async runAgent(options: any, useOpenRouter: boolean, useGemini: boolean, useONNX: boolean = false, useRequesty: boolean = false): Promise<void> {
     const agentName = options.agent || process.env.AGENT || '';
     const task = options.task || process.env.TASK || '';
 
@@ -616,11 +695,24 @@ EXAMPLES:
     // Check for API key (unless using ONNX)
     const isOnnx = options.provider === 'onnx' || process.env.USE_ONNX === 'true' || process.env.PROVIDER === 'onnx';
 
-    if (!isOnnx && !useOpenRouter && !useGemini && !process.env.ANTHROPIC_API_KEY) {
+    if (!isOnnx && !useOpenRouter && !useGemini && !useRequesty && !process.env.ANTHROPIC_API_KEY) {
       console.error('\n❌ Error: ANTHROPIC_API_KEY is required\n');
       console.error('Please set your API key:');
       console.error('  export ANTHROPIC_API_KEY=sk-ant-xxxxx\n');
       console.error('Or use alternative providers:');
+      console.error('  --provider openrouter  (requires OPENROUTER_API_KEY)');
+      console.error('  --provider requesty    (requires REQUESTY_API_KEY)');
+      console.error('  --provider gemini      (requires GOOGLE_GEMINI_API_KEY)');
+      console.error('  --provider onnx        (free local inference)\n');
+      process.exit(1);
+    }
+
+    if (!isOnnx && useRequesty && !process.env.REQUESTY_API_KEY) {
+      console.error('\n❌ Error: REQUESTY_API_KEY is required for Requesty\n');
+      console.error('Please set your API key:');
+      console.error('  export REQUESTY_API_KEY=sk-xxxxx\n');
+      console.error('Or use alternative providers:');
+      console.error('  --provider anthropic   (requires ANTHROPIC_API_KEY)');
       console.error('  --provider openrouter  (requires OPENROUTER_API_KEY)');
       console.error('  --provider gemini      (requires GOOGLE_GEMINI_API_KEY)');
       console.error('  --provider onnx        (free local inference)\n');
@@ -633,6 +725,7 @@ EXAMPLES:
       console.error('  export OPENROUTER_API_KEY=sk-or-v1-xxxxx\n');
       console.error('Or use alternative providers:');
       console.error('  --provider anthropic  (requires ANTHROPIC_API_KEY)');
+      console.error('  --provider requesty   (requires REQUESTY_API_KEY)');
       console.error('  --provider gemini     (requires GOOGLE_GEMINI_API_KEY)');
       console.error('  --provider onnx       (free local inference)\n');
       process.exit(1);
@@ -782,7 +875,7 @@ AGENT COMMANDS:
 OPTIONS:
   --task, -t <task>           Task description for agent mode
   --model, -m <model>         Model to use (triggers OpenRouter if contains "/")
-  --provider, -p <name>       Provider to use (anthropic, openrouter, gemini, onnx)
+  --provider, -p <name>       Provider to use (anthropic, openrouter, requesty, gemini, onnx)
   --stream, -s                Enable real-time streaming output
   --help, -h                  Show this help message
 
@@ -829,16 +922,19 @@ EXAMPLES:
 
   # Proxy Server for Claude Code/Cursor
   npx agentic-flow proxy --provider openrouter --port 3000
+  npx agentic-flow proxy --provider requesty --port 3000
   npx agentic-flow proxy --provider gemini --port 3001
 
   # Claude Code Integration (Auto-start proxy + spawn Claude Code)
   npx agentic-flow claude-code --provider openrouter "Write a Python function"
+  npx agentic-flow claude-code --provider requesty "Write a Python function"
   npx agentic-flow claude-code --provider gemini "Create a REST API"
   npx agentic-flow claude-code --provider anthropic "Help me debug this code"
 
   # Agent Execution
   npx agentic-flow --list                 # List all 150+ agents
   npx agentic-flow --agent coder --task "Create Python hello world"
+  npx agentic-flow --agent coder --task "Create REST API" --provider requesty
   npx agentic-flow --agent coder --task "Create REST API" --model "meta-llama/llama-3.1-8b-instruct"
   npx agentic-flow --agent coder --task "Create code" --provider onnx
 
@@ -851,8 +947,10 @@ EXAMPLES:
 ENVIRONMENT VARIABLES:
   ANTHROPIC_API_KEY       Anthropic API key (for Claude models)
   OPENROUTER_API_KEY      OpenRouter API key (for alternative models)
+  REQUESTY_API_KEY        Requesty API key (for Requesty models - 300+ models)
   GOOGLE_GEMINI_API_KEY   Google Gemini API key (for Gemini models)
   USE_OPENROUTER          Set to 'true' to force OpenRouter usage
+  USE_REQUESTY            Set to 'true' to force Requesty usage
   USE_GEMINI              Set to 'true' to force Gemini usage
   COMPLETION_MODEL        Default model for OpenRouter
   AGENTS_DIR              Path to agents directory

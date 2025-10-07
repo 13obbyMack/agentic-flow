@@ -10,6 +10,9 @@ function getCurrentProvider(): string {
   if (process.env.PROVIDER === 'gemini' || process.env.USE_GEMINI === 'true') {
     return 'gemini';
   }
+  if (process.env.PROVIDER === 'requesty' || process.env.USE_REQUESTY === 'true') {
+    return 'requesty';
+  }
   if (process.env.PROVIDER === 'openrouter' || process.env.USE_OPENROUTER === 'true') {
     return 'openrouter';
   }
@@ -29,6 +32,13 @@ function getModelForProvider(provider: string): {
       return {
         model: process.env.COMPLETION_MODEL || 'gemini-2.0-flash-exp',
         apiKey: process.env.GOOGLE_GEMINI_API_KEY || process.env.ANTHROPIC_API_KEY || '',
+        baseURL: process.env.PROXY_URL || undefined
+      };
+
+    case 'requesty':
+      return {
+        model: process.env.COMPLETION_MODEL || 'deepseek/deepseek-chat',
+        apiKey: process.env.REQUESTY_API_KEY || process.env.ANTHROPIC_API_KEY || '',
         baseURL: process.env.PROXY_URL || undefined
       };
 
@@ -92,6 +102,15 @@ export async function claudeAgent(
       envOverrides.ANTHROPIC_BASE_URL = process.env.ANTHROPIC_BASE_URL || process.env.GEMINI_PROXY_URL || 'http://localhost:3000';
 
       logger.info('Using Gemini proxy', {
+        proxyUrl: envOverrides.ANTHROPIC_BASE_URL,
+        model: finalModel
+      });
+    } else if (provider === 'requesty' && process.env.REQUESTY_API_KEY) {
+      // Use ANTHROPIC_BASE_URL if already set by CLI (proxy mode)
+      envOverrides.ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY || 'proxy-key';
+      envOverrides.ANTHROPIC_BASE_URL = process.env.ANTHROPIC_BASE_URL || process.env.REQUESTY_PROXY_URL || 'http://localhost:3000';
+
+      logger.info('Using Requesty proxy', {
         proxyUrl: envOverrides.ANTHROPIC_BASE_URL,
         model: finalModel
       });
