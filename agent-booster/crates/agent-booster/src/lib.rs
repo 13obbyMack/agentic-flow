@@ -23,6 +23,7 @@ pub use models::{
     MergeStrategy, Result,
 };
 
+#[cfg(not(target_arch = "wasm32"))]
 use std::time::Instant;
 
 /// Main AgentBooster API
@@ -44,6 +45,7 @@ impl AgentBooster {
 
     /// Apply a single edit to code
     pub fn apply_edit(&mut self, request: EditRequest) -> Result<EditResult> {
+        #[cfg(not(target_arch = "wasm32"))]
         let start_time = Instant::now();
 
         // Parse original code
@@ -79,7 +81,11 @@ impl AgentBooster {
             request.confidence_threshold,
         )?;
 
-        let processing_time = start_time.elapsed();
+        #[cfg(not(target_arch = "wasm32"))]
+        let processing_time_ms = Some(start_time.elapsed().as_millis() as u64);
+
+        #[cfg(target_arch = "wasm32")]
+        let processing_time_ms = None; // No timing in WASM
 
         Ok(EditResult {
             merged_code: merge_result.code,
@@ -89,7 +95,7 @@ impl AgentBooster {
                 chunks_found,
                 best_similarity,
                 syntax_valid: merge_result.syntax_valid,
-                processing_time_ms: Some(processing_time.as_millis() as u64),
+                processing_time_ms,
             },
         })
     }

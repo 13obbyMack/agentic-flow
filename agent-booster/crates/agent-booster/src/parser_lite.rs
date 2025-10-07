@@ -139,7 +139,7 @@ impl Parser {
     }
 
     /// Validate syntax by checking for balanced braces/parens/brackets
-    pub fn validate_syntax(&self, code: &str, _language: Language) -> Result<bool> {
+    pub fn validate_syntax(&self, code: &str, _language: Language) -> bool {
         let mut paren_depth = 0;
         let mut brace_depth = 0;
         let mut bracket_depth = 0;
@@ -157,12 +157,12 @@ impl Parser {
 
             // Check for negative depth (closing before opening)
             if paren_depth < 0 || brace_depth < 0 || bracket_depth < 0 {
-                return Ok(false);
+                return false;
             }
         }
 
         // All should be balanced
-        Ok(paren_depth == 0 && brace_depth == 0 && bracket_depth == 0)
+        paren_depth == 0 && brace_depth == 0 && bracket_depth == 0
     }
 
     /// Extract full file as a single chunk (fallback)

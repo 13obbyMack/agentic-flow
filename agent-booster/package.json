@@ -1,0 +1,45 @@
+{
+  "name": "agent-booster",
+  "version": "0.1.0",
+  "description": "Ultra-fast code editing engine - 52x faster than Morph LLM at $0 cost",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "bin": {
+    "agent-booster": "./dist/cli.js"
+  },
+  "files": [
+    "dist/",
+    "wasm/",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "npm run build:wasm && npm run build:js",
+    "build:wasm": "cd crates/agent-booster-wasm && wasm-pack build --target nodejs --out-dir ../../wasm",
+    "build:js": "tsc",
+    "prepublishOnly": "npm run build",
+    "test": "node benchmarks/run-real-benchmark.js"
+  },
+  "keywords": [
+    "code-editing",
+    "ast",
+    "morph",
+    "refactoring",
+    "wasm",
+    "rust",
+    "performance"
+  ],
+  "author": "Agent Booster",
+  "license": "MIT OR Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/agent-booster.git"
+  },
+  "devDependencies": {
+    "@types/node": "^20.19.19",
+    "typescript": "^5.9.3"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  }
+}

@@ -191,7 +191,8 @@ class AgenticFlowCLI {
     const useONNX = this.shouldUseONNX(options);
     const useOpenRouter = this.shouldUseOpenRouter(options);
     const useGemini = this.shouldUseGemini(options);
-    const useRequesty = this.shouldUseRequesty(options);
+    // Requesty temporarily disabled - keep proxy files for future use
+    const useRequesty = false; // this.shouldUseRequesty(options);
 
     // Debug output for provider selection
     if (options.verbose || process.env.VERBOSE === 'true') {
@@ -701,23 +702,11 @@ EXAMPLES:
       console.error('  export ANTHROPIC_API_KEY=sk-ant-xxxxx\n');
       console.error('Or use alternative providers:');
       console.error('  --provider openrouter  (requires OPENROUTER_API_KEY)');
-      console.error('  --provider requesty    (requires REQUESTY_API_KEY)');
       console.error('  --provider gemini      (requires GOOGLE_GEMINI_API_KEY)');
       console.error('  --provider onnx        (free local inference)\n');
       process.exit(1);
     }
 
-    if (!isOnnx && useRequesty && !process.env.REQUESTY_API_KEY) {
-      console.error('\n❌ Error: REQUESTY_API_KEY is required for Requesty\n');
-      console.error('Please set your API key:');
-      console.error('  export REQUESTY_API_KEY=sk-xxxxx\n');
-      console.error('Or use alternative providers:');
-      console.error('  --provider anthropic   (requires ANTHROPIC_API_KEY)');
-      console.error('  --provider openrouter  (requires OPENROUTER_API_KEY)');
-      console.error('  --provider gemini      (requires GOOGLE_GEMINI_API_KEY)');
-      console.error('  --provider onnx        (free local inference)\n');
-      process.exit(1);
-    }
 
     if (!isOnnx && useOpenRouter && !process.env.OPENROUTER_API_KEY) {
       console.error('\n❌ Error: OPENROUTER_API_KEY is required for OpenRouter\n');
@@ -725,7 +714,6 @@ EXAMPLES:
       console.error('  export OPENROUTER_API_KEY=sk-or-v1-xxxxx\n');
       console.error('Or use alternative providers:');
       console.error('  --provider anthropic  (requires ANTHROPIC_API_KEY)');
-      console.error('  --provider requesty   (requires REQUESTY_API_KEY)');
       console.error('  --provider gemini     (requires GOOGLE_GEMINI_API_KEY)');
       console.error('  --provider onnx       (free local inference)\n');
       process.exit(1);
@@ -875,7 +863,7 @@ AGENT COMMANDS:
 OPTIONS:
   --task, -t <task>           Task description for agent mode
   --model, -m <model>         Model to use (triggers OpenRouter if contains "/")
-  --provider, -p <name>       Provider to use (anthropic, openrouter, requesty, gemini, onnx)
+  --provider, -p <name>       Provider to use (anthropic, openrouter, gemini, onnx)
   --stream, -s                Enable real-time streaming output
   --help, -h                  Show this help message
 
@@ -922,19 +910,17 @@ EXAMPLES:
 
   # Proxy Server for Claude Code/Cursor
   npx agentic-flow proxy --provider openrouter --port 3000
-  npx agentic-flow proxy --provider requesty --port 3000
   npx agentic-flow proxy --provider gemini --port 3001
 
   # Claude Code Integration (Auto-start proxy + spawn Claude Code)
   npx agentic-flow claude-code --provider openrouter "Write a Python function"
-  npx agentic-flow claude-code --provider requesty "Write a Python function"
   npx agentic-flow claude-code --provider gemini "Create a REST API"
   npx agentic-flow claude-code --provider anthropic "Help me debug this code"
 
   # Agent Execution
   npx agentic-flow --list                 # List all 150+ agents
   npx agentic-flow --agent coder --task "Create Python hello world"
-  npx agentic-flow --agent coder --task "Create REST API" --provider requesty
+  npx agentic-flow --agent coder --task "Create REST API" --provider openrouter
   npx agentic-flow --agent coder --task "Create REST API" --model "meta-llama/llama-3.1-8b-instruct"
   npx agentic-flow --agent coder --task "Create code" --provider onnx
 
@@ -947,10 +933,8 @@ EXAMPLES:
 ENVIRONMENT VARIABLES:
   ANTHROPIC_API_KEY       Anthropic API key (for Claude models)
   OPENROUTER_API_KEY      OpenRouter API key (for alternative models)
-  REQUESTY_API_KEY        Requesty API key (for Requesty models - 300+ models)
   GOOGLE_GEMINI_API_KEY   Google Gemini API key (for Gemini models)
   USE_OPENROUTER          Set to 'true' to force OpenRouter usage
-  USE_REQUESTY            Set to 'true' to force Requesty usage
   USE_GEMINI              Set to 'true' to force Gemini usage
   COMPLETION_MODEL        Default model for OpenRouter
   AGENTS_DIR              Path to agents directory

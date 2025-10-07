@@ -146,14 +146,23 @@ export async function claudeAgent(
       // MCP server setup - enable in-SDK server and optional external servers
       const mcpServers: any = {};
 
-      // Enable in-SDK MCP server for custom tools (enabled by default)
-      if (process.env.ENABLE_CLAUDE_FLOW_SDK !== 'false') {
-        mcpServers['claude-flow-sdk'] = claudeFlowSdkServer;
-      }
+      // CRITICAL FIX: Disable all MCP servers for Requesty provider
+      // The Claude SDK hangs when trying to initialize MCP servers with Requesty
+      // This is a fundamental incompatibility - SDK initialization fails before API call
+      if (provider === 'requesty') {
+        logger.info('⚠️  Requesty provider detected - disabling all MCP servers to prevent hang');
+        console.log('⚠️  Requesty: MCP tools disabled (SDK incompatibility)');
+        // Skip all MCP server initialization for Requesty
+        // Continue with empty mcpServers object
+      } else {
+        // Enable in-SDK MCP server for custom tools (enabled by default)
+        if (process.env.ENABLE_CLAUDE_FLOW_SDK !== 'false') {
+          mcpServers['claude-flow-sdk'] = claudeFlowSdkServer;
+        }
 
-      // External MCP servers (enabled by default for full 213-tool access)
-      // Disable by setting ENABLE_CLAUDE_FLOW_MCP=false
-      if (process.env.ENABLE_CLAUDE_FLOW_MCP !== 'false') {
+        // External MCP servers (enabled by default for full 213-tool access)
+        // Disable by setting ENABLE_CLAUDE_FLOW_MCP=false
+        if (process.env.ENABLE_CLAUDE_FLOW_MCP !== 'false') {
         mcpServers['claude-flow'] = {
           type: 'stdio',
           command: 'npx',
@@ -219,10 +228,11 @@ export async function claudeAgent(
             }
           }
         }
-      } catch (error) {
-        // Silently fail if config doesn't exist or can't be read
-        console.log('[agentic-flow] No user MCP config found (this is normal)');
-      }
+        } catch (error) {
+          // Silently fail if config doesn't exist or can't be read
+          console.log('[agentic-flow] No user MCP config found (this is normal)');
+        }
+      } // End of provider !== 'requesty' check
 
       const queryOptions: any = {
         systemPrompt: agent.systemPrompt,

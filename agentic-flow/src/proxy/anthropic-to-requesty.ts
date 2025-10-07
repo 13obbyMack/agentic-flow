@@ -112,8 +112,11 @@ export class AnthropicToRequestyProxy {
 
     // Anthropic Messages API → Requesty Chat Completions
     this.app.post('/v1/messages', async (req: Request, res: Response) => {
+      console.log('🔵 REQUEST RECEIVED AT PROXY - /v1/messages');
+      logger.info('🔵 REQUEST RECEIVED AT PROXY - /v1/messages');
       try {
         const anthropicReq: AnthropicRequest = req.body;
+        console.log('🔵 Request body parsed successfully');
 
         // VERBOSE LOGGING: Log incoming Anthropic request
         // Handle system prompt which can be string OR array of content blocks

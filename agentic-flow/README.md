@@ -6,7 +6,7 @@
 [![Node.js Version](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen)](https://nodejs.org/)
 [![rUv](https://img.shields.io/badge/by-rUv-purple.svg)](https://github.com/ruvnet/)
 
-**Production-ready AI agent orchestration with 66+ specialized agents, 213 MCP tools, and multi-model routing (Anthropic, OpenRouter, Requesty, Gemini, ONNX).**
+**Production-ready AI agent orchestration with 66+ specialized agents, 213 MCP tools, and multi-model routing (Anthropic, OpenRouter, Gemini, ONNX).**
 
 ---
 
@@ -23,10 +23,10 @@ Extending agent capabilities is effortless. Add custom tools and integrations th
 Define routing rules through flexible policy modes: Strict mode keeps sensitive data offline, Economy mode prefers free models (99% savings), Premium mode uses Anthropic for highest quality, or create custom cost/quality thresholds. The policy defines the rules; the swarm enforces them automatically. Runs local for development, Docker for CI/CD, or Flow Nexus cloud for production scale. Agentic Flow is the framework for autonomous efficiency—one unified runner for every Claude Code agent, self-tuning, self-routing, and built for real-world deployment.
 
 **Key Capabilities:**
-- ✅ **Claude Code Mode** - Run Claude Code with OpenRouter/Requesty/Gemini/ONNX (85-99% savings)
+- ✅ **Claude Code Mode** - Run Claude Code with OpenRouter//Gemini/ONNX (85-99% savings)
 - ✅ **66 Specialized Agents** - Pre-built experts for coding, research, review, testing, DevOps
 - ✅ **213 MCP Tools** - Memory, GitHub, neural networks, sandboxes, workflows, payments
-- ✅ **Multi-Model Router** - Anthropic, OpenRouter (100+ models), Requesty (300+ models), Gemini, ONNX (free local)
+- ✅ **Multi-Model Router** - Anthropic, OpenRouter (100+ models) (300+ models), Gemini, ONNX (free local)
 - ✅ **Cost Optimization** - DeepSeek at $0.14/M tokens vs Claude at $15/M (99% savings)
 
 **Built On:**
@@ -56,7 +56,7 @@ npx agentic-flow --agent coder --task "Build a REST API with authentication"
 export OPENROUTER_API_KEY=sk-or-v1-...
 npx agentic-flow --agent coder --task "Build REST API" --model "meta-llama/llama-3.1-8b-instruct"
 
-# Run with Requesty (300+ models, 95% cost savings)
+# Run with  (300+ models, 95% cost savings)
 export REQUESTY_API_KEY=sk-...
 npx agentic-flow --agent coder --task "Build REST API" --provider requesty
 
@@ -155,8 +155,8 @@ npx agentic-flow claude-code --provider onnx "Analyze this codebase"
 | Provider | Model | Cost/M Tokens | Context | Best For |
 |----------|-------|---------------|---------|----------|
 | OpenRouter | `deepseek/deepseek-chat` (default) | $0.14 | 128k | General tasks, best value |
-| Requesty | `deepseek/deepseek-chat` | $0.14 | 128k | 300+ models, unified API |
-| Requesty | `openai/gpt-4o-mini` | $0.15 | 128k | OpenAI models via Requesty |
+|  | `deepseek/deepseek-chat` | $0.14 | 128k | 300+ models, unified API |
+|  | `openai/gpt-4o-mini` | $0.15 | 128k | OpenAI models via  |
 | OpenRouter | `anthropic/claude-3.5-sonnet` | $3.00 | 200k | Highest quality, complex reasoning |
 | OpenRouter | `google/gemini-2.0-flash-exp:free` | FREE | 1M | Development, testing (rate limited) |
 | Gemini | `gemini-2.0-flash-exp` | FREE | 1M | Fast responses, rate limited |
@@ -178,7 +178,7 @@ npx agentic-flow claude-code --provider onnx "Analyze this codebase"
 # OpenRouter (100+ models at 85-99% savings)
 export OPENROUTER_API_KEY=sk-or-v1-...
 
-# Requesty (300+ models, unified access)
+#  (300+ models, unified access)
 export REQUESTY_API_KEY=sk-...
 
 # Gemini (FREE tier available)
@@ -1032,11 +1032,11 @@ ENABLE_CLAUDE_FLOW_SDK=true
 COMPLETION_MODEL=deepseek/deepseek-chat-v3.1
 ```
 
-**Requesty Configuration (v1.3.1+)** ⚠️
+** Configuration (v1.3.1+)** ⚠️
 
-Requesty.ai provides unified access to 300+ AI models including OpenAI (GPT-4o, GPT-4o-mini), Anthropic, DeepSeek, Meta, Mistral, and more through a single API key.
+.ai provides unified access to 300+ AI models including OpenAI (GPT-4o, GPT-4o-mini), Anthropic, DeepSeek, Meta, Mistral, and more through a single API key.
 
-⚠️ **Current Status**: Requesty provider has integration challenges with Claude SDK agent initialization. **We recommend using OpenRouter instead** for agent-based tasks.
+⚠️ **Current Status**:  provider has integration challenges with Claude SDK agent initialization. **We recommend using OpenRouter instead** for agent-based tasks.
 
 **What Works:**
 - ✅ Simple API calls without agents
@@ -1057,7 +1057,7 @@ npx agentic-flow --agent coder --task "your task" --provider openrouter
 npx agentic-flow --agent coder --task "your task" --model "deepseek/deepseek-chat"
 ```
 
-**If you still want to try Requesty:**
+**If you still want to try :**
 ```bash
 # Get your API key from https://requesty.ai
 export REQUESTY_API_KEY=sk-...
