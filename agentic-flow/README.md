@@ -1032,42 +1032,51 @@ ENABLE_CLAUDE_FLOW_SDK=true
 COMPLETION_MODEL=deepseek/deepseek-chat-v3.1
 ```
 
-**Requesty Configuration (v1.3.1+)**
+**Requesty Configuration (v1.3.1+)** ⚠️
 
-Requesty.ai provides unified access to 300+ AI models including OpenAI (GPT-4o, GPT-4o-mini), Anthropic, DeepSeek, Meta, Mistral, and more through a single API key:
+Requesty.ai provides unified access to 300+ AI models including OpenAI (GPT-4o, GPT-4o-mini), Anthropic, DeepSeek, Meta, Mistral, and more through a single API key.
 
+⚠️ **Current Status**: Requesty provider has integration challenges with Claude SDK agent initialization. **We recommend using OpenRouter instead** for agent-based tasks.
+
+**What Works:**
+- ✅ Simple API calls without agents
+- ✅ Basic arithmetic and simple tasks
+- ✅ Direct API integration via curl/fetch
+
+**Known Limitations:**
+- ❌ Hangs during Claude SDK agent initialization with MCP tools
+- ❌ Cannot handle full agent execution (coder, reviewer, etc.)
+- ⚠️ Tool limit reduced to 10 maximum (vs 213 available)
+
+**Recommended Alternative:**
+Use **OpenRouter** for identical cost savings and full agent support:
+```bash
+# OpenRouter works perfectly with all agents and tools
+export OPENROUTER_API_KEY=sk-or-v1-...
+npx agentic-flow --agent coder --task "your task" --provider openrouter
+npx agentic-flow --agent coder --task "your task" --model "deepseek/deepseek-chat"
+```
+
+**If you still want to try Requesty:**
 ```bash
 # Get your API key from https://requesty.ai
 export REQUESTY_API_KEY=sk-...
 
-# Use with agents
-npx agentic-flow --agent coder --task "your task" --provider requesty
-
-# Use with Claude Code
-npx agentic-flow claude-code --provider requesty
-
-# Specify model (default: deepseek/deepseek-chat)
-npx agentic-flow --agent coder --task "task" --provider requesty --model "openai/gpt-4o-mini"
-
-# Enable via environment variable
-export USE_REQUESTY=true
-npx agentic-flow --agent coder --task "your task"
+# Simple tasks only (no agent mode recommended)
+# Use OpenRouter for agent-based work instead
 ```
 
-**Supported Requesty Models:**
-- `deepseek/deepseek-chat` (default) - $0.14/M tokens, 128k context, native tools
-- `openai/gpt-4o` - $2.50/M tokens, 128k context, native tools
-- `openai/gpt-4o-mini` - $0.15/M tokens, 128k context, native tools
-- `openai/gpt-4-turbo` - $10/M tokens, 128k context, native tools
-- 300+ other models available
+**Technical Details:**
+- Schema sanitization for array properties
+- 60-second timeout protection
+- Tool limiting (10 max) to prevent overload
+- OpenAI-compatible API format
+- Automatic max_tokens optimization (capped at 8192)
 
-**Features:**
-- ✅ OpenAI-compatible API format
-- ✅ Native tool calling support for GPT-4o, DeepSeek
-- ✅ Automatic max_tokens optimization (capped at 8192)
-- ✅ 95% cost savings vs Anthropic direct API
-- ✅ Full MCP tool integration (all 213 tools)
-- ✅ Works with `--verbose` flag for debugging
+**Supported Models (when working):**
+- `deepseek/deepseek-chat` - $0.14/M tokens, 128k context
+- `openai/gpt-4o-mini` - $0.15/M tokens, 128k context
+- 300+ other models available
 
 ---
 
