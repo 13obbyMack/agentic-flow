@@ -31,7 +31,7 @@ const __dirname = dirname(__filename);
 dotenv.config({ path: resolve(__dirname, '../../../.env') });
 
 interface ProxyConfig {
-  provider: 'anthropic' | 'openrouter' | 'gemini' | 'onnx';
+  provider: 'anthropic' | 'openrouter' | 'requesty' | 'gemini' | 'onnx';
   port: number;
   baseUrl: string;
   model?: string;
@@ -54,6 +54,16 @@ function getProxyConfig(provider: string, customPort?: number): ProxyConfig {
         baseUrl,
         model: process.env.COMPLETION_MODEL || 'deepseek/deepseek-chat',
         apiKey: process.env.OPENROUTER_API_KEY || '',
+        requiresProxy: true
+      };
+
+    case 'requesty':
+      return {
+        provider: 'requesty',
+        port,
+        baseUrl,
+        model: process.env.COMPLETION_MODEL || 'deepseek/deepseek-chat',
+        apiKey: process.env.REQUESTY_API_KEY || '',
         requiresProxy: true
       };
 
