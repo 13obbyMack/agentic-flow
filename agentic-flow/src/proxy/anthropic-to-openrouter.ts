@@ -175,7 +175,16 @@ export class AnthropicToOpenRouterProxy {
   }
 
   private async handleRequest(anthropicReq: AnthropicRequest, res: Response): Promise<any> {
-    const model = anthropicReq.model || this.defaultModel;
+    let model = anthropicReq.model || this.defaultModel;
+
+    // If SDK is requesting a Claude model but we're using OpenRouter with a different default,
+    // override to use the CLI-specified model
+    if (model.startsWith('claude-') && this.defaultModel && !this.defaultModel.startsWith('claude-')) {
+      logger.info(`Overriding SDK Claude model ${model} with CLI-specified ${this.defaultModel}`);
+      model = this.defaultModel;
+      anthropicReq.model = model;
+    }
+
     const capabilities = this.capabilities || detectModelCapabilities(model);
 
     // Check if emulation is required
