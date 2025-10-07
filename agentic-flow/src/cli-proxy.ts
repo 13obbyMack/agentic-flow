@@ -319,7 +319,7 @@ class AgenticFlowCLI {
     const defaultModel = modelOverride ||
                         process.env.COMPLETION_MODEL ||
                         process.env.REASONING_MODEL ||
-                        'meta-llama/llama-3.1-8b-instruct';
+                        'deepseek/deepseek-chat';
 
     const capabilities = detectModelCapabilities(defaultModel);
 
@@ -516,7 +516,7 @@ Get your key at: https://openrouter.ai/keys
         process.exit(1);
       }
 
-      const finalModel = model || process.env.COMPLETION_MODEL || 'meta-llama/llama-3.1-8b-instruct';
+      const finalModel = model || process.env.COMPLETION_MODEL || 'deepseek/deepseek-chat';
 
       console.log(`🚀 Starting OpenRouter → Anthropic Proxy
 📍 Port: ${port}
@@ -668,7 +668,7 @@ EXAMPLES:
     console.log(`🎯 Task: ${task}\n`);
 
     if (useOpenRouter) {
-      const model = options.model || process.env.COMPLETION_MODEL || 'meta-llama/llama-3.1-8b-instruct';
+      const model = options.model || process.env.COMPLETION_MODEL || 'deepseek/deepseek-chat';
       console.log(`🔧 Provider: OpenRouter (via proxy)`);
       console.log(`🔧 Model: ${model}`);
 

@@ -52,7 +52,7 @@ function getProxyConfig(provider: string, customPort?: number): ProxyConfig {
         provider: 'openrouter',
         port,
         baseUrl,
-        model: process.env.COMPLETION_MODEL || 'mistralai/mistral-small-3.1-24b-instruct',
+        model: process.env.COMPLETION_MODEL || 'deepseek/deepseek-chat',
         apiKey: process.env.OPENROUTER_API_KEY || '',
         requiresProxy: true
       };
@@ -139,7 +139,7 @@ async function startProxyServer(config: ProxyConfig): Promise<any> {
     proxy = new AnthropicToOpenRouterProxy({
       openrouterApiKey: config.apiKey,
       openrouterBaseUrl: process.env.ANTHROPIC_PROXY_BASE_URL,
-      defaultModel: config.model || 'mistralai/mistral-small-3.1-24b-instruct'
+      defaultModel: config.model || 'deepseek/deepseek-chat'
     });
   }
 
