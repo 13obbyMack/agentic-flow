@@ -281,7 +281,7 @@ export async function directApiAgent(
           const params: ChatParams = {
             model: provider === 'gemini'
               ? (process.env.COMPLETION_MODEL || 'gemini-2.0-flash-exp')
-              : (process.env.COMPLETION_MODEL || 'meta-llama/llama-3.1-8b-instruct'),
+              : (process.env.COMPLETION_MODEL || 'deepseek/deepseek-chat'),
             messages: messagesWithSystem,
             maxTokens: 8192,
             temperature: 0.7

@@ -38,6 +38,7 @@ import { handleMCPCommand } from "./utils/mcpCommands.js";
 import { handleConfigCommand } from "./cli/config-wizard.js";
 import { handleAgentCommand } from "./cli/agent-manager.js";
 import { ModelOptimizer } from "./utils/modelOptimizer.js";
+import { detectModelCapabilities } from "./utils/modelCapabilities.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -318,12 +319,15 @@ class AgenticFlowCLI {
     const defaultModel = modelOverride ||
                         process.env.COMPLETION_MODEL ||
                         process.env.REASONING_MODEL ||
-                        'meta-llama/llama-3.1-8b-instruct';
+                        'deepseek/deepseek-chat';
+
+    const capabilities = detectModelCapabilities(defaultModel);
 
     const proxy = new AnthropicToOpenRouterProxy({
       openrouterApiKey: openrouterKey,
       openrouterBaseUrl: process.env.ANTHROPIC_PROXY_BASE_URL,
-      defaultModel
+      defaultModel,
+      capabilities: capabilities
     });
 
     // Start proxy in background
@@ -340,7 +344,14 @@ class AgenticFlowCLI {
 
     console.log(`🔗 Proxy Mode: OpenRouter`);
     console.log(`🔧 Proxy URL: http://localhost:${this.proxyPort}`);
-    console.log(`🤖 Default Model: ${defaultModel}\n`);
+    console.log(`🤖 Default Model: ${defaultModel}`);
+
+    if (capabilities.requiresEmulation) {
+      console.log(`\n⚙️  Detected: Model lacks native tool support`);
+      console.log(`🔧 Using ${capabilities.emulationStrategy.toUpperCase()} emulation pattern`);
+      console.log(`📊 Expected reliability: ${capabilities.emulationStrategy === 'react' ? '70-85%' : '50-70%'}`);
+    }
+    console.log('');
 
     // Wait for proxy to be ready
     await new Promise(resolve => setTimeout(resolve, 1500));
@@ -505,7 +516,7 @@ Get your key at: https://openrouter.ai/keys
         process.exit(1);
       }
 
-      const finalModel = model || process.env.COMPLETION_MODEL || 'meta-llama/llama-3.1-8b-instruct';
+      const finalModel = model || process.env.COMPLETION_MODEL || 'deepseek/deepseek-chat';
 
       console.log(`🚀 Starting OpenRouter → Anthropic Proxy
 📍 Port: ${port}
@@ -657,9 +668,18 @@ EXAMPLES:
     console.log(`🎯 Task: ${task}\n`);
 
     if (useOpenRouter) {
-      const model = options.model || process.env.COMPLETION_MODEL || 'meta-llama/llama-3.1-8b-instruct';
+      const model = options.model || process.env.COMPLETION_MODEL || 'deepseek/deepseek-chat';
       console.log(`🔧 Provider: OpenRouter (via proxy)`);
-      console.log(`🔧 Model: ${model}\n`);
+      console.log(`🔧 Model: ${model}`);
+
+      // Show tool capability information
+      const capabilities = detectModelCapabilities(model);
+      if (capabilities.requiresEmulation) {
+        console.log(`⚙️  Tool Emulation: ${capabilities.emulationStrategy.toUpperCase()} pattern`);
+        console.log(`📊 Note: This model uses prompt-based tool emulation`);
+        console.log(`   Tools are handled by Claude Agent SDK (limited to SDK tools)`);
+      }
+      console.log('');
     } else if (useGemini) {
       const model = options.model || 'gemini-2.0-flash-exp';
       console.log(`🔧 Provider: Google Gemini`);

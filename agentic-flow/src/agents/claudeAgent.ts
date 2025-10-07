@@ -34,7 +34,7 @@ function getModelForProvider(provider: string): {
 
     case 'openrouter':
       return {
-        model: process.env.COMPLETION_MODEL || 'meta-llama/llama-3.1-8b-instruct',
+        model: process.env.COMPLETION_MODEL || 'deepseek/deepseek-chat',
         apiKey: process.env.OPENROUTER_API_KEY || process.env.ANTHROPIC_API_KEY || '',
         baseURL: process.env.PROXY_URL || undefined
       };
