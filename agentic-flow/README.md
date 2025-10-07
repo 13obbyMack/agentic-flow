@@ -6,7 +6,7 @@
 [![Node.js Version](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen)](https://nodejs.org/)
 [![rUv](https://img.shields.io/badge/by-rUv-purple.svg)](https://github.com/ruvnet/)
 
-**Production-ready AI agent orchestration with 66+ specialized agents, 213 MCP tools, and multi-model routing (Anthropic, OpenRouter, Gemini, ONNX).**
+**Production-ready AI agent orchestration with 66+ specialized agents, 213 MCP tools, and multi-model routing (Anthropic, OpenRouter, Requesty, Gemini, ONNX).**
 
 ---
 
@@ -23,10 +23,10 @@ Extending agent capabilities is effortless. Add custom tools and integrations th
 Define routing rules through flexible policy modes: Strict mode keeps sensitive data offline, Economy mode prefers free models (99% savings), Premium mode uses Anthropic for highest quality, or create custom cost/quality thresholds. The policy defines the rules; the swarm enforces them automatically. Runs local for development, Docker for CI/CD, or Flow Nexus cloud for production scale. Agentic Flow is the framework for autonomous efficiency—one unified runner for every Claude Code agent, self-tuning, self-routing, and built for real-world deployment.
 
 **Key Capabilities:**
-- ✅ **Claude Code Mode** - Run Claude Code with OpenRouter/Gemini/ONNX (85-99% savings)
+- ✅ **Claude Code Mode** - Run Claude Code with OpenRouter/Requesty/Gemini/ONNX (85-99% savings)
 - ✅ **66 Specialized Agents** - Pre-built experts for coding, research, review, testing, DevOps
 - ✅ **213 MCP Tools** - Memory, GitHub, neural networks, sandboxes, workflows, payments
-- ✅ **Multi-Model Router** - Anthropic, OpenRouter (100+ models), Gemini, ONNX (free local)
+- ✅ **Multi-Model Router** - Anthropic, OpenRouter (100+ models), Requesty (300+ models), Gemini, ONNX (free local)
 - ✅ **Cost Optimization** - DeepSeek at $0.14/M tokens vs Claude at $15/M (99% savings)
 
 **Built On:**
@@ -55,6 +55,10 @@ npx agentic-flow --agent coder --task "Build a REST API with authentication"
 # Run with OpenRouter (99% cost savings)
 export OPENROUTER_API_KEY=sk-or-v1-...
 npx agentic-flow --agent coder --task "Build REST API" --model "meta-llama/llama-3.1-8b-instruct"
+
+# Run with Requesty (300+ models, 95% cost savings)
+export REQUESTY_API_KEY=sk-...
+npx agentic-flow --agent coder --task "Build REST API" --provider requesty
 
 # Run with Gemini (free tier)
 export GOOGLE_GEMINI_API_KEY=AIza...
@@ -129,14 +133,17 @@ Automatically spawns Claude Code with proxy configuration for OpenRouter, Gemini
 ```bash
 # Interactive mode - Opens Claude Code UI with proxy
 npx agentic-flow claude-code --provider openrouter
+npx agentic-flow claude-code --provider requesty
 npx agentic-flow claude-code --provider gemini
 
 # Non-interactive mode - Execute task and exit
 npx agentic-flow claude-code --provider openrouter "Write a Python hello world function"
+npx agentic-flow claude-code --provider requesty "Write a Python hello world function"
 npx agentic-flow claude-code --provider openrouter --model "deepseek/deepseek-chat" "Create REST API"
 
 # Use specific models
 npx agentic-flow claude-code --provider openrouter --model "mistralai/mistral-small"
+npx agentic-flow claude-code --provider requesty --model "openai/gpt-4o-mini"
 npx agentic-flow claude-code --provider gemini --model "gemini-2.0-flash-exp"
 
 # Local ONNX models (100% free, privacy-focused)
@@ -148,6 +155,8 @@ npx agentic-flow claude-code --provider onnx "Analyze this codebase"
 | Provider | Model | Cost/M Tokens | Context | Best For |
 |----------|-------|---------------|---------|----------|
 | OpenRouter | `deepseek/deepseek-chat` (default) | $0.14 | 128k | General tasks, best value |
+| Requesty | `deepseek/deepseek-chat` | $0.14 | 128k | 300+ models, unified API |
+| Requesty | `openai/gpt-4o-mini` | $0.15 | 128k | OpenAI models via Requesty |
 | OpenRouter | `anthropic/claude-3.5-sonnet` | $3.00 | 200k | Highest quality, complex reasoning |
 | OpenRouter | `google/gemini-2.0-flash-exp:free` | FREE | 1M | Development, testing (rate limited) |
 | Gemini | `gemini-2.0-flash-exp` | FREE | 1M | Fast responses, rate limited |
@@ -168,6 +177,9 @@ npx agentic-flow claude-code --provider onnx "Analyze this codebase"
 ```bash
 # OpenRouter (100+ models at 85-99% savings)
 export OPENROUTER_API_KEY=sk-or-v1-...
+
+# Requesty (300+ models, unified access)
+export REQUESTY_API_KEY=sk-...
 
 # Gemini (FREE tier available)
 export GOOGLE_GEMINI_API_KEY=AIza...
@@ -1014,10 +1026,48 @@ export HEALTH_PORT=8080                     # Health check port
 # .env file (auto-loaded)
 ANTHROPIC_API_KEY=sk-ant-...
 OPENROUTER_API_KEY=sk-or-v1-...
+REQUESTY_API_KEY=sk-...
 GOOGLE_GEMINI_API_KEY=AIza...
 ENABLE_CLAUDE_FLOW_SDK=true
 COMPLETION_MODEL=deepseek/deepseek-chat-v3.1
 ```
+
+**Requesty Configuration (v1.3.1+)**
+
+Requesty.ai provides unified access to 300+ AI models including OpenAI (GPT-4o, GPT-4o-mini), Anthropic, DeepSeek, Meta, Mistral, and more through a single API key:
+
+```bash
+# Get your API key from https://requesty.ai
+export REQUESTY_API_KEY=sk-...
+
+# Use with agents
+npx agentic-flow --agent coder --task "your task" --provider requesty
+
+# Use with Claude Code
+npx agentic-flow claude-code --provider requesty
+
+# Specify model (default: deepseek/deepseek-chat)
+npx agentic-flow --agent coder --task "task" --provider requesty --model "openai/gpt-4o-mini"
+
+# Enable via environment variable
+export USE_REQUESTY=true
+npx agentic-flow --agent coder --task "your task"
+```
+
+**Supported Requesty Models:**
+- `deepseek/deepseek-chat` (default) - $0.14/M tokens, 128k context, native tools
+- `openai/gpt-4o` - $2.50/M tokens, 128k context, native tools
+- `openai/gpt-4o-mini` - $0.15/M tokens, 128k context, native tools
+- `openai/gpt-4-turbo` - $10/M tokens, 128k context, native tools
+- 300+ other models available
+
+**Features:**
+- ✅ OpenAI-compatible API format
+- ✅ Native tool calling support for GPT-4o, DeepSeek
+- ✅ Automatic max_tokens optimization (capped at 8192)
+- ✅ 95% cost savings vs Anthropic direct API
+- ✅ Full MCP tool integration (all 213 tools)
+- ✅ Works with `--verbose` flag for debugging
 
 ---
 
