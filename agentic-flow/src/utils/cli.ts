@@ -36,6 +36,8 @@ export interface CliOptions {
 
   // Agent Booster Integration
   claudeCode?: boolean; // Use Agent Booster for 57x faster code edits
+  agentBooster?: boolean; // Enable Agent Booster pre-processing
+  boosterThreshold?: number; // Confidence threshold for Agent Booster
 
   help?: boolean;
   version?: boolean;
@@ -191,7 +193,25 @@ export function parseArgs(): CliOptions {
       case '--max-cost':
         options.maxCost = parseFloat(args[++i]);
         break;
+
+      // Agent Booster
+      case '--agent-booster':
+      case '--booster':
+        options.agentBooster = true;
+        break;
+
+      case '--booster-threshold':
+        options.boosterThreshold = parseFloat(args[++i]);
+        break;
     }
+  }
+
+  // Check environment variable for Agent Booster
+  if (process.env.AGENTIC_FLOW_AGENT_BOOSTER === 'true') {
+    options.agentBooster = true;
+  }
+  if (process.env.AGENTIC_FLOW_BOOSTER_THRESHOLD) {
+    options.boosterThreshold = parseFloat(process.env.AGENTIC_FLOW_BOOSTER_THRESHOLD);
   }
 
   return options;
@@ -246,15 +266,24 @@ OPTIONS:
   --timeout <ms>              Execution timeout
   --retry                     Auto-retry on errors
 
-  MODEL OPTIMIZATION (NEW!):
+  MODEL OPTIMIZATION:
   --optimize, -O              Auto-select best model for agent/task
   --priority <type>           Optimization priority (quality|balanced|cost|speed|privacy)
   --max-cost <dollars>        Maximum cost per task in dollars
 
+  AGENT BOOSTER (200x faster code edits!):
+  --agent-booster             Enable Agent Booster pre-processing
+  --booster-threshold <0-1>   Confidence threshold (default: 0.7)
+
   --help, -h                  Show this help message
 
 EXAMPLES:
-  # Claude Code with Agent Booster (57x faster code edits)
+  # Agent Booster Integration (200x faster code edits!)
+  npx agentic-flow --agent coder --task "Convert var to const in utils.js" --agent-booster
+  npx agentic-flow --agent coder --task "Add types to api.ts" --agent-booster --provider openrouter
+  export AGENTIC_FLOW_AGENT_BOOSTER=true  # Enable for all tasks
+
+  # Claude Code with Agent Booster
   npx agentic-flow claude-code --provider openrouter --agent-booster
   npx agentic-flow claude-code --provider gemini "Write a REST API"
   npx agentic-flow claude-code --help     # See all claude-code options

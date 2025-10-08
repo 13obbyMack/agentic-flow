@@ -40,6 +40,7 @@ import { handleConfigCommand } from "./cli/config-wizard.js";
 import { handleAgentCommand } from "./cli/agent-manager.js";
 import { ModelOptimizer } from "./utils/modelOptimizer.js";
 import { detectModelCapabilities } from "./utils/modelCapabilities.js";
+import { AgentBoosterPreprocessor } from "./utils/agentBoosterPreprocessor.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -775,6 +776,53 @@ EXAMPLES:
     }
 
     console.log('⏳ Running...\n');
+
+    // Try Agent Booster pre-processing if enabled
+    if (options.agentBooster || process.env.AGENTIC_FLOW_AGENT_BOOSTER === 'true') {
+      const preprocessor = new AgentBoosterPreprocessor({
+        confidenceThreshold: options.boosterThreshold || parseFloat(process.env.AGENTIC_FLOW_BOOSTER_THRESHOLD || '0.7')
+      });
+
+      console.log('⚡ Agent Booster: Analyzing task for pattern matching opportunities...\n');
+
+      const intent = preprocessor.detectIntent(task);
+
+      if (intent) {
+        console.log(`🎯 Detected intent: ${intent.type}`);
+        if (intent.filePath) {
+          console.log(`📄 Target file: ${intent.filePath}`);
+        }
+        console.log('🔧 Attempting Agent Booster pre-processing...\n');
+
+        const result = await preprocessor.tryApply(intent);
+
+        if (result.success) {
+          console.log(`✅ Agent Booster Success!\n`);
+          console.log(`⚡ Method: ${result.method}`);
+          console.log(`⏱️  Latency: ${result.latency}ms`);
+          console.log(`🎯 Confidence: ${((result.confidence || 0) * 100).toFixed(1)}%`);
+          console.log(`📊 Strategy: ${result.strategy}`);
+          console.log(`\n✅ File updated successfully!\n`);
+          console.log('═══════════════════════════════════════\n');
+          console.log(result.output || 'Edit applied');
+          console.log('\n═══════════════════════════════════════\n');
+
+          logger.info('Agent Booster completed', {
+            agent: agentName,
+            latency: result.latency,
+            confidence: result.confidence,
+            strategy: result.strategy
+          });
+
+          return; // Skip LLM execution
+        } else {
+          console.log(`⚠️  Agent Booster: ${result.reason || 'Low confidence'}`);
+          console.log(`🔄 Falling back to LLM agent...\n`);
+        }
+      } else {
+        console.log('ℹ️  No code editing pattern detected, using LLM agent...\n');
+      }
+    }
 
     const streamHandler = options.stream ? (chunk: string) => process.stdout.write(chunk) : undefined;
 
