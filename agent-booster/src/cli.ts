@@ -106,7 +106,8 @@ async function applyCommand(args: CliArgs) {
   }
 
   // Check if stdin has data (JSON mode for MCP)
-  if (!process.stdin.isTTY) {
+  // Only use stdin mode if no file argument is provided
+  if (!process.stdin.isTTY && !args.file) {
     return applyJsonStdin(args);
   }
 
