@@ -125,15 +125,27 @@ export class AgentBoosterPreprocessor {
       const language = this.detectLanguage(intent.filePath);
 
       const cmd = `npx --yes agent-booster@0.2.2 apply --language ${language}`;
-      const result = execSync(cmd, {
-        encoding: 'utf-8',
-        input: JSON.stringify({
-          code: intent.originalCode,
-          edit: intent.targetCode
-        }),
-        maxBuffer: 10 * 1024 * 1024,
-        timeout: 10000
-      });
+
+      let result: string;
+      try {
+        result = execSync(cmd, {
+          encoding: 'utf-8',
+          input: JSON.stringify({
+            code: intent.originalCode,
+            edit: intent.targetCode
+          }),
+          maxBuffer: 10 * 1024 * 1024,
+          timeout: 10000
+        });
+      } catch (execError: any) {
+        // execSync throws on non-zero exit, but agent-booster returns JSON even on stderr
+        // Try to parse stdout anyway
+        if (execError.stdout) {
+          result = execError.stdout.toString();
+        } else {
+          throw new Error(`execSync failed: ${execError.message}`);
+        }
+      }
 
       const parsed = JSON.parse(result);
 
@@ -300,7 +312,9 @@ export class AgentBoosterPreprocessor {
    */
   private extractRemoveConsole(code: string): string | null {
     if (code.includes('console.')) {
-      return code.replace(/\s*console\.(log|debug|warn|info)\([^)]*\);?\n?/g, '');
+      // Remove console statements but preserve line structure
+      // Match optional leading whitespace, console call, and keep one newline if present
+      return code.replace(/^[ \t]*console\.(log|debug|warn|info|error)\([^)]*\);?\s*$/gm, '');
     }
     return null;
   }
