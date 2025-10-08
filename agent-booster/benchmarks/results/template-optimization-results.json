@@ -6,7 +6,7 @@
       "success": true,
       "confidence": 0.8500000238418579,
       "strategy": "exact_replace",
-      "latency": 1,
+      "latency": 2,
       "previouslyFailed": true,
       "nowPasses": true
     },
@@ -16,7 +16,7 @@
       "success": true,
       "confidence": 0.8500000238418579,
       "strategy": "exact_replace",
-      "latency": 1,
+      "latency": 0,
       "previouslyFailed": true,
       "nowPasses": true
     },
@@ -61,5 +61,5 @@
       "nowPasses": true
     }
   ],
-  "timestamp": "2025-10-07T23:38:19.600Z"
+  "timestamp": "2025-10-08T00:16:52.038Z"
 }

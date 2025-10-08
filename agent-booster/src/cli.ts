@@ -145,10 +145,10 @@ async function applyCommand(args: CliArgs) {
 
   if (args.dryRun) {
     console.log(`\n📄 Modified code:\n`);
-    console.log(result.code);
+    console.log(result.output);
   } else {
     const outputPath = args.output || filePath;
-    fs.writeFileSync(outputPath, result.code, 'utf-8');
+    fs.writeFileSync(outputPath, result.output, 'utf-8');
     console.log(`\n💾 Saved to: ${outputPath}`);
   }
 }
