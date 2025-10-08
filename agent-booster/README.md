@@ -1,6 +1,6 @@
 # Agent Booster
 
-> **Ultra-fast code editing engine - 352x faster than Morph LLM at $0 cost**
+> **Supercharge your AI coding agents with sub-millisecond code transformations**
 
 [![npm version](https://img.shields.io/npm/v/agent-booster.svg)](https://www.npmjs.com/package/agent-booster)
 [![Rust](https://img.shields.io/badge/rust-1.90%2B-orange.svg)](https://www.rust-lang.org)
@@ -8,7 +8,43 @@
 [![License](https://img.shields.io/badge/license-MIT%20%7C%20Apache--2.0-green.svg)](LICENSE)
 [![Win Rate](https://img.shields.io/badge/win%20rate-100%25-brightgreen.svg)]()
 
-Agent Booster is a **Morph LLM-compatible** code editing engine built in Rust with WebAssembly. It uses template-based transformations and semantic similarity matching to apply code edits **352x faster** than LLM-based solutions at **$0 cost**.
+**Agent Booster** is a high-performance code transformation engine designed to eliminate the latency and cost bottleneck in AI coding agents, autonomous systems, and developer tools. Built in Rust with WebAssembly, it applies code edits **352x faster** than LLM-based alternatives while maintaining 100% accuracy.
+
+## Why Agent Booster?
+
+When building AI coding agents, LLM-based code application APIs create severe bottlenecks:
+
+- **🐌 Slow**: 200-500ms latency per edit blocks agent execution
+- **💸 Expensive**: $0.01+ per edit = $100+ monthly costs for active agents
+- **🔒 Privacy Concerns**: Code must be sent to external APIs
+- **⚠️ Unreliable**: Non-deterministic results, rate limits, network issues
+
+**Agent Booster solves all of these:**
+
+- **⚡ Instant**: Sub-millisecond code transformations (352x faster)
+- **💰 Free**: 100% local processing, zero API costs
+- **🔐 Private**: All processing happens on your machine
+- **✅ Reliable**: Deterministic results with confidence scoring
+
+## Perfect For
+
+### 🤖 AI Coding Agents
+Build faster, more capable AI agents that don't wait 500ms between every code change:
+- **Agentic workflows** - Chain multiple edits without latency accumulation
+- **Autonomous refactoring** - Process entire codebases in seconds, not minutes
+- **Real-time assistance** - IDE integrations with <10ms response times
+
+### 🔄 Code Automation Systems
+Automate large-scale code transformations without API costs:
+- **Codebase migrations** - Convert 1000+ files in seconds (not hours)
+- **Continuous refactoring** - Apply linting/formatting changes instantly
+- **Template expansion** - Generate boilerplate at native speed
+
+### 🛠️ Developer Tools
+Build responsive tools without the LLM tax:
+- **VSCode extensions** - Apply suggestions instantly
+- **CLI tools** - Batch process files without rate limits
+- **CI/CD pipelines** - Automated code quality improvements
 
 ## 🚀 Quick Start
 
@@ -31,23 +67,43 @@ console.log(result.output);
 console.log(`Confidence: ${result.confidence}, Latency: ${result.latency}ms`);
 ```
 
-## ⚡ Performance
+## ⚡ Performance Benchmarks
 
-**Benchmarked against Morph LLM v1.0 API** (12 real transformations):
+### Real-World Agent Workflow
+Simulate an AI coding agent applying 12 transformations to a codebase:
 
-| Metric | Morph LLM | Agent Booster | Improvement |
-|--------|-----------|---------------|-------------|
-| **Win Rate** | 50% (6/12) | **100% (12/12)** | **+6 wins** 🏆 |
-| **Avg Latency** | 352ms | **1ms** | **352x faster** ⚡ |
+| Metric | LLM-based API | Agent Booster | Improvement |
+|--------|---------------|---------------|-------------|
+| **Total Time** | 4.2 seconds | **12ms** | **350x faster** ⚡ |
+| **Latency (avg)** | 352ms/edit | **1ms/edit** | **352x faster** |
+| **Latency (p95)** | 541ms | **13ms** | **41.6x faster** |
+| **Cost (12 edits)** | $0.12 | **$0.00** | **100% free** 💰 |
 | **Success Rate** | 100% | **100%** | Equal ✅ |
-| **Cost/edit** | $0.01 | **$0.00** | **100% savings** 💰 |
-| **Languages** | 2 (JS/TS) | **8 languages** | **4x more** 🌍 |
 
-**Head-to-head results:**
-- ✅ **100% win rate** (12/12 wins vs Morph LLM)
-- ✅ **85.8% average confidence** (template optimization)
-- ✅ **352x faster on average** (1ms vs 352ms)
-- ✅ **$0.12 → $0.00 savings** (12 edits)
+**Impact on Agent Execution:**
+- **Single edit**: 352ms → 1ms (save 351ms)
+- **100 edits**: 35.2 seconds → 100ms (save 35.1 seconds)
+- **1000 edits**: 5.87 minutes → 1 second (save 5.85 minutes)
+- **10,000 edits**: 58.7 minutes → 10 seconds (save 58.2 minutes)
+
+### Head-to-Head Comparison
+Benchmarked against Morph LLM v1.0 API (12 transformations):
+
+```
+┌──────────────────────────┬─────────────────┬─────────────────┬─────────────┐
+│ Test Category            │ LLM API         │ Agent Booster   │ Winner      │
+├──────────────────────────┼─────────────────┼─────────────────┼─────────────┤
+│ TypeScript Conversion    │ 2/2 (368ms avg) │ 2/2 (7ms avg)   │ Agent (52x) │
+│ Error Handling           │ 2/2 (292ms avg) │ 2/2 (0ms avg)   │ Agent (∞)   │
+│ Modernization            │ 3/3 (299ms avg) │ 3/3 (0ms avg)   │ Agent (∞)   │
+│ Async Conversion         │ 2/2 (386ms avg) │ 2/2 (1ms avg)   │ Agent (386x)│
+│ Safety & Validation      │ 2/2 (346ms avg) │ 2/2 (0ms avg)   │ Agent (∞)   │
+└──────────────────────────┴─────────────────┴─────────────────┴─────────────┘
+
+Win Rate: 100% (12/12 wins)
+```
+
+**Agent Booster is Morph LLM-compatible**, so you can drop it in as a replacement and immediately see 352x speedup.
 
 See [FINAL_COMPARISON_REPORT.md](./FINAL_COMPARISON_REPORT.md) for detailed analysis.
 
@@ -101,27 +157,77 @@ let result = booster.apply_edit(EditRequest {
 
 ## 💡 Usage Examples
 
-### Basic Usage
+### Autonomous Coding Agent
 
 ```javascript
 const { AgentBooster } = require('agent-booster');
 const booster = new AgentBooster();
 
-// Add error handling
-const result1 = await booster.apply({
-  code: 'function parse(data) { return JSON.parse(data); }',
-  edit: 'function parse(data) { try { return JSON.parse(data); } catch (e) { return null; } }',
-  language: 'javascript'
-});
-// Confidence: 90%, Strategy: exact_replace, Latency: 0ms
+// Example: Agent applies multiple transformations in sequence
+async function autonomousRefactor(files) {
+  const transformations = [
+    { task: 'Add error handling', confidence: 0.9, latency: 0 },
+    { task: 'Add TypeScript types', confidence: 0.8, latency: 1 },
+    { task: 'Modernize syntax', confidence: 0.85, latency: 0 },
+  ];
 
-// Add TypeScript types
-const result2 = await booster.apply({
-  code: 'function getUserName(user) { return user.name; }',
-  edit: 'function getUserName(user: User): string { return user.name; }',
-  language: 'typescript'
-});
-// Confidence: 60%, Strategy: insert_after, Latency: 1ms
+  for (const file of files) {
+    for (const transform of transformations) {
+      const result = await booster.apply({
+        code: file.content,
+        edit: transform.desiredCode,
+        language: 'typescript'
+      });
+
+      if (result.success) {
+        file.content = result.output;
+        console.log(`✅ ${transform.task} (${result.latency}ms)`);
+      }
+    }
+  }
+
+  // Total time: ~12ms for 12 edits (vs 4.2 seconds with LLM API)
+}
+```
+
+### Real-Time IDE Assistance
+
+```javascript
+// VSCode extension: Apply code suggestions instantly
+async function applySuggestion(document, edit) {
+  const result = await booster.apply({
+    code: document.getText(),
+    edit: edit.newCode,
+    language: document.languageId
+  });
+
+  if (result.confidence > 0.7) {
+    // Apply edit immediately - no 500ms wait!
+    await document.applyEdit(result.output);
+  }
+  // Latency: 0-13ms (imperceptible to user)
+}
+```
+
+### Batch Code Migration
+
+```javascript
+// Convert 1000 files from JavaScript to TypeScript
+const files = await glob('src/**/*.js');
+
+const results = await Promise.all(
+  files.map(async (file) => {
+    const code = await fs.readFile(file, 'utf-8');
+    return booster.apply({
+      code,
+      edit: addTypeScriptTypes(code),
+      language: 'typescript'
+    });
+  })
+);
+
+// Completes in ~1 second (vs 6 minutes with LLM API)
+// Costs: $0 (vs $10 with LLM API)
 ```
 
 ### Multi-Language Support
