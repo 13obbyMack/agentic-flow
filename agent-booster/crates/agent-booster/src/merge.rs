@@ -73,9 +73,10 @@ impl Merger {
     /// Select merge strategy based on similarity score
     fn select_strategy(similarity: f32, threshold: f32) -> MergeStrategy {
         match similarity {
-            s if s >= 0.95 => MergeStrategy::ExactReplace,
-            s if s >= 0.80 => MergeStrategy::FuzzyReplace,
-            s if s >= 0.60 => MergeStrategy::InsertAfter,
+            // Prefer replacement strategies over insertion for simple edits
+            s if s >= 0.90 => MergeStrategy::ExactReplace,  // Very high similarity
+            s if s >= 0.50 => MergeStrategy::FuzzyReplace,  // Medium-high similarity (var→const, add types)
+            s if s >= 0.30 => MergeStrategy::InsertAfter,   // Low-medium similarity
             s if s >= threshold => MergeStrategy::InsertBefore,
             _ => MergeStrategy::Append,
         }
