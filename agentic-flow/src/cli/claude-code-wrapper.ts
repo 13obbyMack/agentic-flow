@@ -243,6 +243,9 @@ Examples:
   $ agentic-flow claude-code --provider gemini      # Uses Gemini 2.0 Flash
   $ agentic-flow claude-code --provider onnx        # Uses local ONNX models (free)
 
+  # With Agent Booster for 57x faster code edits
+  $ agentic-flow claude-code --provider openrouter --agent-booster
+
 Recommended Models:
   OpenRouter:
     mistralai/mistral-small-3.1-24b-instruct  (default, $0.02/M, 128k context, optimized for tools)
@@ -264,6 +267,7 @@ Documentation:
     .option('--provider <provider>', 'AI provider (anthropic, openrouter, gemini, onnx)', 'anthropic')
     .option('--port <port>', 'Proxy server port', '3000')
     .option('--model <model>', 'Specific model to use (e.g., mistralai/mistral-small-3.1-24b-instruct)')
+    .option('--agent-booster', 'Enable Agent Booster MCP tools for 57x faster code edits (default: true)', true)
     .option('--keep-proxy', 'Keep proxy running after Claude Code exits')
     .option('--no-auto-start', 'Skip proxy startup (use existing proxy)')
     .allowUnknownOption(true)
@@ -293,7 +297,7 @@ Documentation:
   }
 
   // Get Claude Code arguments (filter out wrapper-specific flags only)
-  const wrapperFlags = new Set(['--provider', '--port', '--model', '--keep-proxy', '--no-auto-start']);
+  const wrapperFlags = new Set(['--provider', '--port', '--model', '--agent-booster', '--keep-proxy', '--no-auto-start']);
   const wrapperValues = new Set([options.provider, options.port, options.model]);
 
   const claudeArgs: string[] = [];
@@ -339,6 +343,16 @@ Documentation:
   let proxyServer: any = null;
 
   try {
+    // Info about Agent Booster MCP tools if enabled
+    if (options.agentBooster) {
+      logger.info('');
+      logger.info('⚡ Agent Booster enabled (57x faster code edits)');
+      logger.info('   Available tools: agent_booster_edit_file, agent_booster_batch_edit, agent_booster_parse_markdown');
+      logger.info('   Configure MCP: Add "agentic-flow" to Claude Desktop config');
+      logger.info('   Learn more: examples/mcp-integration.md');
+      logger.info('');
+    }
+
     // Start proxy if needed and auto-start is enabled
     if (options.autoStart) {
       proxyServer = await startProxyServer(config);

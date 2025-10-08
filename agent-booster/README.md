@@ -21,7 +21,7 @@ When building AI coding agents, LLM-based code application APIs create severe bo
 
 **Agent Booster solves all of these:**
 
-- **⚡ Instant**: Sub-millisecond code transformations (352x faster)
+- **⚡ Instant**: Sub-millisecond code transformations (350x faster)
 - **💰 Free**: 100% local processing, zero API costs
 - **🔐 Private**: All processing happens on your machine
 - **✅ Reliable**: Deterministic results with confidence scoring

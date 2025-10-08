@@ -99,6 +99,12 @@ function detectLanguage(filePath: string): string {
 }
 
 async function applyCommand(args: CliArgs) {
+  // Check for help flags FIRST (before stdin mode)
+  if (process.argv.includes('--help') || process.argv.includes('-h')) {
+    console.log(USAGE);
+    process.exit(0);
+  }
+
   // Check if stdin has data (JSON mode for MCP)
   if (!process.stdin.isTTY) {
     return applyJsonStdin(args);

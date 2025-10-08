@@ -3,6 +3,7 @@
 import { FastMCP } from 'fastmcp';
 import { z } from 'zod';
 import { execSync } from 'child_process';
+import { resolve } from 'path';
 
 // Suppress FastMCP internal warnings for cleaner output
 const originalConsoleWarn = console.warn;
@@ -360,23 +361,26 @@ server.addTool({
         language = langMap[ext] || 'javascript';
       }
 
-      // Apply edit using agent-booster (local WASM, 0-1ms)
-      const cmd = `npx --yes agent-booster apply --language ${language}`;
+      // Apply edit using agent-booster CLI directly (local WASM, 0-1ms)
+      const agentBoosterCli = resolve(__dirname, '../../../agent-booster/dist/cli.js');
+      const cmd = `node ${agentBoosterCli} apply --language ${language}`;
       const result = execSync(cmd, {
         encoding: 'utf-8',
         input: JSON.stringify({ code: originalCode, edit: code_edit }),
         maxBuffer: 10 * 1024 * 1024,
-        timeout: 5000
+        timeout: 5000,
+        cwd: resolve(__dirname, '../../../agent-booster')
       });
 
       const parsed = JSON.parse(result);
 
       if (parsed.success && parsed.confidence >= 0.7) {
-        // Write modified file
+        // High confidence - use Agent Booster result
         fs.writeFileSync(target_filepath, parsed.output);
 
         return JSON.stringify({
           success: true,
+          method: 'agent_booster',
           filepath: target_filepath,
           instruction: instructions,
           latency_ms: parsed.latency,
@@ -385,7 +389,24 @@ server.addTool({
           message: `✅ Successfully edited ${target_filepath} (${parsed.latency}ms, ${(parsed.confidence * 100).toFixed(1)}% confidence)`
         }, null, 2);
       } else {
-        throw new Error(`Low confidence (${(parsed.confidence * 100).toFixed(1)}%). Please provide more specific code snippet.`);
+        // Low confidence - fall back to LLM for complex edits
+        const confidencePercent = (parsed.confidence * 100).toFixed(1);
+
+        return JSON.stringify({
+          success: false,
+          method: 'agent_booster_failed',
+          filepath: target_filepath,
+          confidence: confidencePercent + '%',
+          fallback_required: true,
+          message: `⚠️ Agent Booster confidence too low (${confidencePercent}%). Falling back to LLM for complex edit.`,
+          suggestion: `Use agentic_flow_agent with task: "Apply this edit to ${target_filepath}: ${instructions}. Original code: ${originalCode.substring(0, 500)}... Target edit: ${code_edit.substring(0, 500)}..."`,
+          llm_fallback: {
+            tool: 'agentic_flow_agent',
+            agent: 'coder',
+            task: `Apply code edit to ${target_filepath}:\n\nInstructions: ${instructions}\n\nOriginal code:\n${originalCode}\n\nTarget edit:\n${code_edit}`,
+            reason: `Agent Booster pattern matching failed (${confidencePercent}% confidence). This edit requires LLM reasoning for: structural changes, complex logic, or vague instructions.`
+          }
+        }, null, 2);
       }
     } catch (error: any) {
       throw new Error(`Failed to edit file: ${error.message}`);

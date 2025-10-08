@@ -90,6 +90,30 @@ export class AgentBooster {
     const startTime = Date.now();
 
     try {
+      // Validate input - detect vague instructions
+      if (!request.edit || request.edit.trim().length === 0) {
+        throw new Error('Edit instruction cannot be empty. Provide specific code snippet or transformation.');
+      }
+
+      // Detect vague/non-code instructions
+      const vaguePhrases = [
+        'make it better', 'improve', 'optimize', 'fix', 'refactor',
+        'add feature', 'implement', 'create', 'design', 'build',
+        'handle', 'manage', 'process', 'support'
+      ];
+
+      const isVague = vaguePhrases.some(phrase =>
+        request.edit.toLowerCase().includes(phrase) &&
+        !request.edit.includes('{') && // No code blocks
+        !request.edit.includes('function') && // No function def
+        !request.edit.includes('const') && // No variable def
+        !request.edit.includes('class') // No class def
+      );
+
+      if (isVague) {
+        throw new Error(`Vague instruction detected: "${request.edit}". Agent Booster requires specific code snippets, not high-level instructions. Use an LLM for vague tasks.`);
+      }
+
       // Call WASM module with confidence threshold
       const result = this.wasmInstance.apply_edit(
         request.code,
