@@ -361,8 +361,8 @@ server.addTool({
         language = langMap[ext] || 'javascript';
       }
 
-      // Apply edit using agent-booster CLI (automatically installs from npm if not available)
-      const cmd = `npx --yes agent-booster apply --language ${language}`;
+      // Apply edit using agent-booster@0.2.1 CLI (automatically installs from npm if not available)
+      const cmd = `npx --yes agent-booster@0.2.1 apply --language ${language}`;
       const result = execSync(cmd, {
         encoding: 'utf-8',
         input: JSON.stringify({ code: originalCode, edit: code_edit }),
@@ -449,7 +449,7 @@ server.addTool({
         }
 
         // Apply edit
-        const cmd = `npx --yes agent-booster apply --language ${language}`;
+        const cmd = `npx --yes agent-booster@0.2.1 apply --language ${language}`;
         const result = execSync(cmd, {
           encoding: 'utf-8',
           input: JSON.stringify({ code: originalCode, edit: edit.code_edit }),
@@ -547,7 +547,7 @@ server.addTool({
           language = langMap[ext] || 'javascript';
         }
 
-        const cmd = `npx --yes agent-booster apply --language ${language}`;
+        const cmd = `npx --yes agent-booster@0.2.1 apply --language ${language}`;
         const result = execSync(cmd, {
           encoding: 'utf-8',
           input: JSON.stringify({ code: originalCode, edit: edit.code_edit }),
