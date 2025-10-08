@@ -13,7 +13,7 @@
         }
       },
       "agentBooster": {
-        "latency": 12,
+        "latency": 13,
         "success": true,
         "confidence": 0.5737500190734863,
         "strategy": "insert_after",
@@ -22,7 +22,7 @@
           "output": 26
         }
       },
-      "speedup": "38.8",
+      "speedup": "35.8",
       "winner": "agent"
     },
     {
@@ -88,7 +88,7 @@
         }
       },
       "agentBooster": {
-        "latency": 1,
+        "latency": 0,
         "success": true,
         "confidence": 0.5672115683555603,
         "strategy": "insert_after",
@@ -97,7 +97,7 @@
           "output": 66
         }
       },
-      "speedup": "541.0",
+      "speedup": "Infinity",
       "winner": "agent"
     },
     {
@@ -113,7 +113,7 @@
         }
       },
       "agentBooster": {
-        "latency": 0,
+        "latency": 1,
         "success": true,
         "confidence": 0.5106883645057678,
         "strategy": "insert_after",
@@ -122,7 +122,7 @@
           "output": 92
         }
       },
-      "speedup": "Infinity",
+      "speedup": "395.0",
       "winner": "agent"
     },
     {
@@ -213,7 +213,7 @@
         }
       },
       "agentBooster": {
-        "latency": 0,
+        "latency": 1,
         "success": true,
         "confidence": 0.800000011920929,
         "strategy": "exact_replace",
@@ -222,7 +222,7 @@
           "output": 55
         }
       },
-      "speedup": "Infinity",
+      "speedup": "269.0",
       "winner": "agent"
     },
     {
@@ -238,7 +238,7 @@
         }
       },
       "agentBooster": {
-        "latency": 1,
+        "latency": 0,
         "success": true,
         "confidence": 0.5604602098464966,
         "strategy": "insert_after",
@@ -247,7 +247,7 @@
           "output": 83
         }
       },
-      "speedup": "319.0",
+      "speedup": "Infinity",
       "winner": "agent"
     },
     {
@@ -301,5 +301,5 @@
       "winner": "agent"
     }
   ],
-  "timestamp": "2025-10-07T23:38:40.982Z"
+  "timestamp": "2025-10-08T00:22:11.506Z"
 }

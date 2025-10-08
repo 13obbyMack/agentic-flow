@@ -48,6 +48,8 @@ Build responsive tools without the LLM tax:
 
 ## 🚀 Quick Start
 
+### Option 1: npm Package (Local Use)
+
 ```bash
 npm install agent-booster
 ```
@@ -66,6 +68,30 @@ const result = await booster.apply({
 console.log(result.output);
 console.log(`Confidence: ${result.confidence}, Latency: ${result.latency}ms`);
 ```
+
+### Option 2: API Server (Morph LLM Compatible)
+
+Start the server:
+```bash
+npm install -g agent-booster
+agent-booster-server
+# Server runs on http://localhost:3000
+```
+
+Use it exactly like Morph LLM:
+```bash
+curl -X POST http://localhost:3000/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "agent-booster-v1",
+    "messages": [{
+      "role": "user",
+      "content": "<instruction>Add types</instruction><code>function add(a, b) { return a + b; }</code><update>function add(a: number, b: number): number { return a + b; }</update>"
+    }]
+  }'
+```
+
+**Drop-in replacement**: Change your Morph LLM base URL to `http://localhost:3000` and get 352x speedup with zero code changes!
 
 ## ⚡ Performance Benchmarks
 
@@ -110,7 +136,7 @@ See [FINAL_COMPARISON_REPORT.md](./FINAL_COMPARISON_REPORT.md) for detailed anal
 ## 🎯 Features
 
 ### Core Capabilities
-- ✅ **100% Morph LLM Compatible** - Drop-in replacement API
+- ✅ **100% Morph LLM API Compatible** - Drop-in replacement with `/v1/chat/completions` and `/v1/apply` endpoints
 - ✅ **Template-Based Optimization** - 80-90% confidence on complex transformations
 - ✅ **Multi-Language Support** - JavaScript, TypeScript, Python, Rust, Go, Java, C, C++
 - ✅ **Zero Cost** - 100% local processing, no API fees
@@ -118,6 +144,12 @@ See [FINAL_COMPARISON_REPORT.md](./FINAL_COMPARISON_REPORT.md) for detailed anal
 - ✅ **Privacy-First** - No code sent to external APIs
 - ✅ **Confidence Scoring** - Know when to trust results (50-90%)
 - ✅ **Intelligent Strategies** - exact_replace, fuzzy_replace, insert_after, insert_before, append
+
+### API Endpoints (Morph LLM Compatible)
+- 🌐 **`POST /v1/chat/completions`** - 100% compatible with Morph LLM chat format
+- ⚡ **`POST /v1/apply`** - Direct apply endpoint (simplified)
+- 📦 **`POST /v1/batch`** - Batch processing for multiple edits
+- 🏥 **`GET /health`** - Health check and status
 
 ### Template Transformations
 Agent Booster includes 7 built-in transformation templates:
