@@ -361,15 +361,13 @@ server.addTool({
         language = langMap[ext] || 'javascript';
       }
 
-      // Apply edit using agent-booster CLI directly (local WASM, 0-1ms)
-      const agentBoosterCli = resolve(__dirname, '../../../agent-booster/dist/cli.js');
-      const cmd = `node ${agentBoosterCli} apply --language ${language}`;
+      // Apply edit using agent-booster CLI (automatically installs from npm if not available)
+      const cmd = `npx --yes agent-booster apply --language ${language}`;
       const result = execSync(cmd, {
         encoding: 'utf-8',
         input: JSON.stringify({ code: originalCode, edit: code_edit }),
         maxBuffer: 10 * 1024 * 1024,
-        timeout: 5000,
-        cwd: resolve(__dirname, '../../../agent-booster')
+        timeout: 30000  // Allow time for npx to download package on first run
       });
 
       const parsed = JSON.parse(result);

@@ -11,7 +11,9 @@
   "files": [
     "dist/",
     "wasm/",
+    "validation/",
     "README.md",
+    "USAGE.md",
     "LICENSE"
   ],
   "scripts": {
@@ -19,7 +21,8 @@
     "build:wasm": "cd crates/agent-booster-wasm && wasm-pack build --target nodejs --out-dir ../../wasm",
     "build:js": "tsc",
     "prepublishOnly": "npm run build:js",
-    "test": "node benchmarks/run-real-benchmark.js",
+    "test": "node validation/test-published-package.js",
+    "test:benchmark": "node benchmarks/run-real-benchmark.js",
     "server": "node dist/server.js",
     "dev:server": "tsc && node dist/server.js"
   },
