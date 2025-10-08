@@ -55,6 +55,29 @@ const MODEL_CAPABILITIES: Record<string, Partial<ModelCapabilities>> = {
     costPerMillionTokens: 0.30
   },
 
+  // OpenAI Models (via OpenRouter/Requesty)
+  'openai/gpt-4o': {
+    supportsNativeTools: true,
+    contextWindow: 128000,
+    requiresEmulation: false,
+    emulationStrategy: 'none',
+    costPerMillionTokens: 2.50
+  },
+  'openai/gpt-4o-mini': {
+    supportsNativeTools: true,
+    contextWindow: 128000,
+    requiresEmulation: false,
+    emulationStrategy: 'none',
+    costPerMillionTokens: 0.15
+  },
+  'openai/gpt-4-turbo': {
+    supportsNativeTools: true,
+    contextWindow: 128000,
+    requiresEmulation: false,
+    emulationStrategy: 'none',
+    costPerMillionTokens: 10.00
+  },
+
   // OpenRouter - No Native Tool Support (Require Emulation)
   'mistralai/mistral-7b-instruct': {
     supportsNativeTools: false,

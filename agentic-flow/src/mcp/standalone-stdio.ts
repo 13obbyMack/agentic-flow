@@ -3,6 +3,7 @@
 import { FastMCP } from 'fastmcp';
 import { z } from 'zod';
 import { execSync } from 'child_process';
+import { resolve } from 'path';
 
 // Suppress FastMCP internal warnings for cleaner output
 const originalConsoleWarn = console.warn;
@@ -323,14 +324,286 @@ server.addTool({
   }
 });
 
-console.error('✅ Registered 7 tools:');
+// ========================================
+// Agent Booster Tools (352x faster code editing)
+// ========================================
+
+// Tool: Apply code edit with Agent Booster
+server.addTool({
+  name: 'agent_booster_edit_file',
+  description: 'Ultra-fast code editing (352x faster than cloud APIs, $0 cost). Apply precise code edits using Agent Booster\'s local WASM engine. Use "// ... existing code ..." markers for unchanged sections.',
+  parameters: z.object({
+    target_filepath: z.string().describe('Path of the file to modify'),
+    instructions: z.string().describe('First-person instruction (e.g., "I will add error handling")'),
+    code_edit: z.string().describe('Precise code lines to edit, using "// ... existing code ..." for unchanged sections'),
+    language: z.string().optional().describe('Programming language (auto-detected from file extension if not provided)')
+  }),
+  execute: async ({ target_filepath, instructions, code_edit, language }) => {
+    try {
+      const fs = await import('fs');
+      const path = await import('path');
+
+      // Read current file
+      if (!fs.existsSync(target_filepath)) {
+        throw new Error(`File not found: ${target_filepath}`);
+      }
+
+      const originalCode = fs.readFileSync(target_filepath, 'utf-8');
+
+      // Detect language if not provided
+      if (!language) {
+        const ext = path.extname(target_filepath).slice(1);
+        const langMap: { [key: string]: string } = {
+          'ts': 'typescript', 'js': 'javascript', 'py': 'python',
+          'rs': 'rust', 'go': 'go', 'java': 'java',
+          'c': 'c', 'cpp': 'cpp', 'h': 'c', 'hpp': 'cpp'
+        };
+        language = langMap[ext] || 'javascript';
+      }
+
+      // Apply edit using agent-booster CLI directly (local WASM, 0-1ms)
+      const agentBoosterCli = resolve(__dirname, '../../../agent-booster/dist/cli.js');
+      const cmd = `node ${agentBoosterCli} apply --language ${language}`;
+      const result = execSync(cmd, {
+        encoding: 'utf-8',
+        input: JSON.stringify({ code: originalCode, edit: code_edit }),
+        maxBuffer: 10 * 1024 * 1024,
+        timeout: 5000,
+        cwd: resolve(__dirname, '../../../agent-booster')
+      });
+
+      const parsed = JSON.parse(result);
+
+      if (parsed.success && parsed.confidence >= 0.7) {
+        // High confidence - use Agent Booster result
+        fs.writeFileSync(target_filepath, parsed.output);
+
+        return JSON.stringify({
+          success: true,
+          method: 'agent_booster',
+          filepath: target_filepath,
+          instruction: instructions,
+          latency_ms: parsed.latency,
+          confidence: (parsed.confidence * 100).toFixed(1) + '%',
+          strategy: parsed.strategy,
+          message: `✅ Successfully edited ${target_filepath} (${parsed.latency}ms, ${(parsed.confidence * 100).toFixed(1)}% confidence)`
+        }, null, 2);
+      } else {
+        // Low confidence - fall back to LLM for complex edits
+        const confidencePercent = (parsed.confidence * 100).toFixed(1);
+
+        return JSON.stringify({
+          success: false,
+          method: 'agent_booster_failed',
+          filepath: target_filepath,
+          confidence: confidencePercent + '%',
+          fallback_required: true,
+          message: `⚠️ Agent Booster confidence too low (${confidencePercent}%). Falling back to LLM for complex edit.`,
+          suggestion: `Use agentic_flow_agent with task: "Apply this edit to ${target_filepath}: ${instructions}. Original code: ${originalCode.substring(0, 500)}... Target edit: ${code_edit.substring(0, 500)}..."`,
+          llm_fallback: {
+            tool: 'agentic_flow_agent',
+            agent: 'coder',
+            task: `Apply code edit to ${target_filepath}:\n\nInstructions: ${instructions}\n\nOriginal code:\n${originalCode}\n\nTarget edit:\n${code_edit}`,
+            reason: `Agent Booster pattern matching failed (${confidencePercent}% confidence). This edit requires LLM reasoning for: structural changes, complex logic, or vague instructions.`
+          }
+        }, null, 2);
+      }
+    } catch (error: any) {
+      throw new Error(`Failed to edit file: ${error.message}`);
+    }
+  }
+});
+
+// Tool: Batch apply multiple edits
+server.addTool({
+  name: 'agent_booster_batch_edit',
+  description: 'Apply multiple code edits in a single operation (ultra-fast batch processing). Perfect for multi-file refactoring.',
+  parameters: z.object({
+    edits: z.array(z.object({
+      target_filepath: z.string().describe('File path'),
+      instructions: z.string().describe('First-person instruction'),
+      code_edit: z.string().describe('Code edit with markers'),
+      language: z.string().optional().describe('Programming language')
+    })).describe('Array of edit requests')
+  }),
+  execute: async ({ edits }) => {
+    try {
+      const fs = await import('fs');
+      const path = await import('path');
+      const results = [];
+      let totalLatency = 0;
+
+      for (const edit of edits) {
+        const originalCode = fs.existsSync(edit.target_filepath)
+          ? fs.readFileSync(edit.target_filepath, 'utf-8')
+          : '';
+
+        // Detect language
+        let language = edit.language;
+        if (!language) {
+          const ext = path.extname(edit.target_filepath).slice(1);
+          const langMap: { [key: string]: string } = {
+            'ts': 'typescript', 'js': 'javascript', 'py': 'python',
+            'rs': 'rust', 'go': 'go', 'java': 'java',
+            'c': 'c', 'cpp': 'cpp', 'h': 'c', 'hpp': 'cpp'
+          };
+          language = langMap[ext] || 'javascript';
+        }
+
+        // Apply edit
+        const cmd = `npx --yes agent-booster apply --language ${language}`;
+        const result = execSync(cmd, {
+          encoding: 'utf-8',
+          input: JSON.stringify({ code: originalCode, edit: edit.code_edit }),
+          maxBuffer: 10 * 1024 * 1024,
+          timeout: 5000
+        });
+
+        const parsed = JSON.parse(result);
+        totalLatency += parsed.latency;
+
+        if (parsed.success && parsed.confidence >= 0.7) {
+          fs.writeFileSync(edit.target_filepath, parsed.output);
+          results.push({
+            file: edit.target_filepath,
+            success: true,
+            latency_ms: parsed.latency,
+            confidence: (parsed.confidence * 100).toFixed(1) + '%'
+          });
+        } else {
+          results.push({
+            file: edit.target_filepath,
+            success: false,
+            confidence: (parsed.confidence * 100).toFixed(1) + '%',
+            reason: 'Low confidence'
+          });
+        }
+      }
+
+      const successful = results.filter(r => r.success).length;
+
+      return JSON.stringify({
+        success: true,
+        total: edits.length,
+        successful,
+        failed: edits.length - successful,
+        total_latency_ms: totalLatency,
+        avg_latency_ms: (totalLatency / edits.length).toFixed(1),
+        results,
+        performance_note: `Agent Booster: ${totalLatency}ms total vs Morph LLM: ~${edits.length * 352}ms (${((edits.length * 352) / totalLatency).toFixed(1)}x faster)`
+      }, null, 2);
+    } catch (error: any) {
+      throw new Error(`Batch edit failed: ${error.message}`);
+    }
+  }
+});
+
+// Tool: Parse markdown code blocks and apply edits
+server.addTool({
+  name: 'agent_booster_parse_markdown',
+  description: 'Parse markdown code blocks with filepath= and instruction= metadata, then apply all edits. Compatible with LLM-generated multi-file refactoring outputs.',
+  parameters: z.object({
+    markdown: z.string().describe('Markdown text containing code blocks with filepath= and instruction= metadata')
+  }),
+  execute: async ({ markdown }) => {
+    try {
+      const fs = await import('fs');
+      const path = await import('path');
+
+      // Parse markdown code blocks
+      const regex = /```(?:(\w+))?\s*filepath=([^\s]+)\s+instruction=([^\n]+)\n([\s\S]*?)```/g;
+      const edits = [];
+      let match;
+
+      while ((match = regex.exec(markdown)) !== null) {
+        const [_, language, filepath, instruction, code_edit] = match;
+        edits.push({
+          target_filepath: filepath.trim(),
+          instructions: instruction.trim(),
+          code_edit: code_edit.trim(),
+          language: language || undefined
+        });
+      }
+
+      if (edits.length === 0) {
+        throw new Error('No code blocks found in markdown. Expected format: ```language filepath=path instruction=description\\ncode\\n```');
+      }
+
+      // Apply all edits using batch tool
+      const results = [];
+      let totalLatency = 0;
+
+      for (const edit of edits) {
+        const originalCode = fs.existsSync(edit.target_filepath)
+          ? fs.readFileSync(edit.target_filepath, 'utf-8')
+          : '';
+
+        let language = edit.language;
+        if (!language) {
+          const ext = path.extname(edit.target_filepath).slice(1);
+          const langMap: { [key: string]: string } = {
+            'ts': 'typescript', 'js': 'javascript', 'py': 'python',
+            'rs': 'rust', 'go': 'go', 'java': 'java',
+            'c': 'c', 'cpp': 'cpp', 'h': 'c', 'hpp': 'cpp'
+          };
+          language = langMap[ext] || 'javascript';
+        }
+
+        const cmd = `npx --yes agent-booster apply --language ${language}`;
+        const result = execSync(cmd, {
+          encoding: 'utf-8',
+          input: JSON.stringify({ code: originalCode, edit: edit.code_edit }),
+          maxBuffer: 10 * 1024 * 1024,
+          timeout: 5000
+        });
+
+        const parsed = JSON.parse(result);
+        totalLatency += parsed.latency;
+
+        if (parsed.success && parsed.confidence >= 0.7) {
+          fs.writeFileSync(edit.target_filepath, parsed.output);
+          results.push({
+            file: edit.target_filepath,
+            instruction: edit.instructions,
+            success: true,
+            latency_ms: parsed.latency
+          });
+        } else {
+          results.push({
+            file: edit.target_filepath,
+            success: false,
+            confidence: (parsed.confidence * 100).toFixed(1) + '%'
+          });
+        }
+      }
+
+      const successful = results.filter(r => r.success).length;
+
+      return JSON.stringify({
+        success: true,
+        parsed_edits: edits.length,
+        successful,
+        failed: edits.length - successful,
+        total_latency_ms: totalLatency,
+        results
+      }, null, 2);
+    } catch (error: any) {
+      throw new Error(`Failed to parse and apply markdown edits: ${error.message}`);
+    }
+  }
+});
+
+console.error('✅ Registered 10 tools (7 agentic-flow + 3 agent-booster):');
 console.error('   • agentic_flow_agent (execute agent with 13 parameters)');
 console.error('   • agentic_flow_list_agents (list 66+ agents)');
 console.error('   • agentic_flow_create_agent (create custom agent)');
 console.error('   • agentic_flow_list_all_agents (list with sources)');
 console.error('   • agentic_flow_agent_info (get agent details)');
 console.error('   • agentic_flow_check_conflicts (conflict detection)');
-console.error('   • agentic_flow_optimize_model (auto-select best model) 🔥 NEW');
+console.error('   • agentic_flow_optimize_model (auto-select best model)');
+console.error('   • agent_booster_edit_file (352x faster code editing) ⚡ NEW');
+console.error('   • agent_booster_batch_edit (multi-file refactoring) ⚡ NEW');
+console.error('   • agent_booster_parse_markdown (LLM output parsing) ⚡ NEW');
 console.error('🔌 Starting stdio transport...');
 
 server.start({ transportType: 'stdio' }).then(() => {

@@ -10,6 +10,9 @@ function getCurrentProvider(): string {
   if (process.env.PROVIDER === 'gemini' || process.env.USE_GEMINI === 'true') {
     return 'gemini';
   }
+  if (process.env.PROVIDER === 'requesty' || process.env.USE_REQUESTY === 'true') {
+    return 'requesty';
+  }
   if (process.env.PROVIDER === 'openrouter' || process.env.USE_OPENROUTER === 'true') {
     return 'openrouter';
   }
@@ -29,6 +32,13 @@ function getModelForProvider(provider: string): {
       return {
         model: process.env.COMPLETION_MODEL || 'gemini-2.0-flash-exp',
         apiKey: process.env.GOOGLE_GEMINI_API_KEY || process.env.ANTHROPIC_API_KEY || '',
+        baseURL: process.env.PROXY_URL || undefined
+      };
+
+    case 'requesty':
+      return {
+        model: process.env.COMPLETION_MODEL || 'deepseek/deepseek-chat',
+        apiKey: process.env.REQUESTY_API_KEY || process.env.ANTHROPIC_API_KEY || '',
         baseURL: process.env.PROXY_URL || undefined
       };
 
@@ -95,6 +105,15 @@ export async function claudeAgent(
         proxyUrl: envOverrides.ANTHROPIC_BASE_URL,
         model: finalModel
       });
+    } else if (provider === 'requesty' && process.env.REQUESTY_API_KEY) {
+      // Use ANTHROPIC_BASE_URL if already set by CLI (proxy mode)
+      envOverrides.ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY || 'proxy-key';
+      envOverrides.ANTHROPIC_BASE_URL = process.env.ANTHROPIC_BASE_URL || process.env.REQUESTY_PROXY_URL || 'http://localhost:3000';
+
+      logger.info('Using Requesty proxy', {
+        proxyUrl: envOverrides.ANTHROPIC_BASE_URL,
+        model: finalModel
+      });
     } else if (provider === 'openrouter' && process.env.OPENROUTER_API_KEY) {
       // Use ANTHROPIC_BASE_URL if already set by CLI (proxy mode)
       envOverrides.ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY || 'proxy-key';
@@ -127,14 +146,23 @@ export async function claudeAgent(
       // MCP server setup - enable in-SDK server and optional external servers
       const mcpServers: any = {};
 
-      // Enable in-SDK MCP server for custom tools (enabled by default)
-      if (process.env.ENABLE_CLAUDE_FLOW_SDK !== 'false') {
-        mcpServers['claude-flow-sdk'] = claudeFlowSdkServer;
-      }
+      // CRITICAL FIX: Disable all MCP servers for Requesty provider
+      // The Claude SDK hangs when trying to initialize MCP servers with Requesty
+      // This is a fundamental incompatibility - SDK initialization fails before API call
+      if (provider === 'requesty') {
+        logger.info('⚠️  Requesty provider detected - disabling all MCP servers to prevent hang');
+        console.log('⚠️  Requesty: MCP tools disabled (SDK incompatibility)');
+        // Skip all MCP server initialization for Requesty
+        // Continue with empty mcpServers object
+      } else {
+        // Enable in-SDK MCP server for custom tools (enabled by default)
+        if (process.env.ENABLE_CLAUDE_FLOW_SDK !== 'false') {
+          mcpServers['claude-flow-sdk'] = claudeFlowSdkServer;
+        }
 
-      // External MCP servers (enabled by default for full 213-tool access)
-      // Disable by setting ENABLE_CLAUDE_FLOW_MCP=false
-      if (process.env.ENABLE_CLAUDE_FLOW_MCP !== 'false') {
+        // External MCP servers (enabled by default for full 213-tool access)
+        // Disable by setting ENABLE_CLAUDE_FLOW_MCP=false
+        if (process.env.ENABLE_CLAUDE_FLOW_MCP !== 'false') {
         mcpServers['claude-flow'] = {
           type: 'stdio',
           command: 'npx',
@@ -200,10 +228,11 @@ export async function claudeAgent(
             }
           }
         }
-      } catch (error) {
-        // Silently fail if config doesn't exist or can't be read
-        console.log('[agentic-flow] No user MCP config found (this is normal)');
-      }
+        } catch (error) {
+          // Silently fail if config doesn't exist or can't be read
+          console.log('[agentic-flow] No user MCP config found (this is normal)');
+        }
+      } // End of provider !== 'requesty' check
 
       const queryOptions: any = {
         systemPrompt: agent.systemPrompt,

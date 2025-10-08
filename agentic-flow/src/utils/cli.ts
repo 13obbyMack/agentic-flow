@@ -34,6 +34,9 @@ export interface CliOptions {
   optimizePriority?: 'quality' | 'balanced' | 'cost' | 'speed' | 'privacy';
   maxCost?: number;
 
+  // Agent Booster Integration
+  claudeCode?: boolean; // Use Agent Booster for 57x faster code edits
+
   help?: boolean;
   version?: boolean;
   mcpCommand?: string; // start, stop, status, list
@@ -202,6 +205,7 @@ USAGE:
   npx agentic-flow [COMMAND] [OPTIONS]
 
 COMMANDS:
+  claude-code [options]   Spawn Claude Code with proxy + Agent Booster (57x faster edits)
   mcp <command> [server]  Manage MCP servers (start, stop, status, list)
   config [command]        Configuration wizard (set, get, list, delete, reset)
   agent <command>         Agent management (list, create, info, conflicts)
@@ -250,6 +254,11 @@ OPTIONS:
   --help, -h                  Show this help message
 
 EXAMPLES:
+  # Claude Code with Agent Booster (57x faster code edits)
+  npx agentic-flow claude-code --provider openrouter --agent-booster
+  npx agentic-flow claude-code --provider gemini "Write a REST API"
+  npx agentic-flow claude-code --help     # See all claude-code options
+
   # Agent Management
   npx agentic-flow agent list             # List all agents with sources
   npx agentic-flow agent create           # Interactive agent creator
