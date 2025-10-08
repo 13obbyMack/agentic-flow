@@ -1,6 +1,6 @@
 {
   "metadata": {
-    "timestamp": "2025-10-07T22:27:22.986Z",
+    "timestamp": "2025-10-08T01:10:17.578Z",
     "runtime": "wasm",
     "parser": "regex",
     "dataset": "small-test-dataset.json",
@@ -20,7 +20,7 @@
     {
       "id": "test-002",
       "description": "Add error handling to async function",
-      "latency_ms": 6,
+      "latency_ms": 5,
       "success": false,
       "confidence": 0,
       "strategy": "unknown"
@@ -28,7 +28,7 @@
     {
       "id": "test-003",
       "description": "Convert var to const/let",
-      "latency_ms": 5,
+      "latency_ms": 6,
       "success": true,
       "confidence": 0.7955467104911804,
       "strategy": 1,
@@ -37,7 +37,7 @@
     {
       "id": "test-004",
       "description": "Add JSDoc comments",
-      "latency_ms": 6,
+      "latency_ms": 5,
       "success": true,
       "confidence": 0.5672115683555603,
       "strategy": 2,
@@ -46,7 +46,7 @@
     {
       "id": "test-005",
       "description": "Convert callback to Promise",
-      "latency_ms": 5,
+      "latency_ms": 4,
       "success": true,
       "confidence": 0.5106883645057678,
       "strategy": 2,
@@ -55,7 +55,7 @@
     {
       "id": "test-006",
       "description": "Add null checks",
-      "latency_ms": 6,
+      "latency_ms": 4,
       "success": false,
       "confidence": 0,
       "strategy": "unknown"
@@ -63,7 +63,7 @@
     {
       "id": "test-007",
       "description": "Convert to arrow function",
-      "latency_ms": 5,
+      "latency_ms": 4,
       "success": true,
       "confidence": 0.5705881714820862,
       "strategy": 2,
@@ -72,7 +72,7 @@
     {
       "id": "test-008",
       "description": "Add input validation",
-      "latency_ms": 6,
+      "latency_ms": 5,
       "success": false,
       "confidence": 0,
       "strategy": "unknown"
@@ -80,7 +80,7 @@
     {
       "id": "test-009",
       "description": "Convert class to TypeScript",
-      "latency_ms": 6,
+      "latency_ms": 5,
       "success": false,
       "confidence": 0,
       "strategy": "unknown"
@@ -112,9 +112,9 @@
     }
   ],
   "aggregate": {
-    "totalLatency": 80,
-    "avgLatency": 6.666666666666667,
-    "p50Latency": 6,
+    "totalLatency": 73,
+    "avgLatency": 6.083333333333333,
+    "p50Latency": 5,
     "p95Latency": 20,
     "p99Latency": 20,
     "successRate": 50,

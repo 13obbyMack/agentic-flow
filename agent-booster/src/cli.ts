@@ -99,6 +99,11 @@ function detectLanguage(filePath: string): string {
 }
 
 async function applyCommand(args: CliArgs) {
+  // Check if stdin has data (JSON mode for MCP)
+  if (!process.stdin.isTTY) {
+    return applyJsonStdin(args);
+  }
+
   if (!args.file) {
     console.error('Error: File path required');
     console.log(USAGE);
@@ -151,6 +156,50 @@ async function applyCommand(args: CliArgs) {
     fs.writeFileSync(outputPath, result.output, 'utf-8');
     console.log(`\n💾 Saved to: ${outputPath}`);
   }
+}
+
+async function applyJsonStdin(args: CliArgs): Promise<void> {
+  return new Promise((resolve, reject) => {
+    let input = '';
+
+    process.stdin.on('data', (chunk) => {
+      input += chunk;
+    });
+
+    process.stdin.on('end', async () => {
+      try {
+        const { code, edit } = JSON.parse(input);
+
+        if (!code || !edit) {
+          console.log(JSON.stringify({
+            success: false,
+            error: 'Missing required fields: code and edit'
+          }));
+          process.exit(1);
+        }
+
+        const booster = new AgentBooster({
+          confidenceThreshold: args.confidence || 0.5,
+        });
+
+        const result = await booster.apply({
+          code,
+          edit,
+          language: args.language || 'javascript'
+        });
+
+        // Output JSON result
+        console.log(JSON.stringify(result));
+        process.exit(result.success ? 0 : 1);
+      } catch (error: any) {
+        console.log(JSON.stringify({
+          success: false,
+          error: error.message
+        }));
+        process.exit(1);
+      }
+    });
+  });
 }
 
 async function benchmarkCommand() {

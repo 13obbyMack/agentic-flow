@@ -8,7 +8,7 @@
 [![License](https://img.shields.io/badge/license-MIT%20%7C%20Apache--2.0-green.svg)](LICENSE)
 [![Win Rate](https://img.shields.io/badge/win%20rate-100%25-brightgreen.svg)]()
 
-**Agent Booster** is a high-performance code transformation engine designed to eliminate the latency and cost bottleneck in AI coding agents, autonomous systems, and developer tools. Built in Rust with WebAssembly, it applies code edits **352x faster** than LLM-based alternatives while maintaining 100% accuracy.
+**Agent Booster** is a high-performance code transformation engine designed to eliminate the latency and cost bottleneck in AI coding agents, autonomous systems, and developer tools. Built in Rust with WebAssembly, it applies code edits **350x faster** than LLM-based alternatives while maintaining 100% accuracy.
 
 ## Why Agent Booster?
 
@@ -48,7 +48,33 @@ Build responsive tools without the LLM tax:
 
 ## 🚀 Quick Start
 
-### Option 1: npm Package (Local Use)
+### Option 1: MCP Tools (Claude Desktop, Cursor, VS Code)
+
+Get Agent Booster tools instantly in Claude Desktop or any MCP client:
+
+```bash
+# Install agentic-flow MCP server
+npm install -g agentic-flow
+
+# Configure Claude Desktop (~/Library/Application Support/Claude/claude_desktop_config.json)
+{
+  "mcpServers": {
+    "agentic-flow": {
+      "command": "npx",
+      "args": ["-y", "agentic-flow", "mcp"]
+    }
+  }
+}
+```
+
+**3 Agent Booster tools now available:**
+- `agent_booster_edit_file` - Ultra-fast single file editing
+- `agent_booster_batch_edit` - Multi-file refactoring
+- `agent_booster_parse_markdown` - LLM output parsing
+
+[→ Full MCP Integration Guide](./examples/mcp-integration.md)
+
+### Option 2: npm Package (Direct Integration)
 
 ```bash
 npm install agent-booster
@@ -69,7 +95,7 @@ console.log(result.output);
 console.log(`Confidence: ${result.confidence}, Latency: ${result.latency}ms`);
 ```
 
-### Option 2: API Server (Morph LLM Compatible)
+### Option 3: API Server (Morph LLM Compatible)
 
 Start the server:
 ```bash
