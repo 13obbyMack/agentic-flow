@@ -1,6 +1,6 @@
 {
   "name": "agent-booster",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Ultra-fast code editing engine - 52x faster than Morph LLM at $0 cost",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -18,7 +18,7 @@
     "build": "npm run build:wasm && npm run build:js",
     "build:wasm": "cd crates/agent-booster-wasm && wasm-pack build --target nodejs --out-dir ../../wasm",
     "build:js": "tsc",
-    "prepublishOnly": "npm run build",
+    "prepublishOnly": "npm run build:js",
     "test": "node benchmarks/run-real-benchmark.js",
     "server": "node dist/server.js",
     "dev:server": "tsc && node dist/server.js"
@@ -32,11 +32,16 @@
     "rust",
     "performance"
   ],
-  "author": "Agent Booster",
+  "author": "rUv <ruv@ruv.io>",
   "license": "MIT OR Apache-2.0",
+  "homepage": "https://ruv.io",
   "repository": {
     "type": "git",
-    "url": "https://github.com/yourusername/agent-booster.git"
+    "url": "https://github.com/ruvnet/agentic-flow.git",
+    "directory": "agent-booster"
+  },
+  "bugs": {
+    "url": "https://github.com/ruvnet/agentic-flow/issues"
   },
   "devDependencies": {
     "@types/express": "^5.0.3",
