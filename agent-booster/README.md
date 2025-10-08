@@ -284,92 +284,181 @@ console.log(`Confidence: ${result.confidence}`);
 </script>
 ```
 
-## 📊 Benchmarks
+## 📊 Performance Testing: How Fast Is It Really?
 
-### Real-World Performance (vs Morph LLM)
+We tested Agent Booster against Morph LLM (a popular LLM-based code editing API) using 12 real-world code transformations. Here's what we found:
 
-**Dataset:** 12 JavaScript/TypeScript transformations
+### The Bottom Line
 
-```
-┌──────────────────────────┬─────────────────┬─────────────────┬─────────────┐
-│ Metric                   │ Morph LLM       │ Agent Booster   │ Improvement │
-├──────────────────────────┼─────────────────┼─────────────────┼─────────────┤
-│ Win/Loss Record          │ 0/12 (0%)       │ 12/12 (100%)    │ +12 wins    │
-│ Average Latency          │ 352ms           │ 1ms             │ 352x faster │
-│ P50 Latency              │ 331ms           │ 0ms             │ ∞ faster    │
-│ P95 Latency              │ 541ms           │ 13ms            │ 41.6x faster│
-│ Success Rate             │ 100%            │ 100%            │ Equal       │
-│ Average Confidence       │ N/A             │ 72.7%           │ Quantified  │
-│ Total Cost (12 edits)    │ $0.12           │ $0.00           │ 100% free   │
-└──────────────────────────┴─────────────────┴─────────────────┴─────────────┘
-```
+**Agent Booster won every single test** - 12 out of 12 - while being **352x faster on average**.
 
-### Performance by Category
+Think of it like this: If Morph LLM takes 6 minutes to process your code, Agent Booster does it in 1 second. Same accuracy, dramatically faster.
 
-| Category | Tests | Agent Wins | Avg Speedup | Success Rate |
-|----------|-------|------------|-------------|--------------|
-| TypeScript Conversion | 2 | 2/2 (100%) | 152.4x | 100% |
-| Error Handling | 2 | 2/2 (100%) | ∞ | 100% |
-| Modernization | 3 | 3/3 (100%) | ∞ | 100% |
-| Documentation | 1 | 1/1 (100%) | ∞ | 100% |
-| Async Conversion | 2 | 2/2 (100%) | ∞ | 100% |
-| Safety | 1 | 1/1 (100%) | ∞ | 100% |
-| Validation | 1 | 1/1 (100%) | ∞ | 100% |
+### Detailed Results
 
-Run benchmarks yourself:
+We measured these 12 transformations with both systems:
+
+| What We Measured | Morph LLM (Cloud API) | Agent Booster (Local) | How Much Faster? |
+|------------------|----------------------|----------------------|------------------|
+| **Average time per edit** | 352 milliseconds | 1 millisecond | **352x faster** ⚡ |
+| **Fastest edit (p50)** | 331ms | 0ms | **Instant** ⚡ |
+| **Slowest edit (p95)** | 541ms | 13ms | **41x faster** |
+| **Successful edits** | 12/12 (100%) | 12/12 (100%) | **Same accuracy** ✅ |
+| **Total cost** | $0.12 | $0.00 | **Free** 💰 |
+| **Data privacy** | Sent to cloud | Stays on your machine | **Private** 🔒 |
+
+> **What does this mean?** If you're building an AI coding agent that makes 100 code changes, Morph LLM takes 35 seconds. Agent Booster takes 0.1 seconds. That's the difference between your agent feeling sluggish vs instant.
+
+### Performance by Task Type
+
+Different types of code changes have different performance characteristics:
+
+| Type of Change | Example | Morph LLM Speed | Agent Booster Speed | Winner |
+|----------------|---------|----------------|-------------------|--------|
+| **Adding TypeScript types** | `function add(a, b)` → `function add(a: number, b: number): number` | 368ms average | 7ms average | **Agent Booster (52x faster)** |
+| **Adding error handling** | Wrapping code in `try-catch` | 292ms average | Instant (0ms) | **Agent Booster (∞ faster)** |
+| **Modernizing syntax** | `var` → `const/let`, arrow functions | 299ms average | Instant (0ms) | **Agent Booster (∞ faster)** |
+| **Async conversions** | Promises → async/await | 386ms average | 1ms average | **Agent Booster (386x faster)** |
+| **Safety checks** | Adding null checks, validation | 346ms average | Instant (0ms) | **Agent Booster (∞ faster)** |
+
+> **Why is Agent Booster so fast?** It uses template-based pattern matching and similarity algorithms instead of calling an external LLM API. The code never leaves your computer, and processing happens at CPU speed.
+
+### Try It Yourself
+
+Want to verify these results? Run the benchmarks on your own machine:
 
 ```bash
+# Clone the repo and install dependencies
+git clone https://github.com/yourusername/agent-booster.git
+cd agent-booster
+npm install
+
+# Run the same tests we used
 cd benchmarks
-node compare-vs-morphllm.js
-node test-template-optimization.js
-node test-multilanguage.js
+node compare-vs-morphllm.js      # Head-to-head comparison
+node test-template-optimization.js # Template performance
+node test-multilanguage.js        # Multi-language support
 ```
 
-## 🌍 Language Support
+All test data and results are in the `benchmarks/` directory.
 
-| Language | Status | Success Rate | Avg Confidence |
-|----------|--------|--------------|----------------|
-| JavaScript | ✅ Excellent | 100% | 85% |
-| TypeScript | ✅ Excellent | 100% | 80% |
-| Python | ✅ Good | 88% | 63% |
-| Rust | ✅ Excellent | 100% | 70% |
-| Go | ✅ Excellent | 100% | 75% |
-| Java | ✅ Excellent | 100% | 72% |
-| C | ✅ Excellent | 100% | 68% |
-| C++ | ✅ Excellent | 100% | 71% |
+## 🌍 Which Programming Languages Are Supported?
 
-**Overall:** 91% success rate across 8 languages
+Agent Booster works with **8 programming languages** out of the box. Here's how well it performs with each:
 
-See [MULTILANGUAGE_SUPPORT.md](./MULTILANGUAGE_SUPPORT.md) for details.
+### Language Performance
 
-## 🏗️ Architecture
+| Language | How Well Does It Work? | Success Rate | Confidence Score | Best For |
+|----------|----------------------|--------------|------------------|----------|
+| **JavaScript** | ✅ Excellent | 100% (every test passed) | 85% | Error handling, modernization |
+| **TypeScript** | ✅ Excellent | 100% | 80% | Type additions, refactoring |
+| **Python** | ✅ Good | 88% (most tests passed) | 63% | Type hints, function changes |
+| **Rust** | ✅ Excellent | 100% | 70% | Type annotations, safety |
+| **Go** | ✅ Excellent | 100% | 75% | Error handling, types |
+| **Java** | ✅ Excellent | 100% | 72% | Class modifications, types |
+| **C** | ✅ Excellent | 100% | 68% | Function signatures |
+| **C++** | ✅ Excellent | 100% | 71% | Class changes, templates |
 
-Agent Booster uses a **dual-phase strategy**:
+**Overall: 91% success rate across all languages** - Agent Booster correctly applies 91 out of 100 edits across all supported languages.
 
-### Phase 1: Template-Based Transformation
+### What Do These Numbers Mean?
+
+- **Success Rate**: How often Agent Booster successfully applies the edit (100% = always works)
+- **Confidence Score**: How certain Agent Booster is about the change (higher = more confident)
+- **Excellent** (100% success): Ready for production use
+- **Good** (88% success): Works for most cases, may need review for complex edits
+
+### Example: Multi-Language Usage
+
+```javascript
+// JavaScript - Add error handling
+await booster.apply({
+  code: 'JSON.parse(data)',
+  edit: 'try { JSON.parse(data) } catch (e) { console.error(e) }',
+  language: 'javascript'
+});
+
+// Python - Add type hints
+await booster.apply({
+  code: 'def process(items):\n    return items',
+  edit: 'def process(items: list) -> list:\n    return items',
+  language: 'python'
+});
+
+// Rust - Add return type
+await booster.apply({
+  code: 'fn calculate(x: i32) { x * 2 }',
+  edit: 'fn calculate(x: i32) -> i32 { x * 2 }',
+  language: 'rust'
+});
 ```
-Input Code + Edit → Template Detection → Pattern Match (85-90% confidence) → Output
-```
-- Detects 7 common transformations
-- Bypasses similarity matching for speed
-- 0-1ms latency
-- 80-90% confidence
 
-### Phase 2: Similarity-Based Matching
-```
-Code → Parse (regex/tree-sitter) → Chunk Extraction → Vector Similarity → Smart Merge
-```
-- Fallback for non-template edits
-- Uses semantic similarity
-- 1-13ms latency
-- 50-85% confidence
+> **Want more languages?** Language support is extensible. See [MULTILANGUAGE_SUPPORT.md](./MULTILANGUAGE_SUPPORT.md) for details on adding new languages.
 
-### Technology Stack
-- **Rust** - Core engine (613KB compiled library)
-- **WebAssembly** - Browser compatibility (1.3MB binary)
-- **TypeScript** - npm package interface
-- **Regex Parser** - WASM-compatible parsing
-- **Tree-sitter** - Native AST parsing (optional)
+## 🏗️ How Does It Work? (Architecture Explained Simply)
+
+Agent Booster uses a smart **two-phase approach** to apply code changes. Think of it like having two different strategies, trying the fastest one first:
+
+### Phase 1: Template Recognition (The Fast Path)
+
+**What happens:** Agent Booster first checks if your code change matches one of 7 common patterns it knows really well.
+
+**Example patterns it recognizes:**
+- Wrapping code in `try-catch` for error handling
+- Adding `if (!variable)` null checks
+- Converting `function` to `async function`
+- Adding TypeScript types to classes
+
+**Speed:** 0-1 milliseconds (instant)
+**Confidence:** 80-90% (very confident)
+
+```
+Your Code + Your Edit
+    ↓
+Does this match a known pattern?
+    ↓
+YES → Apply template instantly (0-1ms)
+```
+
+**Why is this so fast?** Agent Booster doesn't need to analyze your code deeply - it just recognizes the pattern and applies it. Like a keyboard shortcut vs typing everything manually.
+
+### Phase 2: Similarity Matching (The Smart Fallback)
+
+**What happens:** If Phase 1 doesn't find a matching template, Agent Booster analyzes your code more carefully:
+
+1. **Parse** - Break your code into logical chunks (functions, classes, etc.)
+2. **Compare** - Find which chunk is most similar to your edit
+3. **Merge** - Intelligently apply your edit to that chunk
+
+**Speed:** 1-13 milliseconds (still very fast)
+**Confidence:** 50-85% (good confidence)
+
+```
+Your Code
+    ↓
+Parse into chunks (functions, classes, etc.)
+    ↓
+Find most similar chunk to your edit
+    ↓
+Apply edit using smart merge strategy
+```
+
+**Why is this necessary?** Not every code change fits a template. This handles the unusual cases while still being 27-352x faster than LLM APIs.
+
+### What Powers This?
+
+| Technology | What It Does | Why It Matters |
+|------------|--------------|----------------|
+| **Rust** | Core processing engine | Blazing fast performance, memory safe |
+| **WebAssembly** | Browser compatibility | Use Agent Booster in web apps |
+| **TypeScript** | JavaScript interface | Easy integration with Node.js |
+| **Regex/Tree-sitter** | Code parsing | Understands code structure |
+
+**Binary sizes:**
+- Core library: 613KB (tiny!)
+- WASM binary: 1.3MB (includes all languages)
+
+> **The key insight:** By handling common patterns with templates (Phase 1) and falling back to smart similarity matching (Phase 2), Agent Booster gets both speed AND flexibility.
 
 ## 🔌 API Reference
 
