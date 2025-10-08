@@ -192,11 +192,17 @@ exports.create_edit_request = function(original_code, edit_snippet, language, co
 
 /**
  * JavaScript-compatible Language enum
- * @enum {0 | 1}
+ * @enum {0 | 1 | 2 | 3 | 4 | 5 | 6 | 7}
  */
 exports.WasmLanguage = Object.freeze({
     JavaScript: 0, "0": "JavaScript",
     TypeScript: 1, "1": "TypeScript",
+    Python: 2, "2": "Python",
+    Rust: 3, "3": "Rust",
+    Go: 4, "4": "Go",
+    Java: 5, "5": "Java",
+    C: 6, "6": "C",
+    Cpp: 7, "7": "Cpp",
 });
 /**
  * JavaScript-compatible MergeStrategy enum

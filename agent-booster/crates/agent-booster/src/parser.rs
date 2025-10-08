@@ -31,6 +31,9 @@ impl Parser {
         let parser = match language {
             Language::JavaScript => &mut self.js_parser,
             Language::TypeScript => &mut self.ts_parser,
+            // For other languages in native build, fall back to JavaScript parser
+            // (This is only used when tree-sitter feature is enabled, which is native-only)
+            _ => &mut self.js_parser,
         };
 
         parser

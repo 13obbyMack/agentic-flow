@@ -1,6 +1,7 @@
 use crate::models::{AgentBoosterError, Language, MergeStrategy, Result};
 use crate::parser::Parser;
 use crate::similarity::SearchResult;
+use crate::templates::TemplateEngine;
 
 /// Merger for applying edits to code
 pub struct Merger {
@@ -23,6 +24,23 @@ impl Merger {
         language: Language,
         confidence_threshold: f32,
     ) -> Result<MergeResult> {
+        // PHASE 1: Try template-based transformation first
+        if let Some(template_match) = TemplateEngine::try_template_transform(original_code, edit_snippet) {
+            // Template matched! Use template transformation
+            let syntax_valid = self.parser.validate_syntax(&template_match.transformed_code, language);
+            let confidence_f32 = template_match.confidence as f32;
+
+            if confidence_f32 >= confidence_threshold && syntax_valid {
+                return Ok(MergeResult {
+                    code: template_match.transformed_code,
+                    strategy: MergeStrategy::ExactReplace, // Templates are exact transformations
+                    confidence: confidence_f32,
+                    syntax_valid,
+                });
+            }
+        }
+
+        // PHASE 2: Fall back to similarity-based merge
         // Select strategy based on similarity
         let strategy = Self::select_strategy(best_match.similarity, confidence_threshold);
 

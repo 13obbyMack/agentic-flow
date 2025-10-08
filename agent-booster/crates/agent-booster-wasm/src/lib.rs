@@ -30,6 +30,12 @@ pub fn init() {
 pub enum WasmLanguage {
     JavaScript,
     TypeScript,
+    Python,
+    Rust,
+    Go,
+    Java,
+    C,
+    Cpp,
 }
 
 impl From<WasmLanguage> for Language {
@@ -37,6 +43,12 @@ impl From<WasmLanguage> for Language {
         match lang {
             WasmLanguage::JavaScript => Language::JavaScript,
             WasmLanguage::TypeScript => Language::TypeScript,
+            WasmLanguage::Python => Language::Python,
+            WasmLanguage::Rust => Language::Rust,
+            WasmLanguage::Go => Language::Go,
+            WasmLanguage::Java => Language::Java,
+            WasmLanguage::C => Language::C,
+            WasmLanguage::Cpp => Language::Cpp,
         }
     }
 }
@@ -46,6 +58,12 @@ impl From<Language> for WasmLanguage {
         match lang {
             Language::JavaScript => WasmLanguage::JavaScript,
             Language::TypeScript => WasmLanguage::TypeScript,
+            Language::Python => WasmLanguage::Python,
+            Language::Rust => WasmLanguage::Rust,
+            Language::Go => WasmLanguage::Go,
+            Language::Java => WasmLanguage::Java,
+            Language::C => WasmLanguage::C,
+            Language::Cpp => WasmLanguage::Cpp,
         }
     }
 }
@@ -427,6 +445,12 @@ mod tests {
         assert!(result.is_ok());
 
         let result = AgentBoosterWasm::parse_language("python");
+        assert!(result.is_ok());
+
+        let result = AgentBoosterWasm::parse_language("rust");
+        assert!(result.is_ok());
+
+        let result = AgentBoosterWasm::parse_language("invalid");
         assert!(result.is_err());
     }
 

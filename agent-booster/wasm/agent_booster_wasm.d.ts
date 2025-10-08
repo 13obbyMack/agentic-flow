@@ -18,6 +18,12 @@ export function create_edit_request(original_code: string, edit_snippet: string,
 export enum WasmLanguage {
   JavaScript = 0,
   TypeScript = 1,
+  Python = 2,
+  Rust = 3,
+  Go = 4,
+  Java = 5,
+  C = 6,
+  Cpp = 7,
 }
 /**
  * JavaScript-compatible MergeStrategy enum

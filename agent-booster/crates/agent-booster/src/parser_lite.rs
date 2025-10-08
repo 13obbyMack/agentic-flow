@@ -19,30 +19,104 @@ pub struct LiteTree {
 /// This parser uses regex-based matching instead of tree-sitter's C library.
 /// It provides ~80% accuracy vs tree-sitter's ~95%, but compiles to WASM.
 pub struct Parser {
-    function_regex: Regex,
-    class_regex: Regex,
-    method_regex: Regex,
+    // JavaScript/TypeScript patterns
+    js_function_regex: Regex,
+    js_class_regex: Regex,
+
+    // Python patterns
+    py_function_regex: Regex,
+    py_class_regex: Regex,
+
+    // Rust patterns
+    rust_function_regex: Regex,
+    rust_struct_regex: Regex,
+    rust_impl_regex: Regex,
+
+    // Go patterns
+    go_function_regex: Regex,
+    go_struct_regex: Regex,
+
+    // Java patterns
+    java_method_regex: Regex,
+    java_class_regex: Regex,
+
+    // C/C++ patterns
+    c_function_regex: Regex,
+    cpp_class_regex: Regex,
 }
 
 impl Parser {
     /// Create a new lite parser
     pub fn new() -> Result<Self> {
         Ok(Self {
-            // Match function declarations: function name(...) { ... }
-            function_regex: Regex::new(
+            // JavaScript/TypeScript
+            js_function_regex: Regex::new(
                 r"(?m)^\s*(?:export\s+)?(?:async\s+)?function\s+(\w+)\s*\([^)]*\)\s*\{",
             )
             .map_err(|e| AgentBoosterError::ParseError(e.to_string()))?,
 
-            // Match class declarations: class Name { ... }
-            class_regex: Regex::new(
+            js_class_regex: Regex::new(
                 r"(?m)^\s*(?:export\s+)?class\s+(\w+)(?:\s+extends\s+\w+)?\s*\{",
             )
             .map_err(|e| AgentBoosterError::ParseError(e.to_string()))?,
 
-            // Match method declarations: methodName(...) { ... }
-            method_regex: Regex::new(
-                r"(?m)^\s*(?:async\s+)?(\w+)\s*\([^)]*\)\s*\{",
+            // Python
+            py_function_regex: Regex::new(
+                r"(?m)^\s*(?:async\s+)?def\s+(\w+)\s*\([^)]*\)\s*:",
+            )
+            .map_err(|e| AgentBoosterError::ParseError(e.to_string()))?,
+
+            py_class_regex: Regex::new(
+                r"(?m)^\s*class\s+(\w+)(?:\([^)]*\))?\s*:",
+            )
+            .map_err(|e| AgentBoosterError::ParseError(e.to_string()))?,
+
+            // Rust
+            rust_function_regex: Regex::new(
+                r"(?m)^\s*(?:pub\s+)?(?:async\s+)?fn\s+(\w+)\s*(?:<[^>]*>)?\s*\([^)]*\)(?:\s*->\s*[^\{]+)?\s*\{",
+            )
+            .map_err(|e| AgentBoosterError::ParseError(e.to_string()))?,
+
+            rust_struct_regex: Regex::new(
+                r"(?m)^\s*(?:pub\s+)?struct\s+(\w+)(?:<[^>]*>)?\s*\{",
+            )
+            .map_err(|e| AgentBoosterError::ParseError(e.to_string()))?,
+
+            rust_impl_regex: Regex::new(
+                r"(?m)^\s*impl(?:<[^>]*>)?\s+(\w+)(?:<[^>]*>)?\s*\{",
+            )
+            .map_err(|e| AgentBoosterError::ParseError(e.to_string()))?,
+
+            // Go
+            go_function_regex: Regex::new(
+                r"(?m)^\s*func\s+(?:\([^)]*\)\s+)?(\w+)\s*\([^)]*\)(?:\s*\([^)]*\))?\s*\{",
+            )
+            .map_err(|e| AgentBoosterError::ParseError(e.to_string()))?,
+
+            go_struct_regex: Regex::new(
+                r"(?m)^\s*type\s+(\w+)\s+struct\s*\{",
+            )
+            .map_err(|e| AgentBoosterError::ParseError(e.to_string()))?,
+
+            // Java
+            java_method_regex: Regex::new(
+                r"(?m)^\s*(?:public|private|protected)?\s*(?:static\s+)?(?:final\s+)?(?:\w+(?:<[^>]*>)?)\s+(\w+)\s*\([^)]*\)\s*(?:throws\s+[\w,\s]+)?\s*\{",
+            )
+            .map_err(|e| AgentBoosterError::ParseError(e.to_string()))?,
+
+            java_class_regex: Regex::new(
+                r"(?m)^\s*(?:public\s+)?(?:abstract\s+)?class\s+(\w+)(?:\s+extends\s+\w+)?(?:\s+implements\s+[\w,\s]+)?\s*\{",
+            )
+            .map_err(|e| AgentBoosterError::ParseError(e.to_string()))?,
+
+            // C/C++
+            c_function_regex: Regex::new(
+                r"(?m)^\s*(?:static\s+)?(?:inline\s+)?(?:\w+\s*\*?\s+)?(\w+)\s*\([^)]*\)\s*\{",
+            )
+            .map_err(|e| AgentBoosterError::ParseError(e.to_string()))?,
+
+            cpp_class_regex: Regex::new(
+                r"(?m)^\s*(?:template\s*<[^>]*>\s*)?class\s+(\w+)(?:\s*:\s*(?:public|private|protected)\s+\w+)?\s*\{",
             )
             .map_err(|e| AgentBoosterError::ParseError(e.to_string()))?,
         })
@@ -60,12 +134,38 @@ impl Parser {
     pub fn extract_chunks(&self, tree: &LiteTree, code: &str) -> Vec<CodeChunk> {
         let mut chunks = Vec::new();
 
+        match tree.language {
+            Language::JavaScript | Language::TypeScript => {
+                self.extract_js_chunks(code, &mut chunks);
+            }
+            Language::Python => {
+                self.extract_python_chunks(code, &mut chunks);
+            }
+            Language::Rust => {
+                self.extract_rust_chunks(code, &mut chunks);
+            }
+            Language::Go => {
+                self.extract_go_chunks(code, &mut chunks);
+            }
+            Language::Java => {
+                self.extract_java_chunks(code, &mut chunks);
+            }
+            Language::C => {
+                self.extract_c_chunks(code, &mut chunks);
+            }
+            Language::Cpp => {
+                self.extract_cpp_chunks(code, &mut chunks);
+            }
+        }
+
+        chunks
+    }
+
+    fn extract_js_chunks(&self, code: &str, chunks: &mut Vec<CodeChunk>) {
         // Extract functions
-        for cap in self.function_regex.captures_iter(code) {
+        for cap in self.js_function_regex.captures_iter(code) {
             if let Some(m) = cap.get(0) {
                 let start = m.start();
-
-                // Find matching closing brace
                 if let Some(code_text) = self.extract_block(code, start) {
                     chunks.push(CodeChunk {
                         code: code_text.clone(),
@@ -81,10 +181,161 @@ impl Parser {
         }
 
         // Extract classes
-        for cap in self.class_regex.captures_iter(code) {
+        for cap in self.js_class_regex.captures_iter(code) {
             if let Some(m) = cap.get(0) {
                 let start = m.start();
+                if let Some(code_text) = self.extract_block(code, start) {
+                    chunks.push(CodeChunk {
+                        code: code_text.clone(),
+                        node_type: "class_declaration".to_string(),
+                        start_byte: start,
+                        end_byte: start + code_text.len(),
+                        start_line: code[..start].lines().count(),
+                        end_line: code[..start + code_text.len()].lines().count(),
+                        parent_type: None,
+                    });
+                }
+            }
+        }
+    }
 
+    fn extract_python_chunks(&self, code: &str, chunks: &mut Vec<CodeChunk>) {
+        // Extract functions
+        for cap in self.py_function_regex.captures_iter(code) {
+            if let Some(m) = cap.get(0) {
+                let start = m.start();
+                if let Some(code_text) = self.extract_python_block(code, start) {
+                    chunks.push(CodeChunk {
+                        code: code_text.clone(),
+                        node_type: "function_definition".to_string(),
+                        start_byte: start,
+                        end_byte: start + code_text.len(),
+                        start_line: code[..start].lines().count(),
+                        end_line: code[..start + code_text.len()].lines().count(),
+                        parent_type: None,
+                    });
+                }
+            }
+        }
+
+        // Extract classes
+        for cap in self.py_class_regex.captures_iter(code) {
+            if let Some(m) = cap.get(0) {
+                let start = m.start();
+                if let Some(code_text) = self.extract_python_block(code, start) {
+                    chunks.push(CodeChunk {
+                        code: code_text.clone(),
+                        node_type: "class_definition".to_string(),
+                        start_byte: start,
+                        end_byte: start + code_text.len(),
+                        start_line: code[..start].lines().count(),
+                        end_line: code[..start + code_text.len()].lines().count(),
+                        parent_type: None,
+                    });
+                }
+            }
+        }
+    }
+
+    fn extract_rust_chunks(&self, code: &str, chunks: &mut Vec<CodeChunk>) {
+        // Extract functions
+        for cap in self.rust_function_regex.captures_iter(code) {
+            if let Some(m) = cap.get(0) {
+                let start = m.start();
+                if let Some(code_text) = self.extract_block(code, start) {
+                    chunks.push(CodeChunk {
+                        code: code_text.clone(),
+                        node_type: "function_item".to_string(),
+                        start_byte: start,
+                        end_byte: start + code_text.len(),
+                        start_line: code[..start].lines().count(),
+                        end_line: code[..start + code_text.len()].lines().count(),
+                        parent_type: None,
+                    });
+                }
+            }
+        }
+
+        // Extract structs
+        for cap in self.rust_struct_regex.captures_iter(code) {
+            if let Some(m) = cap.get(0) {
+                let start = m.start();
+                if let Some(code_text) = self.extract_block(code, start) {
+                    chunks.push(CodeChunk {
+                        code: code_text.clone(),
+                        node_type: "struct_item".to_string(),
+                        start_byte: start,
+                        end_byte: start + code_text.len(),
+                        start_line: code[..start].lines().count(),
+                        end_line: code[..start + code_text.len()].lines().count(),
+                        parent_type: None,
+                    });
+                }
+            }
+        }
+
+        // Extract impl blocks
+        for cap in self.rust_impl_regex.captures_iter(code) {
+            if let Some(m) = cap.get(0) {
+                let start = m.start();
+                if let Some(code_text) = self.extract_block(code, start) {
+                    chunks.push(CodeChunk {
+                        code: code_text.clone(),
+                        node_type: "impl_item".to_string(),
+                        start_byte: start,
+                        end_byte: start + code_text.len(),
+                        start_line: code[..start].lines().count(),
+                        end_line: code[..start + code_text.len()].lines().count(),
+                        parent_type: None,
+                    });
+                }
+            }
+        }
+    }
+
+    fn extract_go_chunks(&self, code: &str, chunks: &mut Vec<CodeChunk>) {
+        // Extract functions
+        for cap in self.go_function_regex.captures_iter(code) {
+            if let Some(m) = cap.get(0) {
+                let start = m.start();
+                if let Some(code_text) = self.extract_block(code, start) {
+                    chunks.push(CodeChunk {
+                        code: code_text.clone(),
+                        node_type: "function_declaration".to_string(),
+                        start_byte: start,
+                        end_byte: start + code_text.len(),
+                        start_line: code[..start].lines().count(),
+                        end_line: code[..start + code_text.len()].lines().count(),
+                        parent_type: None,
+                    });
+                }
+            }
+        }
+
+        // Extract structs
+        for cap in self.go_struct_regex.captures_iter(code) {
+            if let Some(m) = cap.get(0) {
+                let start = m.start();
+                if let Some(code_text) = self.extract_block(code, start) {
+                    chunks.push(CodeChunk {
+                        code: code_text.clone(),
+                        node_type: "type_declaration".to_string(),
+                        start_byte: start,
+                        end_byte: start + code_text.len(),
+                        start_line: code[..start].lines().count(),
+                        end_line: code[..start + code_text.len()].lines().count(),
+                        parent_type: None,
+                    });
+                }
+            }
+        }
+    }
+
+    fn extract_java_chunks(&self, code: &str, chunks: &mut Vec<CodeChunk>) {
+        // Extract classes
+        for cap in self.java_class_regex.captures_iter(code) {
+            if let Some(m) = cap.get(0) {
+                let start = m.start();
                 if let Some(code_text) = self.extract_block(code, start) {
                     chunks.push(CodeChunk {
                         code: code_text.clone(),
@@ -99,7 +350,121 @@ impl Parser {
             }
         }
 
-        chunks
+        // Extract methods
+        for cap in self.java_method_regex.captures_iter(code) {
+            if let Some(m) = cap.get(0) {
+                let start = m.start();
+                if let Some(code_text) = self.extract_block(code, start) {
+                    chunks.push(CodeChunk {
+                        code: code_text.clone(),
+                        node_type: "method_declaration".to_string(),
+                        start_byte: start,
+                        end_byte: start + code_text.len(),
+                        start_line: code[..start].lines().count(),
+                        end_line: code[..start + code_text.len()].lines().count(),
+                        parent_type: None,
+                    });
+                }
+            }
+        }
+    }
+
+    fn extract_c_chunks(&self, code: &str, chunks: &mut Vec<CodeChunk>) {
+        // Extract functions
+        for cap in self.c_function_regex.captures_iter(code) {
+            if let Some(m) = cap.get(0) {
+                let start = m.start();
+                if let Some(code_text) = self.extract_block(code, start) {
+                    chunks.push(CodeChunk {
+                        code: code_text.clone(),
+                        node_type: "function_definition".to_string(),
+                        start_byte: start,
+                        end_byte: start + code_text.len(),
+                        start_line: code[..start].lines().count(),
+                        end_line: code[..start + code_text.len()].lines().count(),
+                        parent_type: None,
+                    });
+                }
+            }
+        }
+    }
+
+    fn extract_cpp_chunks(&self, code: &str, chunks: &mut Vec<CodeChunk>) {
+        // Extract classes
+        for cap in self.cpp_class_regex.captures_iter(code) {
+            if let Some(m) = cap.get(0) {
+                let start = m.start();
+                if let Some(code_text) = self.extract_block(code, start) {
+                    chunks.push(CodeChunk {
+                        code: code_text.clone(),
+                        node_type: "class_specifier".to_string(),
+                        start_byte: start,
+                        end_byte: start + code_text.len(),
+                        start_line: code[..start].lines().count(),
+                        end_line: code[..start + code_text.len()].lines().count(),
+                        parent_type: None,
+                    });
+                }
+            }
+        }
+
+        // Extract functions (C-style)
+        for cap in self.c_function_regex.captures_iter(code) {
+            if let Some(m) = cap.get(0) {
+                let start = m.start();
+                if let Some(code_text) = self.extract_block(code, start) {
+                    chunks.push(CodeChunk {
+                        code: code_text.clone(),
+                        node_type: "function_definition".to_string(),
+                        start_byte: start,
+                        end_byte: start + code_text.len(),
+                        start_line: code[..start].lines().count(),
+                        end_line: code[..start + code_text.len()].lines().count(),
+                        parent_type: None,
+                    });
+                }
+            }
+        }
+    }
+
+    /// Extract a Python code block by indentation
+    fn extract_python_block(&self, code: &str, start: usize) -> Option<String> {
+        let lines: Vec<&str> = code.lines().collect();
+        let start_line_idx = code[..start].lines().count();
+
+        if start_line_idx >= lines.len() {
+            return None;
+        }
+
+        // Get the base indentation from the def/class line
+        let base_line = lines[start_line_idx];
+        let base_indent = base_line.len() - base_line.trim_start().len();
+
+        let mut end_line_idx = start_line_idx + 1;
+
+        // Find the end of the indented block
+        while end_line_idx < lines.len() {
+            let line = lines[end_line_idx];
+            let trimmed = line.trim();
+
+            // Skip empty lines and comments
+            if trimmed.is_empty() || trimmed.starts_with('#') {
+                end_line_idx += 1;
+                continue;
+            }
+
+            let line_indent = line.len() - line.trim_start().len();
+
+            // If indentation is less than or equal to base, we've reached the end
+            if line_indent <= base_indent {
+                break;
+            }
+
+            end_line_idx += 1;
+        }
+
+        let block_lines = &lines[start_line_idx..end_line_idx];
+        Some(block_lines.join("\n"))
     }
 
     /// Extract a code block by finding matching braces
@@ -221,9 +586,9 @@ class Person {
     fn test_validate_syntax() {
         let parser = Parser::new().unwrap();
 
-        assert!(parser.validate_syntax("function f() { return 42; }", Language::JavaScript).unwrap());
-        assert!(!parser.validate_syntax("function f() { return 42;", Language::JavaScript).unwrap());
-        assert!(!parser.validate_syntax("function f() return 42; }", Language::JavaScript).unwrap());
+        assert!(parser.validate_syntax("function f() { return 42; }", Language::JavaScript));
+        assert!(!parser.validate_syntax("function f() { return 42;", Language::JavaScript));
+        assert!(!parser.validate_syntax("function f() return 42; }", Language::JavaScript));
     }
 
     #[test]

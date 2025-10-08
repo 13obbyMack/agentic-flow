@@ -28,19 +28,21 @@ export interface MorphApplyRequest {
 }
 
 export interface MorphApplyResponse {
-  /** Modified code after applying the edit */
-  code: string;
-  /** Confidence score (0-1) */
-  confidence: number;
-  /** Strategy used for merging */
-  strategy: string;
-  /** Metadata about the operation */
-  metadata: {
-    chunksFound?: number;
-    bestSimilarity?: number;
-    syntaxValid?: boolean;
-    processingTimeMs?: number;
+  /** Modified code after applying the edit (Morph-compatible) */
+  output: string;
+  /** Whether the edit was successful (Morph-compatible) */
+  success: boolean;
+  /** Latency in milliseconds (Morph-compatible) */
+  latency: number;
+  /** Token usage (Morph-compatible) */
+  tokens: {
+    input: number;
+    output: number;
   };
+  /** Confidence score (0-1) - Agent Booster extension */
+  confidence: number;
+  /** Strategy used for merging - Agent Booster extension */
+  strategy: string;
 }
 
 export interface AgentBoosterConfig {
@@ -79,48 +81,73 @@ export class AgentBooster {
   }
 
   /**
-   * Apply a code edit (Morph-compatible API)
+   * Apply a code edit (100% Morph-compatible API)
    *
    * @param request - Apply request
-   * @returns Modified code with metadata
+   * @returns Modified code in Morph-compatible format
    */
   async apply(request: MorphApplyRequest): Promise<MorphApplyResponse> {
     const startTime = Date.now();
 
     try {
-      // Call WASM module
+      // Call WASM module with confidence threshold
       const result = this.wasmInstance.apply_edit(
         request.code,
         request.edit,
-        request.language || 'javascript'
+        request.language || 'javascript',
+        this.config.confidenceThreshold
       );
 
-      const processingTime = Date.now() - startTime;
+      const latency = Date.now() - startTime;
+
+      // Debug: Log WASM result structure
+      if (process.env.DEBUG_AGENT_BOOSTER) {
+        console.log('WASM result:', {
+          type: typeof result,
+          confidence: result.confidence,
+          strategy: result.strategy,
+          merged_code_length: result.merged_code?.length,
+        });
+      }
 
       // Convert WASM result to Morph-compatible format
       const confidence = this.getConfidence(result);
       const strategy = this.getStrategy(result);
       const mergedCode = this.getMergedCode(result);
 
+      // Calculate token estimates (WASM doesn't track tokens, so we estimate)
+      const inputTokens = Math.ceil(request.code.length / 4);
+      const outputTokens = Math.ceil(mergedCode.length / 4);
+
       return {
-        code: mergedCode,
+        // Morph-compatible fields
+        output: mergedCode,
+        success: confidence > this.config.confidenceThreshold!,
+        latency: latency,
+        tokens: {
+          input: inputTokens,
+          output: outputTokens,
+        },
+        // Agent Booster extensions (don't break Morph compatibility)
         confidence: confidence,
         strategy: this.strategyToString(strategy),
-        metadata: {
-          processingTimeMs: processingTime,
-          syntaxValid: true,
-        },
       };
     } catch (error: any) {
-      // Return original code on failure
+      // Return failure in Morph-compatible format
+      const latency = Date.now() - startTime;
+
+      // Debug: Log error
+      if (process.env.DEBUG_AGENT_BOOSTER) {
+        console.error('Error in apply():', error.message || error);
+      }
+
       return {
-        code: request.code,
+        output: request.code,
+        success: false,
+        latency: latency,
+        tokens: { input: 0, output: 0 },
         confidence: 0,
         strategy: 'failed',
-        metadata: {
-          processingTimeMs: Date.now() - startTime,
-          syntaxValid: false,
-        },
       };
     }
   }

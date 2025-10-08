@@ -5,6 +5,12 @@ use serde::{Deserialize, Serialize};
 pub enum Language {
     JavaScript,
     TypeScript,
+    Python,
+    Rust,
+    Go,
+    Java,
+    C,
+    Cpp,
 }
 
 impl Language {
@@ -12,6 +18,12 @@ impl Language {
         match s.to_lowercase().as_str() {
             "javascript" | "js" => Ok(Language::JavaScript),
             "typescript" | "ts" => Ok(Language::TypeScript),
+            "python" | "py" => Ok(Language::Python),
+            "rust" | "rs" => Ok(Language::Rust),
+            "go" => Ok(Language::Go),
+            "java" => Ok(Language::Java),
+            "c" => Ok(Language::C),
+            "cpp" | "c++" | "cxx" => Ok(Language::Cpp),
             _ => Err(AgentBoosterError::UnsupportedLanguage(s.to_string())),
         }
     }
@@ -20,6 +32,12 @@ impl Language {
         match self {
             Language::JavaScript => "javascript",
             Language::TypeScript => "typescript",
+            Language::Python => "python",
+            Language::Rust => "rust",
+            Language::Go => "go",
+            Language::Java => "java",
+            Language::C => "c",
+            Language::Cpp => "cpp",
         }
     }
 }

@@ -6,6 +6,7 @@
 
 pub mod merge;
 pub mod models;
+pub mod templates;
 
 #[cfg(feature = "tree-sitter-parser")]
 pub mod parser;
@@ -22,6 +23,7 @@ pub use models::{
     AgentBoosterError, CodeChunk, Config, EditMetadata, EditRequest, EditResult, Language,
     MergeStrategy, Result,
 };
+pub use templates::TemplateEngine;
 
 #[cfg(not(target_arch = "wasm32"))]
 use std::time::Instant;
@@ -48,6 +50,33 @@ impl AgentBooster {
         #[cfg(not(target_arch = "wasm32"))]
         let start_time = Instant::now();
 
+        // PHASE 1: Try template-based transformation first (bypasses similarity matching)
+        if let Some(template_match) = TemplateEngine::try_template_transform(&request.original_code, &request.edit_snippet) {
+            let syntax_valid = self.parser.validate_syntax(&template_match.transformed_code, request.language);
+            let confidence_f32 = template_match.confidence as f32;
+
+            if confidence_f32 >= request.confidence_threshold && syntax_valid {
+                #[cfg(not(target_arch = "wasm32"))]
+                let processing_time_ms = Some(start_time.elapsed().as_millis() as u64);
+
+                #[cfg(target_arch = "wasm32")]
+                let processing_time_ms = None;
+
+                return Ok(EditResult {
+                    merged_code: template_match.transformed_code,
+                    confidence: confidence_f32,
+                    strategy: MergeStrategy::ExactReplace,
+                    metadata: EditMetadata {
+                        chunks_found: 1,
+                        best_similarity: 1.0,
+                        syntax_valid,
+                        processing_time_ms,
+                    },
+                });
+            }
+        }
+
+        // PHASE 2: Fall back to similarity-based matching
         // Parse original code
         let tree = self
             .parser
