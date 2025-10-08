@@ -24,7 +24,7 @@ Define routing rules through flexible policy modes: Strict mode keeps sensitive 
 
 **Key Capabilities:**
 - ✅ **Claude Code Mode** - Run Claude Code with OpenRouter/Gemini/ONNX (85-99% savings)
-- ✅ **Agent Booster** - 152x faster code edits with WASM (12ms vs 13s, $0 cost)
+- ✅ **Agent Booster** - Local code editing: 85ms vs 13s (152x faster), $0 cost, runs offline
 - ✅ **66 Specialized Agents** - Pre-built experts for coding, research, review, testing, DevOps
 - ✅ **216 MCP Tools** - Agent Booster (3), Memory, GitHub, neural networks, sandboxes, workflows, payments
 - ✅ **Multi-Model Router** - Anthropic, OpenRouter (300+ models), Gemini, ONNX (free local)
@@ -81,9 +81,35 @@ npx agentic-flow --list
 
 ---
 
-### Option 2: MCP Tools (Direct Access)
+### Option 2: Agent Booster (Fast Code Edits)
 
-Access 213 MCP tools for memory, swarms, GitHub, neural networks, and cloud sandboxes:
+For mechanical code changes, use Agent Booster to avoid LLM API calls entirely:
+
+```bash
+# Install Agent Booster
+npm install -g agent-booster
+
+# Apply code edit (JSON stdin)
+echo '{"code":"function add(a,b){return a+b;}","edit":"function add(a,b){if(typeof a!=='\''number'\'')throw new Error();return a+b;}"}' | agent-booster apply --language javascript
+
+# Output: Modified code in 85ms (vs 13s with LLM)
+# Cost: $0.00 (vs ~$0.001 with API)
+```
+
+**Use Agent Booster MCP tools in Claude Desktop:**
+
+The 3 Agent Booster tools are included in the agentic-flow MCP server:
+- `agent_booster_edit_file` - Apply precise code edits to files
+- `agent_booster_batch_edit` - Edit multiple files in one operation
+- `agent_booster_parse_markdown` - Extract code from AI responses
+
+When confidence is low (<70%), tools automatically suggest LLM fallback. [Learn more](https://github.com/ruvnet/agentic-flow/tree/main/agent-booster)
+
+---
+
+### Option 3: MCP Tools (Direct Access)
+
+Access 216 MCP tools for memory, swarms, GitHub, neural networks, and cloud sandboxes:
 
 ```bash
 # Start all MCP servers (216 tools) - stdio transport
@@ -169,15 +195,17 @@ npx agentic-flow claude-code --provider onnx "Analyze this codebase"
 
 ⚠️ **Note:** Claude Code sends 35k+ tokens in tool definitions. Models with <128k context (like Mistral Small at 32k) will fail with "context length exceeded" errors.
 
-**Agent Booster Performance:**
+**Agent Booster - Local Code Editing:**
 
-| Metric | Standard LLM | Agent Booster (WASM) | Improvement |
-|--------|-------------|---------------------|-------------|
-| **Latency** | 13,000ms (13s) | 85ms | **152x faster** |
-| **Cost** | $0.001/edit | $0.000 | **100% savings** |
-| **Quality** | 100% | 100% | Comparable |
+Instead of sending every code edit through expensive LLM APIs, Agent Booster handles mechanical code changes locally using pattern matching and AST analysis. This delivers substantial performance and cost benefits for routine edits:
 
-Agent Booster uses Rust/WASM for ultra-fast code editing (152x faster than LLMs, zero cost). Enabled by default with `--agent-booster` flag.
+| Metric | Standard LLM | Agent Booster | Benefit |
+|--------|-------------|---------------|---------|
+| **Speed** | 13 seconds | 85ms | 152x faster response |
+| **Cost** | ~$0.001 per edit | $0.00 | No API charges |
+| **Privacy** | Cloud API call | Local execution | Code stays local |
+
+Works well for type annotations, error handling, var→const conversions, and async/await transformations. For complex reasoning or structural refactors, Agent Booster automatically suggests LLM fallback. Runs entirely in-process using Rust/WASM—no external dependencies. Enabled by default, disable with `--no-agent-booster`.
 
 **How it works:**
 1. ✅ Auto-starts proxy server in background (OpenRouter/Gemini/ONNX)
