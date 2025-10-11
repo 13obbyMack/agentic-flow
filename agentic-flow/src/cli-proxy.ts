@@ -36,6 +36,7 @@ import { parseArgs } from "./utils/cli.js";
 import { getAgent, listAgents } from "./utils/agentLoader.js";
 import { claudeAgent } from "./agents/claudeAgent.js";
 import { handleMCPCommand } from "./utils/mcpCommands.js";
+import { handleReasoningBankCommand } from "./utils/reasoningbankCommands.js";
 import { handleConfigCommand } from "./cli/config-wizard.js";
 import { handleAgentCommand } from "./cli/agent-manager.js";
 import { ModelOptimizer } from "./utils/modelOptimizer.js";
@@ -65,7 +66,7 @@ class AgenticFlowCLI {
     }
 
     // If no mode and no agent specified, show help
-    if (!options.agent && options.mode !== 'list' && !['config', 'agent-manager', 'mcp-manager', 'proxy', 'claude-code', 'mcp'].includes(options.mode)) {
+    if (!options.agent && options.mode !== 'list' && !['config', 'agent-manager', 'mcp-manager', 'proxy', 'claude-code', 'mcp', 'reasoningbank'].includes(options.mode)) {
       this.printHelp();
       process.exit(0);
     }
@@ -162,6 +163,13 @@ class AgenticFlowCLI {
       process.on('SIGINT', () => proc.kill('SIGINT'));
       process.on('SIGTERM', () => proc.kill('SIGTERM'));
       return;
+    }
+
+    if (options.mode === 'reasoningbank') {
+      // Handle ReasoningBank commands
+      const subcommand = process.argv[3] || 'help';
+      await handleReasoningBankCommand(subcommand);
+      process.exit(0);
     }
 
     // Apply model optimization if requested

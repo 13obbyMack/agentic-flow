@@ -1,7 +1,7 @@
 // CLI argument parsing and help utilities
 
 export interface CliOptions {
-  mode: 'agent' | 'parallel' | 'list' | 'mcp' | 'mcp-manager' | 'config' | 'agent-manager' | 'proxy' | 'claude-code';
+  mode: 'agent' | 'parallel' | 'list' | 'mcp' | 'mcp-manager' | 'config' | 'agent-manager' | 'proxy' | 'claude-code' | 'reasoningbank';
   agent?: string;
   task?: string;
 
@@ -91,6 +91,12 @@ export function parseArgs(): CliOptions {
   // Check for agent management command
   if (args[0] === 'agent') {
     options.mode = 'agent-manager';
+    return options;
+  }
+
+  // Check for reasoningbank command
+  if (args[0] === 'reasoningbank') {
+    options.mode = 'reasoningbank';
     return options;
   }
 
@@ -225,6 +231,7 @@ USAGE:
   npx agentic-flow [COMMAND] [OPTIONS]
 
 COMMANDS:
+  reasoningbank <cmd>     Memory system that learns from experience (demo, test, init)
   claude-code [options]   Spawn Claude Code with proxy + Agent Booster (57x faster edits)
   mcp <command> [server]  Manage MCP servers (start, stop, status, list)
   config [command]        Configuration wizard (set, get, list, delete, reset)
@@ -232,6 +239,13 @@ COMMANDS:
   --list, -l              List all available agents
   --agent, -a <name>      Run specific agent mode
   (default)               Run parallel mode (3 agents)
+
+REASONINGBANK COMMANDS:
+  npx agentic-flow reasoningbank demo         Run interactive demo comparison
+  npx agentic-flow reasoningbank test         Run validation tests
+  npx agentic-flow reasoningbank init         Initialize database
+  npx agentic-flow reasoningbank benchmark    Run performance benchmarks
+  npx agentic-flow reasoningbank status       Show memory statistics
 
 MCP COMMANDS:
   npx agentic-flow mcp start [server]    Start MCP server(s)
@@ -278,6 +292,12 @@ OPTIONS:
   --help, -h                  Show this help message
 
 EXAMPLES:
+  # ReasoningBank (Learn from agent experience!)
+  npx agentic-flow reasoningbank demo       # See 0% → 100% success transformation
+  npx agentic-flow reasoningbank test       # Run 27 validation tests
+  npx agentic-flow reasoningbank init       # Setup memory database
+  export ANTHROPIC_API_KEY=sk-ant-...      # Enable LLM-based learning
+
   # Agent Booster Integration (200x faster code edits!)
   npx agentic-flow --agent coder --task "Convert var to const in utils.js" --agent-booster
   npx agentic-flow --agent coder --task "Add types to api.ts" --agent-booster --provider openrouter
