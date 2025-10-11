@@ -1,6 +1,6 @@
 {
   "name": "agentic-flow",
-  "version": "1.5.3",
+  "version": "1.5.4",
   "description": "Production-ready AI agent orchestration platform with 66 specialized agents, 213 MCP tools, ReasoningBank learning memory, and autonomous multi-agent swarms. Built by @ruvnet with Claude Agent SDK, neural networks, memory persistence, GitHub integration, and distributed consensus protocols.",
   "type": "module",
   "main": "dist/index.js",
@@ -9,7 +9,7 @@
   },
   "scripts": {
     "start": "node --enable-source-maps dist/index.js",
-    "build": "tsc -p config/tsconfig.json",
+    "build": "tsc -p config/tsconfig.json && cp -r src/reasoningbank/prompts dist/reasoningbank/",
     "dev": "tsx src/index.ts",
     "prepublishOnly": "npm run build",
     "test": "npm run test:retry && npm run test:logging",

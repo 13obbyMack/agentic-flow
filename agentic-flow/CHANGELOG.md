@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.4] - 2025-10-11
+
+### Fixed
+- **Critical:** Added prompts directory to npm package build
+  - Updated build script to copy `src/reasoningbank/prompts/` to `dist/reasoningbank/prompts/`
+  - Resolves "ENOENT" errors when loading prompt JSON files from installed package
+  - All ReasoningBank features now work correctly when installed via npm/npx
+
+### Technical Details
+- Build script now includes: `tsc -p config/tsconfig.json && cp -r src/reasoningbank/prompts dist/reasoningbank/`
+- Ensures judge.json, distill-success.json, distill-failure.json, and matts-aggregate.json are included in package
+
 ## [1.5.3] - 2025-10-11
 
 ### Fixed
