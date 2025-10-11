@@ -4,9 +4,13 @@
  */
 
 import { readFileSync } from 'fs';
-import { join } from 'path';
+import { join, dirname } from 'path';
+import { fileURLToPath } from 'url';
 import { loadConfig } from '../utils/config.js';
 import type { Trajectory } from '../db/schema.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 export interface Verdict {
   label: 'Success' | 'Failure';
@@ -27,8 +31,8 @@ export async function judgeTrajectory(
 
   console.log(`[INFO] Judging trajectory for query: ${query.substring(0, 100)}...`);
 
-  // Load judge prompt template
-  const promptPath = join(process.cwd(), 'src', 'reasoningbank', 'prompts', 'judge.json');
+  // Load judge prompt template (relative to this file)
+  const promptPath = join(__dirname, '../prompts/judge.json');
   const promptTemplate = JSON.parse(readFileSync(promptPath, 'utf-8'));
 
   // Format trajectory for judgment

@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.3] - 2025-10-11
+
+### Fixed
+- **Critical:** Fixed path resolution for prompt template loading when running via npx
+  - Updated judge.ts, distill.ts, and matts.ts to use `__dirname` instead of `process.cwd()`
+  - Resolves "ENOENT: no such file or directory" errors when loading prompt JSON files
+  - Demo and all ReasoningBank CLI commands now work correctly when installed globally
+  - Files load correctly from npm package structure
+
+### Technical Details
+- Added proper ES module path resolution: `fileURLToPath(import.meta.url)` and `dirname()`
+- Changed prompt paths from `join(process.cwd(), 'src', 'reasoningbank', 'prompts', ...)`
+  to `join(__dirname, '../prompts', ...)`
+- Ensures prompts load from installed npm package location, not current working directory
+
 ## [1.5.2] - 2025-10-11
 
 ### Fixed

@@ -4,7 +4,8 @@
  */
 
 import { readFileSync } from 'fs';
-import { join } from 'path';
+import { join, dirname } from 'path';
+import { fileURLToPath } from 'url';
 import { ulid } from 'ulid';
 import { loadConfig } from '../utils/config.js';
 import { scrubMemory } from '../utils/pii-scrubber.js';
@@ -12,6 +13,9 @@ import { computeEmbedding } from '../utils/embeddings.js';
 import * as db from '../db/queries.js';
 import type { Trajectory } from '../db/schema.js';
 import type { Verdict } from './judge.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 export interface DistilledMemory {
   title: string;
@@ -37,7 +41,7 @@ export async function distillMemories(
 
   // Select appropriate prompt template
   const templateName = verdict.label === 'Success' ? 'distill-success.json' : 'distill-failure.json';
-  const promptPath = join(process.cwd(), 'src', 'reasoningbank', 'prompts', templateName);
+  const promptPath = join(__dirname, '../prompts', templateName);
   const promptTemplate = JSON.parse(readFileSync(promptPath, 'utf-8'));
 
   const maxItems = verdict.label === 'Success'

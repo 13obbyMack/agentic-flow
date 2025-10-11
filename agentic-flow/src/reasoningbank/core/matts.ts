@@ -8,7 +8,8 @@
  */
 
 import { readFileSync } from 'fs';
-import { join } from 'path';
+import { join, dirname } from 'path';
+import { fileURLToPath } from 'url';
 import { ulid } from 'ulid';
 import { loadConfig } from '../utils/config.js';
 import { retrieveMemories } from './retrieve.js';
@@ -16,6 +17,9 @@ import { judgeTrajectory } from './judge.js';
 import { distillMemories } from './distill.js';
 import * as db from '../db/queries.js';
 import type { Trajectory } from '../db/schema.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 export interface MattsResult {
   runId: string;
@@ -220,7 +224,7 @@ async function aggregateMemories(
   console.log('[INFO] Aggregating memories via self-contrast');
 
   // Load aggregation prompt
-  const promptPath = join(process.cwd(), 'src', 'reasoningbank', 'prompts', 'matts-aggregate.json');
+  const promptPath = join(__dirname, '../prompts', 'matts-aggregate.json');
   const promptTemplate = JSON.parse(readFileSync(promptPath, 'utf-8'));
 
   // Format trajectories for comparison
