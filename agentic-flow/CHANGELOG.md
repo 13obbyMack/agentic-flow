@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.5] - 2025-10-11
+
+### Fixed
+- **Enhancement:** Added dotenv loading to ReasoningBank demo
+  - Demo now loads `.env` file automatically to pick up ANTHROPIC_API_KEY
+  - Enables full LLM-powered judgment and distillation when API key is available
+  - Falls back gracefully to template-based approach when key is missing
+
+### Technical Details
+- Added `import { config } from 'dotenv'; config();` to demo-comparison.ts
+- Ensures environment variables are loaded before ReasoningBank initialization
+
 ## [1.5.4] - 2025-10-11
 
 ### Fixed

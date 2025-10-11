@@ -7,6 +7,10 @@
  * 2. ReasoningBank approach: Agent learns from experience
  */
 
+// Load environment variables from .env file
+import { config } from 'dotenv';
+config();
+
 import { initialize, runTask, retrieveMemories, db } from './index.js';
 import type { Trajectory } from './db/schema.js';
 
