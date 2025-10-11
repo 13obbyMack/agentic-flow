@@ -174,11 +174,17 @@ export function fetchMemoryCandidates(options: {
   const stmt = db.prepare(query);
   const rows = stmt.all(...params) as any[];
 
-  return rows.map((row: any) => ({
-    ...row,
-    pattern_data: JSON.parse((row as any).pattern_data),
-    embedding: new Float32Array(Buffer.from((row as any).embedding))
-  }));
+  return rows.map((row: any) => {
+    const buffer = Buffer.from((row as any).embedding);
+    // Create Float32Array from buffer - buffer length / 4 bytes per float
+    const float32Array = new Float32Array(buffer.buffer, buffer.byteOffset, buffer.length / 4);
+
+    return {
+      ...row,
+      pattern_data: JSON.parse((row as any).pattern_data),
+      embedding: float32Array
+    };
+  });
 }
 
 /**
