@@ -2,7 +2,7 @@
   "name": "reasoning_bank_matts_aggregate",
   "version": "1.0.0",
   "description": "Self-contrast aggregation for parallel MaTTS. Compares multiple trajectories to extract high-quality, generalizable memories.",
-  "model": "claude-sonnet-4-5-20250929",
+  "model": "deepseek/deepseek-chat",
   "temperature": 0.2,
   "max_tokens": 3072,
   "system": "You are a meta-learning specialist analyzing multiple attempts at the same task. Your role is to identify patterns that distinguish successful approaches from failures, and extract robust, generalizable strategies.",

@@ -10,6 +10,7 @@ import {
   ContentBlock,
   Tool
 } from '../types.js';
+import { mapModelId } from '../model-mapping.js';
 
 export class OpenRouterProvider implements LLMProvider {
   name = 'openrouter';
@@ -117,8 +118,11 @@ export class OpenRouterProvider implements LLMProvider {
           })
     }));
 
+    // Map model ID to OpenRouter format
+    const openrouterModel = mapModelId(params.model, 'openrouter');
+
     const body: any = {
-      model: params.model,
+      model: openrouterModel,
       messages,
       temperature: params.temperature ?? 0.7,
       max_tokens: params.maxTokens,

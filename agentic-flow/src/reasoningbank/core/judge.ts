@@ -7,10 +7,20 @@ import { readFileSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { loadConfig } from '../utils/config.js';
+import { ModelRouter } from '../../router/router.js';
 import type { Trajectory } from '../db/schema.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
+
+// Initialize ModelRouter once
+let routerInstance: ModelRouter | null = null;
+function getRouter(): ModelRouter {
+  if (!routerInstance) {
+    routerInstance = new ModelRouter();
+  }
+  return routerInstance;
+}
 
 export interface Verdict {
   label: 'Success' | 'Failure';
@@ -38,41 +48,38 @@ export async function judgeTrajectory(
   // Format trajectory for judgment
   const trajectoryText = formatTrajectory(trajectory);
 
-  // Check if we have Anthropic API key
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) {
-    console.warn('[WARN] ANTHROPIC_API_KEY not set, using heuristic judgment');
+  // Check if we have any API key configured
+  const hasApiKey = process.env.OPENROUTER_API_KEY ||
+                    process.env.ANTHROPIC_API_KEY ||
+                    process.env.GOOGLE_GEMINI_API_KEY;
+
+  if (!hasApiKey) {
+    console.warn('[WARN] No API key set (OPENROUTER_API_KEY, ANTHROPIC_API_KEY, or GOOGLE_GEMINI_API_KEY), using heuristic judgment');
     return heuristicJudge(trajectory, query);
   }
 
   try {
-    // Call Anthropic API with judge prompt
+    // Call LLM API with judge prompt using ModelRouter
     const prompt = promptTemplate.template
       .replace('{{task_query}}', query)
       .replace('{{trajectory}}', trajectoryText);
 
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-        'content-type': 'application/json'
-      },
-      body: JSON.stringify({
-        model: config.judge.model,
-        max_tokens: config.judge.max_tokens,
-        temperature: config.judge.temperature,
-        system: promptTemplate.system,
-        messages: [{ role: 'user', content: prompt }]
-      })
-    });
+    const router = getRouter();
+    const response = await router.chat({
+      model: config.judge.model,
+      messages: [
+        { role: 'system', content: promptTemplate.system },
+        { role: 'user', content: prompt }
+      ],
+      temperature: config.judge.temperature,
+      maxTokens: config.judge.max_tokens
+    }, 'reasoningbank-judge');
 
-    if (!response.ok) {
-      throw new Error(`Anthropic API error: ${response.status}`);
-    }
-
-    const result = await response.json();
-    const content = result.content[0].text;
+    // Extract content from router response
+    const content = response.content
+      .filter(block => block.type === 'text')
+      .map(block => block.text)
+      .join('\n');
 
     // Parse JSON response
     const verdict = parseVerdict(content);

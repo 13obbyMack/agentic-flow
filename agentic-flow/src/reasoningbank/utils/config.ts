@@ -110,7 +110,7 @@ const DEFAULT_CONFIG: ReasoningBankConfig = {
   },
   embeddings: {
     provider: 'claude',
-    model: 'claude-3-5-sonnet-20241022',
+    model: 'claude-sonnet-4-5-20250929',
     dims: 1024,
     dimensions: 1024,
     cache_ttl_seconds: 3600
@@ -209,7 +209,7 @@ export function loadConfig(): ReasoningBankConfig {
       },
       embeddings: {
         provider: raw.embeddings?.provider ?? 'claude',
-        model: raw.embeddings?.model ?? 'claude-3-5-sonnet-20241022',
+        model: raw.embeddings?.model ?? 'claude-sonnet-4-5-20250929',
         dims: raw.embeddings?.dimensions ?? 1024,
         dimensions: raw.embeddings?.dimensions ?? 1024,
         cache_ttl_seconds: raw.embeddings?.cache_ttl_seconds ?? 3600

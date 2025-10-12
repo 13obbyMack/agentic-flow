@@ -2,7 +2,7 @@
   "name": "reasoning_bank_distill_success",
   "version": "1.0.0",
   "description": "Extract reusable strategy principles from successful trajectories. Creates title/description/content memories.",
-  "model": "claude-sonnet-4-5-20250929",
+  "model": "deepseek/deepseek-chat",
   "temperature": 0.3,
   "max_tokens": 2048,
   "system": "You are a knowledge extraction specialist. Your role is to analyze successful task trajectories and extract reusable, generalizable strategy principles. Each principle should be concise, actionable, and avoid task-specific details like URLs, IDs, or PII.",

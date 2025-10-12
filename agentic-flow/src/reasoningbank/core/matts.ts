@@ -15,11 +15,21 @@ import { loadConfig } from '../utils/config.js';
 import { retrieveMemories } from './retrieve.js';
 import { judgeTrajectory } from './judge.js';
 import { distillMemories } from './distill.js';
+import { ModelRouter } from '../../router/router.js';
 import * as db from '../db/queries.js';
 import type { Trajectory } from '../db/schema.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
+
+// Initialize ModelRouter once
+let routerInstance: ModelRouter | null = null;
+function getRouter(): ModelRouter {
+  if (!routerInstance) {
+    routerInstance = new ModelRouter();
+  }
+  return routerInstance;
+}
 
 export interface MattsResult {
   runId: string;
@@ -235,9 +245,13 @@ async function aggregateMemories(
     steps: JSON.stringify(t.trajectory.steps || [], null, 2)
   }));
 
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) {
-    console.warn('[WARN] No API key, skipping aggregation');
+  // Check if we have any API key configured
+  const hasApiKey = process.env.OPENROUTER_API_KEY ||
+                    process.env.ANTHROPIC_API_KEY ||
+                    process.env.GOOGLE_GEMINI_API_KEY;
+
+  if (!hasApiKey) {
+    console.warn('[WARN] No API key set, skipping aggregation');
     return [];
   }
 
@@ -247,28 +261,23 @@ async function aggregateMemories(
       .replace('{{task_query}}', query)
       .replace('{{trajectories}}', JSON.stringify(trajectoryTexts, null, 2));
 
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-        'content-type': 'application/json'
-      },
-      body: JSON.stringify({
-        model: promptTemplate.model,
-        max_tokens: promptTemplate.max_tokens,
-        temperature: promptTemplate.temperature,
-        system: promptTemplate.system,
-        messages: [{ role: 'user', content: prompt }]
-      })
-    });
+    // Use ModelRouter for multi-provider support
+    const router = getRouter();
+    const response = await router.chat({
+      model: promptTemplate.model,
+      messages: [
+        { role: 'system', content: promptTemplate.system },
+        { role: 'user', content: prompt }
+      ],
+      temperature: promptTemplate.temperature,
+      maxTokens: promptTemplate.max_tokens
+    }, 'reasoningbank-matts-aggregate');
 
-    if (!response.ok) {
-      throw new Error(`Anthropic API error: ${response.status}`);
-    }
-
-    const result = await response.json();
-    const content = result.content[0].text;
+    // Extract content from router response
+    const content = response.content
+      .filter(block => block.type === 'text')
+      .map(block => block.text)
+      .join('\n');
 
     // Parse and store aggregated memories
     const jsonMatch = content.match(/\{[\s\S]*\}/);

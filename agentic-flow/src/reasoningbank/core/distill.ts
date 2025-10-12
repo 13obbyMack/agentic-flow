@@ -10,12 +10,22 @@ import { ulid } from 'ulid';
 import { loadConfig } from '../utils/config.js';
 import { scrubMemory } from '../utils/pii-scrubber.js';
 import { computeEmbedding } from '../utils/embeddings.js';
+import { ModelRouter } from '../../router/router.js';
 import * as db from '../db/queries.js';
 import type { Trajectory } from '../db/schema.js';
 import type { Verdict } from './judge.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
+
+// Initialize ModelRouter once
+let routerInstance: ModelRouter | null = null;
+function getRouter(): ModelRouter {
+  if (!routerInstance) {
+    routerInstance = new ModelRouter();
+  }
+  return routerInstance;
+}
 
 export interface DistilledMemory {
   title: string;
@@ -52,10 +62,13 @@ export async function distillMemories(
     ? config.distill.confidence_prior_success
     : config.distill.confidence_prior_failure;
 
-  // Check API key
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) {
-    console.warn('[WARN] ANTHROPIC_API_KEY not set, using template-based distillation');
+  // Check if we have any API key configured
+  const hasApiKey = process.env.OPENROUTER_API_KEY ||
+                    process.env.ANTHROPIC_API_KEY ||
+                    process.env.GOOGLE_GEMINI_API_KEY;
+
+  if (!hasApiKey) {
+    console.warn('[WARN] No API key set (OPENROUTER_API_KEY, ANTHROPIC_API_KEY, or GOOGLE_GEMINI_API_KEY), using template-based distillation');
     return templateBasedDistill(trajectory, verdict, query, options);
   }
 
@@ -69,29 +82,23 @@ export async function distillMemories(
       .replace('{{trajectory}}', trajectoryText)
       .replace('{{max_items}}', String(maxItems));
 
-    // Call Anthropic API
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-        'content-type': 'application/json'
-      },
-      body: JSON.stringify({
-        model: config.distill.model,
-        max_tokens: 2048,
-        temperature: config.distill.temperature,
-        system: promptTemplate.system,
-        messages: [{ role: 'user', content: prompt }]
-      })
-    });
+    // Use ModelRouter for multi-provider support
+    const router = getRouter();
+    const response = await router.chat({
+      model: config.distill.model || config.judge.model,
+      messages: [
+        { role: 'system', content: promptTemplate.system },
+        { role: 'user', content: prompt }
+      ],
+      temperature: config.distill.temperature || 0.3,
+      maxTokens: config.distill.max_tokens || 2048
+    }, 'reasoningbank-distill');
 
-    if (!response.ok) {
-      throw new Error(`Anthropic API error: ${response.status}`);
-    }
-
-    const result = await response.json();
-    const content = result.content[0].text;
+    // Extract content from router response
+    const content = response.content
+      .filter(block => block.type === 'text')
+      .map(block => block.text)
+      .join('\n');
 
     // Parse memories from response
     const distilled = parseDistilledMemories(content);

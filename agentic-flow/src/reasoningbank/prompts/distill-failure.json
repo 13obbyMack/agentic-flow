@@ -2,7 +2,7 @@
   "name": "reasoning_bank_distill_failure",
   "version": "1.0.0",
   "description": "Extract failure guardrails and preventative patterns from failed trajectories. Creates counterfactual memories.",
-  "model": "claude-sonnet-4-5-20250929",
+  "model": "deepseek/deepseek-chat",
   "temperature": 0.3,
   "max_tokens": 2048,
   "system": "You are a failure analysis specialist. Your role is to analyze failed task trajectories and extract guardrails, pitfalls, and recovery strategies. Focus on preventable errors and how to detect/avoid them.",

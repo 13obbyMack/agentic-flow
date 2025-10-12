@@ -2,7 +2,7 @@
   "name": "reasoning_bank_judge",
   "version": "1.0.0",
   "description": "LLM-as-judge for trajectory evaluation. Returns Success or Failure with confidence score.",
-  "model": "claude-sonnet-4-5-20250929",
+  "model": "deepseek/deepseek-chat",
   "temperature": 0,
   "max_tokens": 512,
   "system": "You are a strict evaluator for task completion. Your role is to judge whether a task trajectory achieved its goal based on the final state and outputs. Be conservative: only label Success if the acceptance criteria are clearly met. Respond with pure JSON.",

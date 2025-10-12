@@ -21,7 +21,7 @@ reasoningbank:
   # ============================================================================
   embeddings:
     provider: "claude"             # "claude" | "openai" | "huggingface" | "local"
-    model: "claude-3-5-sonnet-20241022"  # for Claude provider
+    model: "claude-sonnet-4-5-20250929"  # for Claude provider
     # model: "text-embedding-3-large"    # for OpenAI provider
     # model: "sentence-transformers/all-MiniLM-L6-v2"  # for HuggingFace provider
     dimensions: 1024               # vector dimensions (Claude: 1024, OpenAI: 1536/3072)
