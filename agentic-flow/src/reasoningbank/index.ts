@@ -4,6 +4,10 @@
  * Main entry point and public API
  *
  * Paper: https://arxiv.org/html/2509.25140v1
+ *
+ * This is the Node.js backend using SQLite for persistent storage.
+ * For browser environments, use './wasm-adapter.js' instead.
+ * For automatic backend selection, use './backend-selector.js'.
  */
 
 // Core algorithms

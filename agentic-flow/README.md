@@ -38,6 +38,7 @@ Most AI coding agents are **painfully slow** and **frustratingly forgetful**. Th
 - **After learning**: 90%+ success, **46% faster execution**
 - **Manual intervention**: Required every time → **Zero needed**
 - **Improvement**: Gets smarter with every task
+- **Storage**: Node.js (SQLite, persistent) or WASM (IndexedDB/Memory)
 
 ### 💰 Combined Impact on Real Workflows
 
@@ -53,7 +54,7 @@ Most AI coding agents are **painfully slow** and **frustratingly forgetful**. Th
 | Component | Description | Performance | Documentation |
 |-----------|-------------|-------------|---------------|
 | **Agent Booster** | Ultra-fast local code transformations via Rust/WASM | 352x faster, $0 cost | [Docs](https://github.com/ruvnet/agentic-flow/tree/main/agent-booster) |
-| **ReasoningBank** | Persistent learning memory system | 46% faster, 100% success | [Docs](https://github.com/ruvnet/agentic-flow/tree/main/agentic-flow/src/reasoningbank) |
+| **ReasoningBank** | Persistent learning memory system with dual backends | 46% faster, 100% success | [Docs](https://github.com/ruvnet/agentic-flow/tree/main/agentic-flow/src/reasoningbank) |
 | **Multi-Model Router** | Intelligent cost optimization across 10+ LLMs | 99% cost savings | [Docs](https://github.com/ruvnet/agentic-flow/tree/main/agentic-flow/src/router) |
 
 Switch between Claude (quality), OpenRouter (99% savings), Gemini (speed), or ONNX (free offline) with zero code changes. Deploy locally for development, Docker for CI/CD, or Flow Nexus cloud for production scale.
