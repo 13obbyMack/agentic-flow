@@ -137,42 +137,42 @@ export function validateQuicConfig(config: QuicConfigSchema): void {
   const errors: string[] = [];
 
   // Port validation
-  if (config.port < 1 || config.port > 65535) {
+  if (config.port! < 1 || config.port! > 65535) {
     errors.push(`Invalid port: ${config.port}. Must be between 1 and 65535.`);
   }
 
-  if (config.serverPort < 1 || config.serverPort > 65535) {
+  if (config.serverPort! < 1 || config.serverPort! > 65535) {
     errors.push(`Invalid server port: ${config.serverPort}. Must be between 1 and 65535.`);
   }
 
   // Connection limits
-  if (config.maxConnections < 1) {
+  if (config.maxConnections! < 1) {
     errors.push(`Invalid maxConnections: ${config.maxConnections}. Must be at least 1.`);
   }
 
-  if (config.maxConcurrentStreams < 1) {
+  if (config.maxConcurrentStreams! < 1) {
     errors.push(`Invalid maxConcurrentStreams: ${config.maxConcurrentStreams}. Must be at least 1.`);
   }
 
   // Timeouts
-  if (config.connectionTimeout < 1000) {
+  if (config.connectionTimeout! < 1000) {
     errors.push(`Invalid connectionTimeout: ${config.connectionTimeout}. Must be at least 1000ms.`);
   }
 
-  if (config.idleTimeout < 1000) {
+  if (config.idleTimeout! < 1000) {
     errors.push(`Invalid idleTimeout: ${config.idleTimeout}. Must be at least 1000ms.`);
   }
 
-  if (config.streamTimeout < 1000) {
+  if (config.streamTimeout! < 1000) {
     errors.push(`Invalid streamTimeout: ${config.streamTimeout}. Must be at least 1000ms.`);
   }
 
   // Performance tuning
-  if (config.initialCongestionWindow < 1) {
+  if (config.initialCongestionWindow! < 1) {
     errors.push(`Invalid initialCongestionWindow: ${config.initialCongestionWindow}. Must be at least 1.`);
   }
 
-  if (config.maxDatagramSize < 1200 || config.maxDatagramSize > 65527) {
+  if (config.maxDatagramSize! < 1200 || config.maxDatagramSize! > 65527) {
     errors.push(`Invalid maxDatagramSize: ${config.maxDatagramSize}. Must be between 1200 and 65527.`);
   }
 
