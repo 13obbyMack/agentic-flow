@@ -12,7 +12,7 @@
  * - Type-safe interfaces
  */
 
-import * as ReasoningBankWasm from '../../wasm/reasoningbank/reasoningbank_wasm';
+import * as ReasoningBankWasm from '../../wasm/reasoningbank/reasoningbank_wasm.js';
 
 export interface PatternInput {
   task_description: string;

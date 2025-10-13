@@ -1,6 +1,6 @@
 {
   "name": "agentic-flow",
-  "version": "1.5.11",
+  "version": "1.5.12",
   "description": "Production-ready AI agent orchestration platform with 66 specialized agents, 213 MCP tools, ReasoningBank learning memory, and autonomous multi-agent swarms. Built by @ruvnet with Claude Agent SDK, neural networks, memory persistence, GitHub integration, and distributed consensus protocols.",
   "type": "module",
   "main": "dist/index.js",
@@ -10,7 +10,7 @@
   "scripts": {
     "start": "node --enable-source-maps dist/index.js",
     "build": "npm run build:wasm && tsc -p config/tsconfig.json && cp -r src/reasoningbank/prompts dist/reasoningbank/",
-    "build:wasm": "cd ../reasoningbank && wasm-pack build --target nodejs --out-dir pkg/nodejs crates/reasoningbank-wasm && wasm-pack build --target web --out-dir pkg/web crates/reasoningbank-wasm && mkdir -p ../agentic-flow/wasm/reasoningbank && cp -r crates/reasoningbank-wasm/pkg/nodejs/* ../agentic-flow/wasm/reasoningbank/ && cp -r crates/reasoningbank-wasm/pkg/web ../agentic-flow/wasm/reasoningbank/",
+    "build:wasm": "cd ../reasoningbank && wasm-pack build --target bundler --out-dir pkg/bundler crates/reasoningbank-wasm && wasm-pack build --target web --out-dir pkg/web crates/reasoningbank-wasm && mkdir -p ../agentic-flow/wasm/reasoningbank && cp -r crates/reasoningbank-wasm/pkg/bundler/* ../agentic-flow/wasm/reasoningbank/ && cp -r crates/reasoningbank-wasm/pkg/web ../agentic-flow/wasm/reasoningbank/",
     "build:wasm:clean": "rm -rf ../reasoningbank/crates/reasoningbank-wasm/pkg && rm -rf wasm/reasoningbank",
     "dev": "tsx src/index.ts",
     "prepublishOnly": "npm run build",
