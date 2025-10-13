@@ -161,12 +161,10 @@ mod tests {
     #[test]
     fn test_tpm_normalization() {
         let normalizer = TpmNormalizer::new();
-        let mut samples = vec![
-            create_test_sample(vec![
-                ("GENE1".to_string(), 100),
-                ("GENE2".to_string(), 200),
-            ]),
-        ];
+        let mut samples = vec![create_test_sample(vec![
+            ("GENE1".to_string(), 100),
+            ("GENE2".to_string(), 200),
+        ])];
 
         normalizer.normalize(&mut samples).unwrap();
         let total: f64 = samples[0].normalized.values().sum();

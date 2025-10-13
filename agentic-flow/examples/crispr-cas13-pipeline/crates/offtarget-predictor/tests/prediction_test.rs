@@ -10,7 +10,10 @@ mod offtarget_predictor_tests {
         // Given: guide RNA perfectly matches target site
         // Expected: off-target score = 1.0 (highest probability)
         // Verify confidence interval is narrow
-        assert!(true, "Placeholder - implement when prediction function exists");
+        assert!(
+            true,
+            "Placeholder - implement when prediction function exists"
+        );
     }
 
     #[test]
@@ -19,7 +22,10 @@ mod offtarget_predictor_tests {
         // Given: guide RNA with 1 mismatch to potential off-target
         // Expected: score between 0.6-0.9 depending on position
         // Verify PAM-proximal mismatches penalized more
-        assert!(true, "Placeholder - implement when prediction function exists");
+        assert!(
+            true,
+            "Placeholder - implement when prediction function exists"
+        );
     }
 
     #[test]
@@ -28,7 +34,10 @@ mod offtarget_predictor_tests {
         // Given: guide RNA with 3+ mismatches
         // Expected: off-target score < 0.3 (low probability)
         // Verify score decreases with mismatch count
-        assert!(true, "Placeholder - implement when prediction function exists");
+        assert!(
+            true,
+            "Placeholder - implement when prediction function exists"
+        );
     }
 
     #[test]
@@ -46,7 +55,10 @@ mod offtarget_predictor_tests {
         // Given: mismatches at different positions in guide RNA
         // Expected: seed region mismatches penalized more than distal
         // Verify position weight matrix is applied correctly
-        assert!(true, "Placeholder - implement when position weighting exists");
+        assert!(
+            true,
+            "Placeholder - implement when position weighting exists"
+        );
     }
 
     // Feature extraction tests
@@ -56,7 +68,10 @@ mod offtarget_predictor_tests {
         // Verify k-mer features calculated correctly
         // Test GC content calculation
         // Validate thermodynamic features (ΔG, Tm)
-        assert!(true, "Placeholder - implement when feature extraction exists");
+        assert!(
+            true,
+            "Placeholder - implement when feature extraction exists"
+        );
     }
 
     #[test]
@@ -64,7 +79,10 @@ mod offtarget_predictor_tests {
         // TODO: Test RNA secondary structure features
         // Verify structure prediction integration
         // Test accessibility score calculation
-        assert!(true, "Placeholder - implement when structure features exist");
+        assert!(
+            true,
+            "Placeholder - implement when structure features exist"
+        );
     }
 
     #[test]
@@ -72,7 +90,10 @@ mod offtarget_predictor_tests {
         // TODO: Test chromatin accessibility features
         // Verify DNase-seq/ATAC-seq integration
         // Test histone modification features
-        assert!(true, "Placeholder - implement when chromatin features exist");
+        assert!(
+            true,
+            "Placeholder - implement when chromatin features exist"
+        );
     }
 
     // ML model tests

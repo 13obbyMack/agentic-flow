@@ -37,3 +37,9 @@ serde_bytes = "0.11"
 
 [dev-dependencies]
 tempfile = { workspace = true }
+criterion = { workspace = true }
+
+[[bench]]
+name = "neural_bus_benchmark"
+harness = false
+path = "../../benches/neural_bus_benchmark.rs"

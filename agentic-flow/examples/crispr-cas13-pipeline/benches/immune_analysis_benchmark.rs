@@ -1,7 +1,7 @@
 // Criterion benchmark for immune analysis
 // Measures differential expression analysis performance and statistical computing
 
-use criterion::{black_box, criterion_group, criterion_main, Criterion, BenchmarkId, Throughput};
+use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion, Throughput};
 use rand::Rng;
 // use crispr_cas13_pipeline::immune_analyzer::*; // TODO: Uncomment when module exists
 
@@ -9,11 +9,7 @@ use rand::Rng;
 fn generate_expression_matrix(genes: usize, samples: usize) -> Vec<Vec<f64>> {
     let mut rng = rand::thread_rng();
     (0..genes)
-        .map(|_| {
-            (0..samples)
-                .map(|_| rng.gen_range(0.0..10000.0))
-                .collect()
-        })
+        .map(|_| (0..samples).map(|_| rng.gen_range(0.0..10000.0)).collect())
         .collect()
 }
 
@@ -131,9 +127,7 @@ fn bench_fdr_correction(c: &mut Criterion) {
 
     for gene_count in [1_000, 10_000, 20_000].iter() {
         let mut rng = rand::thread_rng();
-        let pvalues: Vec<f64> = (0..*gene_count)
-            .map(|_| rng.gen_range(0.0..1.0))
-            .collect();
+        let pvalues: Vec<f64> = (0..*gene_count).map(|_| rng.gen_range(0.0..1.0)).collect();
 
         group.throughput(Throughput::Elements(*gene_count as u64));
         group.bench_with_input(
@@ -236,9 +230,7 @@ fn bench_gsea(c: &mut Criterion) {
         .collect();
 
     // Gene set (inflammatory pathway - 200 genes)
-    let gene_set: Vec<String> = (0..200)
-        .map(|i| format!("GENE_{}", i * 100))
-        .collect();
+    let gene_set: Vec<String> = (0..200).map(|i| format!("GENE_{}", i * 100)).collect();
 
     group.throughput(Throughput::Elements(1));
     group.bench_function("pathway_enrichment", |b| {

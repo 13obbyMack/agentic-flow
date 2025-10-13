@@ -1,7 +1,7 @@
 // Criterion benchmark for alignment engine
 // Measures throughput (reads/second) and latency for alignment operations
 
-use criterion::{black_box, criterion_group, criterion_main, Criterion, BenchmarkId, Throughput};
+use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion, Throughput};
 // use crispr_cas13_pipeline::alignment_engine::*; // TODO: Uncomment when module exists
 
 /// Generate synthetic sequence data for benchmarking
@@ -9,9 +9,7 @@ fn generate_sequence(length: usize) -> String {
     use rand::Rng;
     let mut rng = rand::thread_rng();
     let bases = ['A', 'C', 'G', 'T'];
-    (0..length)
-        .map(|_| bases[rng.gen_range(0..4)])
-        .collect()
+    (0..length).map(|_| bases[rng.gen_range(0..4)]).collect()
 }
 
 /// Generate multiple sequences for batch benchmarking

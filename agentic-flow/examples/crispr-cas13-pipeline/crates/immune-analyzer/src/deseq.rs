@@ -169,16 +169,16 @@ impl DeseqAnalyzer {
     fn erf(x: f64) -> f64 {
         let t = 1.0 / (1.0 + 0.5 * x.abs());
         let tau = t
-            * (-x * x
-                - 1.26551223
+            * (-x * x - 1.26551223
                 + t * (1.00002368
                     + t * (0.37409196
                         + t * (0.09678418
                             + t * (-0.18628806
                                 + t * (0.27886807
                                     + t * (-1.13520398
-                                        + t * (1.48851587 + t * (-0.82215223 + t * 0.17087277)))))))))
-            .exp();
+                                        + t * (1.48851587
+                                            + t * (-0.82215223 + t * 0.17087277)))))))))
+                .exp();
 
         if x >= 0.0 {
             1.0 - tau
@@ -216,7 +216,11 @@ impl DeseqAnalyzer {
 mod tests {
     use super::*;
 
-    fn create_test_sample(name: &str, condition: &str, counts: Vec<(String, u64)>) -> ExpressionSample {
+    fn create_test_sample(
+        name: &str,
+        condition: &str,
+        counts: Vec<(String, u64)>,
+    ) -> ExpressionSample {
         let mut sample = ExpressionSample::new(name.to_string(), condition.to_string(), 1);
         for (gene, count) in counts {
             sample.add_count(gene, count);
@@ -230,25 +234,29 @@ mod tests {
         let analyzer = DeseqAnalyzer::new(params);
 
         let control = vec![
-            create_test_sample("C1", "control", vec![
-                ("GENE1".to_string(), 100),
-                ("GENE2".to_string(), 50),
-            ]),
-            create_test_sample("C2", "control", vec![
-                ("GENE1".to_string(), 110),
-                ("GENE2".to_string(), 45),
-            ]),
+            create_test_sample(
+                "C1",
+                "control",
+                vec![("GENE1".to_string(), 100), ("GENE2".to_string(), 50)],
+            ),
+            create_test_sample(
+                "C2",
+                "control",
+                vec![("GENE1".to_string(), 110), ("GENE2".to_string(), 45)],
+            ),
         ];
 
         let treatment = vec![
-            create_test_sample("T1", "treatment", vec![
-                ("GENE1".to_string(), 200),
-                ("GENE2".to_string(), 30),
-            ]),
-            create_test_sample("T2", "treatment", vec![
-                ("GENE1".to_string(), 220),
-                ("GENE2".to_string(), 35),
-            ]),
+            create_test_sample(
+                "T1",
+                "treatment",
+                vec![("GENE1".to_string(), 200), ("GENE2".to_string(), 30)],
+            ),
+            create_test_sample(
+                "T2",
+                "treatment",
+                vec![("GENE1".to_string(), 220), ("GENE2".to_string(), 35)],
+            ),
         ];
 
         let result = analyzer.analyze(control, treatment).unwrap();

@@ -84,10 +84,7 @@ impl DefaultPredictor {
             .par_iter()
             .filter_map(|candidate| {
                 // Extract features
-                let features = self
-                    .feature_extractor
-                    .extract(target, candidate)
-                    .ok()?;
+                let features = self.feature_extractor.extract(target, candidate).ok()?;
 
                 // Predict score
                 let score = self.ml_model.predict_single(&features).ok()?;
@@ -107,7 +104,9 @@ impl DefaultPredictor {
                     })
                     .collect();
 
-                let target_gc = self.feature_extractor.calculate_gc_content(&target.guide_rna);
+                let target_gc = self
+                    .feature_extractor
+                    .calculate_gc_content(&target.guide_rna);
                 let candidate_gc = self.feature_extractor.calculate_gc_content(candidate);
 
                 let off_target_features =
@@ -244,11 +243,13 @@ impl CfdScorer {
         let position_weight = 1.0 - (position as f64 / 23.0);
 
         // Higher penalty for PAM-proximal mismatches
-        let base_penalty = match (guide_base.to_ascii_uppercase(), target_base.to_ascii_uppercase())
-        {
+        let base_penalty = match (
+            guide_base.to_ascii_uppercase(),
+            target_base.to_ascii_uppercase(),
+        ) {
             ('A', 'G') | ('G', 'A') => 0.6, // Purine-purine transition
             ('C', 'U') | ('U', 'C') => 0.6, // Pyrimidine-pyrimidine transition
-            _ => 0.3,                        // Transversion
+            _ => 0.3,                       // Transversion
         };
 
         base_penalty * position_weight

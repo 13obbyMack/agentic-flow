@@ -13,8 +13,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Initialize tracing
     tracing_subscriber::registry()
         .with(tracing_subscriber::EnvFilter::new(
-            std::env::var("RUST_LOG")
-                .unwrap_or_else(|_| "processing_orchestrator=info".into()),
+            std::env::var("RUST_LOG").unwrap_or_else(|_| "processing_orchestrator=info".into()),
         ))
         .with(tracing_subscriber::fmt::layer())
         .init();

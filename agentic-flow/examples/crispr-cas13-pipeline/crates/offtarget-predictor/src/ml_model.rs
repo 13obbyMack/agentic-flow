@@ -225,7 +225,9 @@ mod tests {
     #[test]
     fn test_linear_model_prediction() {
         let model = LinearModel::default_model();
-        let features = Array1::from(vec![1.0, 0.5, 50.0, 48.0, 2.0, 1.0, 5.0, 2.0, 1.5, 1.0, 55.0]);
+        let features = Array1::from(vec![
+            1.0, 0.5, 50.0, 48.0, 2.0, 1.0, 5.0, 2.0, 1.5, 1.0, 55.0,
+        ]);
 
         let score = model.predict_single(&features).unwrap();
         assert!(score >= 0.0 && score <= 1.0);
@@ -237,8 +239,8 @@ mod tests {
         let features = Array2::from_shape_vec(
             (2, 11),
             vec![
-                1.0, 0.5, 50.0, 48.0, 2.0, 1.0, 5.0, 2.0, 1.5, 1.0, 55.0,
-                2.0, 1.0, 52.0, 50.0, 2.0, 2.0, 8.0, 3.0, 1.2, 2.0, 58.0,
+                1.0, 0.5, 50.0, 48.0, 2.0, 1.0, 5.0, 2.0, 1.5, 1.0, 55.0, 2.0, 1.0, 52.0, 50.0,
+                2.0, 2.0, 8.0, 3.0, 1.2, 2.0, 58.0,
             ],
         )
         .unwrap();
@@ -253,7 +255,9 @@ mod tests {
         let mut ensemble = EnsembleModel::new();
         ensemble.add_model(Box::new(LinearModel::default_model()), 1.0);
 
-        let features = Array1::from(vec![1.0, 0.5, 50.0, 48.0, 2.0, 1.0, 5.0, 2.0, 1.5, 1.0, 55.0]);
+        let features = Array1::from(vec![
+            1.0, 0.5, 50.0, 48.0, 2.0, 1.0, 5.0, 2.0, 1.5, 1.0, 55.0,
+        ]);
         let score = ensemble.predict_single(&features).unwrap();
         assert!(score >= 0.0 && score <= 1.0);
     }

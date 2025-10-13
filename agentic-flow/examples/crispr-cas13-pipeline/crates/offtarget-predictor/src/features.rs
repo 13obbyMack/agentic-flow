@@ -26,11 +26,7 @@ impl FeatureExtractor {
     }
 
     /// Extract features from a potential off-target site
-    pub fn extract(
-        &self,
-        target: &CrisprTarget,
-        candidate_sequence: &str,
-    ) -> Result<Array1<f64>> {
+    pub fn extract(&self, target: &CrisprTarget, candidate_sequence: &str) -> Result<Array1<f64>> {
         let mut features = Vec::new();
 
         // Basic mismatch features
@@ -39,7 +35,8 @@ impl FeatureExtractor {
 
         // Position-weighted mismatch score
         if self.position_weighted {
-            let position_score = self.position_weighted_score(&target.guide_rna, candidate_sequence);
+            let position_score =
+                self.position_weighted_score(&target.guide_rna, candidate_sequence);
             features.push(position_score);
         }
 

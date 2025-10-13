@@ -1,7 +1,7 @@
 //! BWA (Burrows-Wheeler Aligner) wrapper implementation
 
 use crate::error::{AlignmentError, Result};
-use crate::{AlignmentConfig, Aligner};
+use crate::{Aligner, AlignmentConfig};
 use async_trait::async_trait;
 use data_models::sequencing::{AlignedRead, FastqRecord, GenomicCoordinate};
 use rayon::prelude::*;
@@ -82,12 +82,7 @@ impl BwaAligner {
             return Ok(None);
         }
 
-        let position = GenomicCoordinate::new(
-            0,
-            1000,
-            1000 + read.sequence.len() as u64,
-            true,
-        )?;
+        let position = GenomicCoordinate::new(0, 1000, 1000 + read.sequence.len() as u64, true)?;
 
         let aligned = AlignedRead {
             id: Uuid::new_v4(),

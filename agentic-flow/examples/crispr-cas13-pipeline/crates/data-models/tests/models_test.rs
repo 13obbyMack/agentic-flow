@@ -17,7 +17,10 @@ mod data_models_tests {
         // TODO: Test SequenceRead struct serialization
         // Verify that sequence reads can be serialized to/from JSON
         // Test edge cases: empty sequences, special characters, max length
-        assert!(true, "Placeholder - implement when SequenceRead model exists");
+        assert!(
+            true,
+            "Placeholder - implement when SequenceRead model exists"
+        );
     }
 
     #[test]
@@ -26,7 +29,10 @@ mod data_models_tests {
         // Verify quality scores are within valid range (0-100)
         // Test alignment positions are non-negative
         // Verify CIGAR string format correctness
-        assert!(true, "Placeholder - implement when AlignmentResult model exists");
+        assert!(
+            true,
+            "Placeholder - implement when AlignmentResult model exists"
+        );
     }
 
     #[test]
@@ -35,7 +41,10 @@ mod data_models_tests {
         // Verify score normalization (0.0-1.0 range)
         // Test mismatch counting logic
         // Validate confidence interval calculations
-        assert!(true, "Placeholder - implement when OffTargetSite model exists");
+        assert!(
+            true,
+            "Placeholder - implement when OffTargetSite model exists"
+        );
     }
 
     #[test]
@@ -44,7 +53,10 @@ mod data_models_tests {
         // Verify TPM/FPKM calculations
         // Test log-transform correctness
         // Validate statistical measures (mean, variance)
-        assert!(true, "Placeholder - implement when GeneExpression model exists");
+        assert!(
+            true,
+            "Placeholder - implement when GeneExpression model exists"
+        );
     }
 
     #[test]
@@ -53,7 +65,10 @@ mod data_models_tests {
         // Verify valid state transitions (pending -> running -> completed/failed)
         // Test invalid state transitions are rejected
         // Validate timestamp ordering
-        assert!(true, "Placeholder - implement when AnalysisJob model exists");
+        assert!(
+            true,
+            "Placeholder - implement when AnalysisJob model exists"
+        );
     }
 
     #[test]

@@ -139,9 +139,8 @@ impl PipelineRun {
 
     /// Get duration in seconds
     pub fn duration_seconds(&self) -> Option<f64> {
-        self.completed_at.map(|end| {
-            (end - self.started_at).num_milliseconds() as f64 / 1000.0
-        })
+        self.completed_at
+            .map(|end| (end - self.started_at).num_milliseconds() as f64 / 1000.0)
     }
 }
 
@@ -280,11 +279,7 @@ mod tests {
     #[test]
     fn test_pipeline_run_duration() {
         let config = PipelineConfig::default();
-        let mut run = PipelineRun::new(
-            Uuid::new_v4(),
-            "1.0.0".to_string(),
-            config,
-        );
+        let mut run = PipelineRun::new(Uuid::new_v4(), "1.0.0".to_string(), config);
 
         // Simulate completion after 1 second
         std::thread::sleep(std::time::Duration::from_millis(100));

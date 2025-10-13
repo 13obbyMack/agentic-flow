@@ -1,6 +1,6 @@
 {
   "name": "agentic-flow",
-  "version": "1.5.9",
+  "version": "1.5.10",
   "description": "Production-ready AI agent orchestration platform with 66 specialized agents, 213 MCP tools, ReasoningBank learning memory, and autonomous multi-agent swarms. Built by @ruvnet with Claude Agent SDK, neural networks, memory persistence, GitHub integration, and distributed consensus protocols.",
   "type": "module",
   "main": "dist/index.js",
@@ -9,12 +9,16 @@
   },
   "scripts": {
     "start": "node --enable-source-maps dist/index.js",
-    "build": "tsc -p config/tsconfig.json && cp -r src/reasoningbank/prompts dist/reasoningbank/",
+    "build": "npm run build:wasm && tsc -p config/tsconfig.json && cp -r src/reasoningbank/prompts dist/reasoningbank/",
+    "build:wasm": "cd ../reasoningbank && wasm-pack build --target nodejs --out-dir pkg/nodejs crates/reasoningbank-wasm && wasm-pack build --target web --out-dir pkg/web crates/reasoningbank-wasm && mkdir -p ../agentic-flow/wasm/reasoningbank && cp -r crates/reasoningbank-wasm/pkg/nodejs/* ../agentic-flow/wasm/reasoningbank/ && cp -r crates/reasoningbank-wasm/pkg/web ../agentic-flow/wasm/reasoningbank/",
+    "build:wasm:clean": "rm -rf ../reasoningbank/crates/reasoningbank-wasm/pkg && rm -rf wasm/reasoningbank",
     "dev": "tsx src/index.ts",
     "prepublishOnly": "npm run build",
     "test": "npm run test:retry && npm run test:logging",
     "test:retry": "tsx validation/quick-wins/test-retry.ts",
     "test:logging": "tsx validation/quick-wins/test-logging.ts",
+    "test:wasm:e2e": "tsx validation/test-wasm-e2e.ts",
+    "test:wasm:docker": "docker build -f Dockerfile.e2e -t agentic-flow-e2e . && docker run --rm agentic-flow-e2e",
     "validate": "tsx validation/quick-wins/validate-all.ts",
     "validate:sdk": "tsx validation/sdk-validation.ts",
     "validate:health": "bash validation/quick-wins/test-health.sh",
@@ -24,6 +28,7 @@
     "test:coordination": "tsx validation/claude-flow/test-coordination.ts",
     "test:hybrid": "tsx validation/claude-flow/test-hybrid.ts",
     "test:fastmcp": "bash scripts/test-fastmcp-poc.sh",
+    "test:quic": "tsx validation/test-quic-integration.ts",
     "mcp:fastmcp-poc": "node dist/mcp/fastmcp/servers/poc-stdio.js",
     "mcp:http": "node dist/mcp/fastmcp/servers/http-sse.js",
     "mcp:stdio": "node dist/mcp/standalone-stdio.js",
@@ -31,7 +36,9 @@
     "example:goal-planner": "tsx src/examples/use-goal-planner.ts",
     "example:multi-agent": "tsx src/examples/multi-agent-orchestration.ts",
     "proxy": "node dist/proxy/anthropic-to-openrouter.js",
-    "proxy:dev": "tsx src/proxy/anthropic-to-openrouter.ts"
+    "proxy:dev": "tsx src/proxy/anthropic-to-openrouter.ts",
+    "proxy:quic": "node dist/proxy/quic-proxy.js",
+    "proxy:quic:dev": "tsx src/proxy/quic-proxy.ts"
   },
   "keywords": [
     "ai",
@@ -151,6 +158,8 @@
     ".claude",
     "validation",
     "scripts",
+    "wasm",
+    "certs",
     "README.md",
     "LICENSE",
     "VALIDATION-RESULTS.md",

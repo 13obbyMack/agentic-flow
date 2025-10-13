@@ -1,7 +1,7 @@
 // Criterion benchmark for API service
 // Measures request latency, throughput, and concurrent request handling
 
-use criterion::{black_box, criterion_group, criterion_main, Criterion, BenchmarkId, Throughput};
+use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion, Throughput};
 // use crispr_cas13_pipeline::api_service::*; // TODO: Uncomment when module exists
 
 /// Generate mock job submission payload
@@ -247,13 +247,7 @@ fn bench_csv_export(c: &mut Criterion) {
     // Simulate 10,000 alignment results
     let result_count = 10_000;
     let mock_results: Vec<(String, u32, f64)> = (0..result_count)
-        .map(|i| {
-            (
-                format!("READ_{}", i),
-                i % 100,
-                90.0 + (i % 10) as f64,
-            )
-        })
+        .map(|i| (format!("READ_{}", i), i % 100, 90.0 + (i % 10) as f64))
         .collect();
 
     group.throughput(Throughput::Elements(result_count as u64));

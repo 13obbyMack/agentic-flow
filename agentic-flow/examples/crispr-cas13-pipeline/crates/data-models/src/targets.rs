@@ -39,9 +39,7 @@ impl CrisprTarget {
         }
 
         if target_sequence.is_empty() {
-            return Err(DataModelError::MissingField(
-                "target_sequence".to_string(),
-            ));
+            return Err(DataModelError::MissingField("target_sequence".to_string()));
         }
 
         Ok(Self {
@@ -156,15 +154,8 @@ pub struct OffTargetFeatures {
 
 impl OffTargetFeatures {
     /// Create features from mismatch analysis
-    pub fn from_mismatches(
-        mismatch_positions: Vec<usize>,
-        guide_gc: f64,
-        target_gc: f64,
-    ) -> Self {
-        let seed_mismatches = mismatch_positions
-            .iter()
-            .filter(|&&pos| pos < 10)
-            .count() as u8;
+    pub fn from_mismatches(mismatch_positions: Vec<usize>, guide_gc: f64, target_gc: f64) -> Self {
+        let seed_mismatches = mismatch_positions.iter().filter(|&&pos| pos < 10).count() as u8;
 
         Self {
             mismatch_positions,

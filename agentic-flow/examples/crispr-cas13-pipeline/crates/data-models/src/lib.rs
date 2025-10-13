@@ -10,3 +10,18 @@ pub mod sequencing;
 pub mod targets;
 
 pub use error::{DataModelError, Result};
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_result_type_alias() {
+        let ok_result: Result<i32> = Ok(42);
+        assert!(ok_result.is_ok());
+        assert_eq!(ok_result.unwrap(), 42);
+
+        let err_result: Result<i32> = Err(DataModelError::ValidationError("test error".to_string()));
+        assert!(err_result.is_err());
+    }
+}

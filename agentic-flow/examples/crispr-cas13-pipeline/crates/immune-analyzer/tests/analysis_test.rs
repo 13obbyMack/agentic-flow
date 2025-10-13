@@ -130,7 +130,10 @@ mod immune_analyzer_tests {
         // Given: RNA-seq data including cytokine genes
         // Expected: quantifies cytokine response signature
         // Verify specific cytokines (IL-6, TNF-α, etc.) tracked
-        assert!(true, "Placeholder - implement when cytokine analysis exists");
+        assert!(
+            true,
+            "Placeholder - implement when cytokine analysis exists"
+        );
     }
 
     #[test]

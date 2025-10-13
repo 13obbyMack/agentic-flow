@@ -110,7 +110,10 @@ mod api_service_tests {
         // Given: completed job with off-target predictions
         // Expected: 200 OK with scored off-target sites
         // Verify sorting by score (descending)
-        assert!(true, "Placeholder - implement when offtarget endpoint exists");
+        assert!(
+            true,
+            "Placeholder - implement when offtarget endpoint exists"
+        );
     }
 
     #[test]

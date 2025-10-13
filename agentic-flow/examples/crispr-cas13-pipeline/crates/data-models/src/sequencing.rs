@@ -102,9 +102,7 @@ impl GenomicCoordinate {
 
     /// Check if two coordinates overlap
     pub fn overlaps(&self, other: &Self) -> bool {
-        self.reference_id == other.reference_id
-            && self.start < other.end
-            && other.start < self.end
+        self.reference_id == other.reference_id && self.start < other.end && other.start < self.end
     }
 }
 
@@ -228,12 +226,8 @@ mod tests {
 
     #[test]
     fn test_gc_content() {
-        let record = FastqRecord::new(
-            "read1".to_string(),
-            "GCGCGCGC".to_string(),
-            vec![40; 8],
-        )
-        .unwrap();
+        let record =
+            FastqRecord::new("read1".to_string(), "GCGCGCGC".to_string(), vec![40; 8]).unwrap();
         assert_eq!(record.gc_content(), 100.0);
     }
 

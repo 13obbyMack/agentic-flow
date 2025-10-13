@@ -1,6 +1,6 @@
 //! API route handlers
 
-use axum::{Json};
+use axum::Json;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize)]
@@ -48,9 +48,7 @@ pub struct PredictResponse {
     status: String,
 }
 
-pub async fn predict_offtargets(
-    Json(_payload): Json<PredictRequest>,
-) -> Json<PredictResponse> {
+pub async fn predict_offtargets(Json(_payload): Json<PredictRequest>) -> Json<PredictResponse> {
     Json(PredictResponse {
         prediction_id: uuid::Uuid::new_v4().to_string(),
         status: "processing".to_string(),

@@ -1,7 +1,7 @@
 // Criterion benchmark for off-target prediction
 // Measures ML inference throughput and feature extraction performance
 
-use criterion::{black_box, criterion_group, criterion_main, Criterion, BenchmarkId, Throughput};
+use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion, Throughput};
 // use crispr_cas13_pipeline::offtarget_predictor::*; // TODO: Uncomment when module exists
 
 /// Generate random guide RNA sequence
