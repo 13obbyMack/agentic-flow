@@ -52,22 +52,22 @@ Most AI coding agents are **painfully slow** and **frustratingly forgetful**. Th
 
 | Component | Description | Performance | Documentation |
 |-----------|-------------|-------------|---------------|
-| **Agent Booster** | Ultra-fast local code transformations via Rust/WASM | 352x faster, $0 cost | [Docs](https://github.com/ruvnet/agentic-flow/tree/main/agent-booster) |
-| **ReasoningBank** | Persistent learning memory system | 46% faster, 100% success | [Docs](https://github.com/ruvnet/agentic-flow/tree/main/agentic-flow/src/reasoningbank) |
-| **Multi-Model Router** | Intelligent cost optimization across 10+ LLMs | 99% cost savings | [Docs](https://github.com/ruvnet/agentic-flow/tree/main/agentic-flow/src/router) |
+| **Agent Booster** | Ultra-fast local code transformations via Rust/WASM (auto-detects edits) | 352x faster, $0 cost | [Docs](https://github.com/ruvnet/agentic-flow/tree/main/agent-booster) |
+| **ReasoningBank** | Persistent learning memory system with semantic search | 46% faster, 100% success | [Docs](https://github.com/ruvnet/agentic-flow/tree/main/agentic-flow/src/reasoningbank) |
+| **Multi-Model Router** | Intelligent cost optimization across 100+ LLMs | 85-99% cost savings | [Docs](https://github.com/ruvnet/agentic-flow/tree/main/agentic-flow/src/router) |
 
-Switch between Claude (quality), OpenRouter (99% savings), Gemini (speed), or ONNX (free offline) with zero code changes. Deploy locally for development, Docker for CI/CD, or Flow Nexus cloud for production scale.
+**CLI Usage**: Multi-Model Router via `--optimize`, Agent Booster (automatic), ReasoningBank (API only)
+**Programmatic**: All components importable: `agentic-flow/router`, `agentic-flow/reasoningbank`, `agentic-flow/agent-booster`
 
 **Get Started:**
 ```bash
-# Run an agent with automatic cost optimization
+# CLI: Auto-optimization (Agent Booster runs automatically on code edits)
 npx agentic-flow --agent coder --task "Build a REST API" --optimize
 
-# Add custom MCP tools instantly
-npx agentic-flow mcp add weather 'npx @modelcontextprotocol/server-weather'
-
-# Install globally for faster access
-npm install -g agentic-flow
+# Programmatic: Import any component
+import { ModelRouter } from 'agentic-flow/router';
+import * as reasoningbank from 'agentic-flow/reasoningbank';
+import { AgentBooster } from 'agentic-flow/agent-booster';
 ```
 
 Built on **[Claude Agent SDK](https://docs.claude.com/en/api/agent-sdk)** by Anthropic, powered by **[Claude Flow](https://github.com/ruvnet/claude-flow)** (101 MCP tools), **[Flow Nexus](https://github.com/ruvnet/flow-nexus)** (96 cloud tools), **[OpenRouter](https://openrouter.ai)** (100+ LLM models), **[Google Gemini](https://ai.google.dev)** (fast, cost-effective inference), **[Agentic Payments](https://github.com/ruvnet/agentic-flow/tree/main/agentic-payments)** (payment authorization), and **[ONNX Runtime](https://onnxruntime.ai)** (free local CPU or GPU inference).
@@ -230,58 +230,60 @@ npx agentic-flow --agent coder --task "Code cleanup" --optimize --max-cost 0.001
 
 ---
 
-## 📋 Commands
-
-### MCP Server Management
+## 📋 CLI Commands
 
 ```bash
-# Start all MCP servers (213 tools)
-npx agentic-flow mcp start
+# Agent execution with auto-optimization
+npx agentic-flow --agent coder --task "Build REST API" --optimize
+npx agentic-flow --agent coder --task "Fix bug" --provider openrouter --priority cost
 
-# List all available MCP tools
-npx agentic-flow mcp list
+# MCP server management (7 tools built-in)
+npx agentic-flow mcp start   # Start MCP server
+npx agentic-flow mcp list    # List 7 agentic-flow tools
+npx agentic-flow mcp status  # Check server status
 
-# Check MCP server status
-npx agentic-flow mcp status
-
-# Add custom MCP server
-npx agentic-flow mcp add weather '{"command":"npx","args":["-y","weather-mcp"]}'
+# Agent management
+npx agentic-flow --list              # List all 79 agents
+npx agentic-flow agent info coder    # Get agent details
+npx agentic-flow agent create        # Create custom agent
 ```
 
-**MCP Servers Available:**
-- **claude-flow** (101 tools): Neural networks, GitHub integration, workflows, DAA, performance
-- **flow-nexus** (96 tools): E2B sandboxes, distributed swarms, templates, cloud storage
-- **agentic-payments** (10 tools): Payment authorization, Ed25519 signatures, consensus
-- **claude-flow-sdk** (6 tools): In-process memory and swarm coordination
+**Built-in MCP Tools** (7): agent execution, list agents, create agent, agent info, conflicts check, model optimizer, list all agents
+**External MCP Servers**: claude-flow (101 tools), flow-nexus (96 tools), agentic-payments (10 tools)
 
 ---
 
-## 🎛️ Using the Multi-Model Router
+## 🎛️ Programmatic API
 
-### Quick Start with Router
+### Multi-Model Router
 
 ```javascript
 import { ModelRouter } from 'agentic-flow/router';
 
-// Initialize router (auto-loads configuration)
 const router = new ModelRouter();
-
-// Use default provider (Anthropic)
 const response = await router.chat({
-  model: 'claude-3-5-sonnet-20241022',
-  messages: [{ role: 'user', content: 'Your prompt here' }]
+  model: 'auto', priority: 'cost',  // Auto-select cheapest model
+  messages: [{ role: 'user', content: 'Your prompt' }]
 });
-
-console.log(response.content[0].text);
-console.log(`Cost: $${response.metadata.cost}`);
+console.log(`Cost: $${response.metadata.cost}, Model: ${response.metadata.model}`);
 ```
 
-### Available Providers
+### ReasoningBank (Learning Memory)
 
-**Anthropic (Cloud)** - Claude 3.5 Sonnet, 3.5 Haiku, 3 Opus
-**OpenRouter (Multi-Model Gateway)** - 100+ models from multiple providers
-**Google Gemini (Cloud)** - Gemini 2.0 Flash Exp, 2.5 Flash, 2.5 Pro
-**ONNX Runtime (Free Local)** - Microsoft Phi-4-mini-instruct (INT4 quantized)
+```javascript
+import * as reasoningbank from 'agentic-flow/reasoningbank';
+
+await reasoningbank.initialize();
+await reasoningbank.storeMemory('pattern_name', 'pattern_value', { namespace: 'api' });
+const results = await reasoningbank.queryMemories('search query', { namespace: 'api' });
+```
+
+### Agent Booster (Auto-Optimizes Code Edits)
+
+**Automatic**: Detects code editing tasks and applies 352x speedup with $0 cost
+**Manual**: `import { AgentBooster } from 'agentic-flow/agent-booster'` for direct control
+
+**Providers**: Anthropic (Claude), OpenRouter (100+ models), Gemini (fast), ONNX (free local)
 
 ---
 

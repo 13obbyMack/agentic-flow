@@ -10,8 +10,7 @@ wasm-pack build \
   --target nodejs \
   --out-dir pkg \
   --features wasm \
-  --release \
-  -- --config profile.wasm-release
+  --release
 
 echo "WASM build complete!"
 echo "Output: pkg/"

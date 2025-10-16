@@ -1,6 +1,6 @@
 {
   "name": "agentic-flow",
-  "version": "1.5.13",
+  "version": "1.5.14",
   "description": "Production-ready AI agent orchestration platform with 66 specialized agents, 213 MCP tools, ReasoningBank learning memory, and autonomous multi-agent swarms. Built by @ruvnet with Claude Agent SDK, neural networks, memory persistence, GitHub integration, and distributed consensus protocols.",
   "type": "module",
   "main": "dist/index.js",
@@ -17,7 +17,8 @@
     "./reasoningbank/backend-selector": "./dist/reasoningbank/backend-selector.js",
     "./reasoningbank/wasm-adapter": "./dist/reasoningbank/wasm-adapter.js",
     "./router": "./dist/router/index.js",
-    "./agent-booster": "./dist/agent-booster/index.js"
+    "./agent-booster": "./dist/agent-booster/index.js",
+    "./transport/quic": "./dist/transport/quic.js"
   },
   "scripts": {
     "start": "node --enable-source-maps dist/index.js",
@@ -41,6 +42,7 @@
     "test:hybrid": "tsx validation/claude-flow/test-hybrid.ts",
     "test:fastmcp": "bash scripts/test-fastmcp-poc.sh",
     "test:quic": "tsx validation/test-quic-integration.ts",
+    "test:quic:wasm": "tsx validation/test-quic-wasm.ts",
     "mcp:fastmcp-poc": "node dist/mcp/fastmcp/servers/poc-stdio.js",
     "mcp:http": "node dist/mcp/fastmcp/servers/http-sse.js",
     "mcp:stdio": "node dist/mcp/standalone-stdio.js",

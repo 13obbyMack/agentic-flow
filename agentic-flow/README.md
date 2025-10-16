@@ -54,24 +54,29 @@ Most AI coding agents are **painfully slow** and **frustratingly forgetful**. Th
 | Component | Description | Performance | Documentation |
 |-----------|-------------|-------------|---------------|
 | **Agent Booster** | Ultra-fast local code transformations via Rust/WASM | 352x faster, $0 cost | [Docs](https://github.com/ruvnet/agentic-flow/tree/main/agent-booster) |
-| **ReasoningBank** | Persistent learning memory system with dual backends | 46% faster, 100% success | [Docs](https://github.com/ruvnet/agentic-flow/tree/main/agentic-flow/src/reasoningbank) |
-| **Multi-Model Router** | Intelligent cost optimization across 10+ LLMs | 99% cost savings | [Docs](https://github.com/ruvnet/agentic-flow/tree/main/agentic-flow/src/router) |
+| **ReasoningBank** | Persistent learning memory with Node.js (SQLite) or WASM backends | 46% faster, 100% success | [Docs](https://github.com/ruvnet/agentic-flow/tree/main/agentic-flow/src/reasoningbank) |
+| **Multi-Model Router** | Intelligent cost optimization across 100+ LLMs | 85-99% cost savings | [Docs](https://github.com/ruvnet/agentic-flow/tree/main/agentic-flow/src/router) |
 
-Switch between Claude (quality), OpenRouter (99% savings), Gemini (speed), or ONNX (free offline) with zero code changes. Deploy locally for development, Docker for CI/CD, or Flow Nexus cloud for production scale.
+**Exports**: `agentic-flow/router`, `agentic-flow/reasoningbank`, `agentic-flow/agent-booster`
+**Backends**: Node.js (SQLite, production-ready) or WASM (browser, experimental)
 
 **Get Started:**
 ```bash
-# Run an agent with automatic cost optimization
+# CLI usage with auto-optimization
 npx agentic-flow --agent coder --task "Build a REST API" --optimize
 
-# Add custom MCP tools instantly
-npx agentic-flow mcp add weather 'npx @modelcontextprotocol/server-weather'
-
-# Install globally for faster access
-npm install -g agentic-flow
+# Programmatic usage (import components)
+npm install agentic-flow
 ```
 
-Built on **[Claude Agent SDK](https://docs.claude.com/en/api/agent-sdk)** by Anthropic, powered by **[Claude Flow](https://github.com/ruvnet/claude-flow)** (101 MCP tools), **[Flow Nexus](https://github.com/ruvnet/flow-nexus)** (96 cloud tools), **[OpenRouter](https://openrouter.ai)** (100+ LLM models), **[Google Gemini](https://ai.google.dev)** (fast, cost-effective inference), **[Agentic Payments](https://github.com/ruvnet/agentic-flow/tree/main/agentic-payments)** (payment authorization), and **[ONNX Runtime](https://onnxruntime.ai)** (free local CPU or GPU inference).
+```javascript
+// Import any component
+import { ModelRouter } from 'agentic-flow/router';
+import * as reasoningbank from 'agentic-flow/reasoningbank';
+import { AgentBooster } from 'agentic-flow/agent-booster';
+```
+
+Built on **[Claude Agent SDK](https://docs.claude.com/en/api/agent-sdk)**, integrated with **[Claude Flow](https://github.com/ruvnet/claude-flow)** (101 MCP tools), **[OpenRouter](https://openrouter.ai)** (100+ models), **[Google Gemini](https://ai.google.dev)**, **[ONNX Runtime](https://onnxruntime.ai)** (free local inference).
 
 ---
 
@@ -257,32 +262,46 @@ npx agentic-flow mcp add weather '{"command":"npx","args":["-y","weather-mcp"]}'
 
 ---
 
-## 🎛️ Using the Multi-Model Router
+## 🎛️ Programmatic API
 
-### Quick Start with Router
+### Multi-Model Router (Cost Optimization)
 
 ```javascript
 import { ModelRouter } from 'agentic-flow/router';
 
-// Initialize router (auto-loads configuration)
 const router = new ModelRouter();
-
-// Use default provider (Anthropic)
 const response = await router.chat({
-  model: 'claude-3-5-sonnet-20241022',
-  messages: [{ role: 'user', content: 'Your prompt here' }]
+  model: 'auto', priority: 'cost',  // Auto-select cheapest
+  messages: [{ role: 'user', content: 'Your prompt' }]
 });
-
-console.log(response.content[0].text);
-console.log(`Cost: $${response.metadata.cost}`);
+console.log(`Used: ${response.metadata.model}, Cost: $${response.metadata.cost}`);
 ```
 
-### Available Providers
+### ReasoningBank (Learning Memory)
 
-**Anthropic (Cloud)** - Claude 3.5 Sonnet, 3.5 Haiku, 3 Opus
-**OpenRouter (Multi-Model Gateway)** - 100+ models from multiple providers
-**Google Gemini (Cloud)** - Gemini 2.0 Flash Exp, 2.5 Flash, 2.5 Pro
-**ONNX Runtime (Free Local)** - Microsoft Phi-4-mini-instruct (INT4 quantized)
+```javascript
+import * as reasoningbank from 'agentic-flow/reasoningbank';
+
+await reasoningbank.initialize();
+await reasoningbank.storeMemory('key', 'value', { namespace: 'default' });
+const results = await reasoningbank.queryMemories('search', { limit: 5 });
+const status = await reasoningbank.getStatus();
+```
+
+### Agent Booster (Ultra-Fast Edits)
+
+```javascript
+import { AgentBooster } from 'agentic-flow/agent-booster';
+
+const booster = new AgentBooster();
+await booster.editFile({
+  target_filepath: 'src/app.js',
+  instructions: 'Add error handling',
+  code_edit: '/* your code here */'
+});
+```
+
+**Providers**: Anthropic, OpenRouter (100+ models), Gemini, ONNX (local)
 
 ---
 

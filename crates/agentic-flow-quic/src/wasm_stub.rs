@@ -39,6 +39,16 @@ impl QuicClient {
         ))
     }
 
+    /// Receive message (WASM stub - not implemented)
+    pub async fn recv_message(
+        &self,
+        _addr: std::net::SocketAddr,
+    ) -> Result<QuicMessage> {
+        Err(QuicError::Connection(
+            "QUIC not supported in WASM - use WebTransport or native build".to_string()
+        ))
+    }
+
     /// Get pool statistics (WASM stub - returns zeros)
     pub async fn pool_stats(&self) -> PoolStats {
         PoolStats::default()

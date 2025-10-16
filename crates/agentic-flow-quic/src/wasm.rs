@@ -7,7 +7,6 @@
 
 use crate::{
     QuicClient,
-    error::QuicError,
     types::{ConnectionConfig, MessageType, QuicMessage},
 };
 use bytes::Bytes;
