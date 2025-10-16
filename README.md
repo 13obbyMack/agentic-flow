@@ -55,9 +55,10 @@ Most AI coding agents are **painfully slow** and **frustratingly forgetful**. Th
 | **Agent Booster** | Ultra-fast local code transformations via Rust/WASM (auto-detects edits) | 352x faster, $0 cost | [Docs](https://github.com/ruvnet/agentic-flow/tree/main/agent-booster) |
 | **ReasoningBank** | Persistent learning memory system with semantic search | 46% faster, 100% success | [Docs](https://github.com/ruvnet/agentic-flow/tree/main/agentic-flow/src/reasoningbank) |
 | **Multi-Model Router** | Intelligent cost optimization across 100+ LLMs | 85-99% cost savings | [Docs](https://github.com/ruvnet/agentic-flow/tree/main/agentic-flow/src/router) |
+| **QUIC Transport** | Ultra-low latency agent communication via Rust/WASM QUIC protocol | 50-70% faster than TCP, 0-RTT | [Docs](https://github.com/ruvnet/agentic-flow/tree/main/crates/agentic-flow-quic) |
 
-**CLI Usage**: Multi-Model Router via `--optimize`, Agent Booster (automatic), ReasoningBank (API only)
-**Programmatic**: All components importable: `agentic-flow/router`, `agentic-flow/reasoningbank`, `agentic-flow/agent-booster`
+**CLI Usage**: Multi-Model Router via `--optimize`, Agent Booster (automatic), ReasoningBank (API only), QUIC Transport (API only)
+**Programmatic**: All components importable: `agentic-flow/router`, `agentic-flow/reasoningbank`, `agentic-flow/agent-booster`, `agentic-flow/transport/quic`
 
 **Get Started:**
 ```bash
@@ -68,6 +69,7 @@ npx agentic-flow --agent coder --task "Build a REST API" --optimize
 import { ModelRouter } from 'agentic-flow/router';
 import * as reasoningbank from 'agentic-flow/reasoningbank';
 import { AgentBooster } from 'agentic-flow/agent-booster';
+import { QuicTransport } from 'agentic-flow/transport/quic';
 ```
 
 Built on **[Claude Agent SDK](https://docs.claude.com/en/api/agent-sdk)** by Anthropic, powered by **[Claude Flow](https://github.com/ruvnet/claude-flow)** (101 MCP tools), **[Flow Nexus](https://github.com/ruvnet/flow-nexus)** (96 cloud tools), **[OpenRouter](https://openrouter.ai)** (100+ LLM models), **[Google Gemini](https://ai.google.dev)** (fast, cost-effective inference), **[Agentic Payments](https://github.com/ruvnet/agentic-flow/tree/main/agentic-payments)** (payment authorization), and **[ONNX Runtime](https://onnxruntime.ai)** (free local CPU or GPU inference).

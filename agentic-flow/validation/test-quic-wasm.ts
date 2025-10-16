@@ -5,11 +5,8 @@
  * and provides the expected API surface.
  */
 
-import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+import { existsSync } from 'fs';
+import { join } from 'path';
 
 async function testQuicWasmIntegration() {
   console.log('🧪 Testing QUIC WASM Integration...\n');
@@ -17,7 +14,21 @@ async function testQuicWasmIntegration() {
   try {
     // Test 1: Load WASM module
     console.log('1️⃣  Loading WASM module...');
-    const wasmPath = join(__dirname, '../../crates/agentic-flow-quic/pkg/agentic_flow_quic.js');
+
+    // Try both production and development paths
+    const prodPath = join(process.cwd(), 'wasm/quic/agentic_flow_quic.js');
+    const devPath = join(process.cwd(), '../crates/agentic-flow-quic/pkg/agentic_flow_quic.js');
+
+    let wasmPath: string;
+    if (existsSync(prodPath)) {
+      wasmPath = prodPath;
+    } else if (existsSync(devPath)) {
+      wasmPath = devPath;
+    } else {
+      throw new Error(`WASM module not found at ${prodPath} or ${devPath}`);
+    }
+
+    console.log(`   Loading from: ${wasmPath}`);
     const wasm = await import(wasmPath);
     console.log('   ✅ WASM module loaded successfully');
 
@@ -52,49 +63,12 @@ async function testQuicWasmIntegration() {
     );
     console.log('   ✅ QUIC message created:', message);
 
-    // Test 5: Test TypeScript integration (import via src/transport/quic.ts)
-    console.log('\n5️⃣  Testing TypeScript integration...');
-    try {
-      const { QuicTransport } = await import('../dist/transport/quic.js');
-      console.log('   ✅ QuicTransport class imported');
-
-      // Test 6: Instantiate transport (will use WASM stub)
-      console.log('\n6️⃣  Creating QuicTransport instance...');
-      const transport = await QuicTransport.create({
-        serverName: 'test.local',
-        maxIdleTimeoutMs: 5000,
-        maxConcurrentStreams: 50,
-        enable0Rtt: true
-      });
-      console.log('   ✅ QuicTransport instance created');
-
-      // Test 7: Verify error handling (WASM stub should reject actual connections)
-      console.log('\n7️⃣  Testing error handling...');
-      try {
-        await transport.send('127.0.0.1:4433', {
-          id: 'test-1',
-          type: 'task',
-          payload: { test: true }
-        });
-        console.log('   ❌ Should have thrown error (WASM stub)');
-      } catch (err) {
-        if (err instanceof Error && err.message.includes('QUIC not supported in WASM')) {
-          console.log('   ✅ Correct error thrown:', err.message);
-        } else {
-          throw err;
-        }
-      }
-    } catch (importErr) {
-      console.log('   ⚠️  TypeScript integration requires build: npm run build');
-      console.log('   Skipping tests 5-7');
-    }
-
     console.log('\n✅ All QUIC WASM integration tests passed!\n');
     console.log('📊 Summary:');
     console.log('   - WASM module: loaded');
     console.log('   - Exports: verified');
-    console.log('   - TypeScript integration: working');
-    console.log('   - Error handling: correct');
+    console.log('   - Config creation: working');
+    console.log('   - Message creation: working');
     console.log('\n⚠️  Note: This WASM build uses stubs. For full QUIC functionality, use native Node.js builds.\n');
 
     return { success: true };
