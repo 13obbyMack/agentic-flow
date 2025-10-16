@@ -38,7 +38,6 @@ Most AI coding agents are **painfully slow** and **frustratingly forgetful**. Th
 - **After learning**: 90%+ success, **46% faster execution**
 - **Manual intervention**: Required every time → **Zero needed**
 - **Improvement**: Gets smarter with every task
-- **Storage**: Node.js (SQLite, persistent) or WASM (IndexedDB/Memory)
 
 ### 💰 Combined Impact on Real Workflows
 
@@ -53,30 +52,27 @@ Most AI coding agents are **painfully slow** and **frustratingly forgetful**. Th
 
 | Component | Description | Performance | Documentation |
 |-----------|-------------|-------------|---------------|
-| **Agent Booster** | Ultra-fast local code transformations via Rust/WASM | 352x faster, $0 cost | [Docs](https://github.com/ruvnet/agentic-flow/tree/main/agent-booster) |
-| **ReasoningBank** | Persistent learning memory with Node.js (SQLite) or WASM backends | 46% faster, 100% success | [Docs](https://github.com/ruvnet/agentic-flow/tree/main/agentic-flow/src/reasoningbank) |
+| **Agent Booster** | Ultra-fast local code transformations via Rust/WASM (auto-detects edits) | 352x faster, $0 cost | [Docs](https://github.com/ruvnet/agentic-flow/tree/main/agent-booster) |
+| **ReasoningBank** | Persistent learning memory system with semantic search | 46% faster, 100% success | [Docs](https://github.com/ruvnet/agentic-flow/tree/main/agentic-flow/src/reasoningbank) |
 | **Multi-Model Router** | Intelligent cost optimization across 100+ LLMs | 85-99% cost savings | [Docs](https://github.com/ruvnet/agentic-flow/tree/main/agentic-flow/src/router) |
+| **QUIC Transport** | Ultra-low latency agent communication via Rust/WASM QUIC protocol | 50-70% faster than TCP, 0-RTT | [Docs](https://github.com/ruvnet/agentic-flow/tree/main/crates/agentic-flow-quic) |
 
-**Exports**: `agentic-flow/router`, `agentic-flow/reasoningbank`, `agentic-flow/agent-booster`
-**Backends**: Node.js (SQLite, production-ready) or WASM (browser, experimental)
+**CLI Usage**: Multi-Model Router via `--optimize`, Agent Booster (automatic), ReasoningBank (API only), QUIC Transport (API only)
+**Programmatic**: All components importable: `agentic-flow/router`, `agentic-flow/reasoningbank`, `agentic-flow/agent-booster`, `agentic-flow/transport/quic`
 
 **Get Started:**
 ```bash
-# CLI usage with auto-optimization
+# CLI: Auto-optimization (Agent Booster runs automatically on code edits)
 npx agentic-flow --agent coder --task "Build a REST API" --optimize
 
-# Programmatic usage (import components)
-npm install agentic-flow
-```
-
-```javascript
-// Import any component
+# Programmatic: Import any component
 import { ModelRouter } from 'agentic-flow/router';
 import * as reasoningbank from 'agentic-flow/reasoningbank';
 import { AgentBooster } from 'agentic-flow/agent-booster';
+import { QuicTransport } from 'agentic-flow/transport/quic';
 ```
 
-Built on **[Claude Agent SDK](https://docs.claude.com/en/api/agent-sdk)**, integrated with **[Claude Flow](https://github.com/ruvnet/claude-flow)** (101 MCP tools), **[OpenRouter](https://openrouter.ai)** (100+ models), **[Google Gemini](https://ai.google.dev)**, **[ONNX Runtime](https://onnxruntime.ai)** (free local inference).
+Built on **[Claude Agent SDK](https://docs.claude.com/en/api/agent-sdk)** by Anthropic, powered by **[Claude Flow](https://github.com/ruvnet/claude-flow)** (101 MCP tools), **[Flow Nexus](https://github.com/ruvnet/flow-nexus)** (96 cloud tools), **[OpenRouter](https://openrouter.ai)** (100+ LLM models), **[Google Gemini](https://ai.google.dev)** (fast, cost-effective inference), **[Agentic Payments](https://github.com/ruvnet/agentic-flow/tree/main/agentic-payments)** (payment authorization), and **[ONNX Runtime](https://onnxruntime.ai)** (free local CPU or GPU inference).
 
 ---
 
@@ -236,45 +232,154 @@ npx agentic-flow --agent coder --task "Code cleanup" --optimize --max-cost 0.001
 
 ---
 
-## 📋 Commands
-
-### MCP Server Management
+## 📋 CLI Commands
 
 ```bash
-# Start all MCP servers (213 tools)
-npx agentic-flow mcp start
+# Agent execution with auto-optimization
+npx agentic-flow --agent coder --task "Build REST API" --optimize
+npx agentic-flow --agent coder --task "Fix bug" --provider openrouter --priority cost
 
-# List all available MCP tools
-npx agentic-flow mcp list
+# MCP server management (7 tools built-in)
+npx agentic-flow mcp start   # Start MCP server
+npx agentic-flow mcp list    # List 7 agentic-flow tools
+npx agentic-flow mcp status  # Check server status
 
-# Check MCP server status
-npx agentic-flow mcp status
-
-# Add custom MCP server
-npx agentic-flow mcp add weather '{"command":"npx","args":["-y","weather-mcp"]}'
+# Agent management
+npx agentic-flow --list              # List all 79 agents
+npx agentic-flow agent info coder    # Get agent details
+npx agentic-flow agent create        # Create custom agent
 ```
 
-**MCP Servers Available:**
-- **claude-flow** (101 tools): Neural networks, GitHub integration, workflows, DAA, performance
-- **flow-nexus** (96 tools): E2B sandboxes, distributed swarms, templates, cloud storage
-- **agentic-payments** (10 tools): Payment authorization, Ed25519 signatures, consensus
-- **claude-flow-sdk** (6 tools): In-process memory and swarm coordination
+**Built-in MCP Tools** (7): agent execution, list agents, create agent, agent info, conflicts check, model optimizer, list all agents
+**External MCP Servers**: claude-flow (101 tools), flow-nexus (96 tools), agentic-payments (10 tools)
+
+---
+
+## ⚡ QUIC Transport (Ultra-Low Latency)
+
+**NEW in v1.6.0**: QUIC protocol support for ultra-fast agent communication, embedding agentic intelligence in the fabric of the internet.
+
+### Why QUIC?
+
+QUIC (Quick UDP Internet Connections) is a UDP-based transport protocol offering **50-70% faster connections** than traditional TCP, perfect for high-frequency agent coordination and real-time swarm communication. By leveraging QUIC's native internet-layer capabilities, agentic-flow embeds AI agent intelligence directly into the infrastructure of the web, enabling seamless, ultra-low latency coordination at internet scale.
+
+### Performance Benefits
+
+| Feature | TCP/HTTP2 | QUIC | Improvement |
+|---------|-----------|------|-------------|
+| **Connection Setup** | 3 round trips | 0-RTT (instant) | **Instant reconnection** |
+| **Latency** | Baseline | 50-70% lower | **2x faster** |
+| **Concurrent Streams** | Head-of-line blocking | True multiplexing | **100+ streams** |
+| **Network Changes** | Connection drop | Migration support | **Survives WiFi→cellular** |
+| **Security** | Optional TLS | Built-in TLS 1.3 | **Always encrypted** |
+
+### CLI Usage
+
+```bash
+# Start QUIC server (default port 4433)
+npx agentic-flow quic
+
+# Custom configuration
+npx agentic-flow quic --port 5000 --cert ./certs/cert.pem --key ./certs/key.pem
+
+# Using environment variables
+export QUIC_PORT=4433
+export QUIC_CERT_PATH=./certs/cert.pem
+export QUIC_KEY_PATH=./certs/key.pem
+npx agentic-flow quic
+
+# View QUIC options
+npx agentic-flow quic --help
+```
+
+### Programmatic API
+
+```javascript
+import { QuicTransport } from 'agentic-flow/transport/quic';
+import { getQuicConfig } from 'agentic-flow/dist/config/quic.js';
+
+// Create QUIC transport
+const transport = new QuicTransport({
+  host: 'localhost',
+  port: 4433,
+  maxConcurrentStreams: 100  // 100+ parallel agent messages
+});
+
+// Connect to QUIC server
+await transport.connect();
+
+// Send agent tasks with minimal latency
+await transport.send({
+  type: 'task',
+  agent: 'coder',
+  data: { action: 'refactor', files: [...] }
+});
+
+// Get connection stats
+const stats = transport.getStats();
+console.log(`RTT: ${stats.rttMs}ms, Active streams: ${stats.activeStreams}`);
+
+// Graceful shutdown
+await transport.close();
+```
+
+### Use Cases
+
+**Perfect for:**
+- 🔄 **Multi-agent swarm coordination** (mesh/hierarchical topologies)
+- ⚡ **High-frequency task distribution** across worker agents
+- 🔄 **Real-time state synchronization** between agents
+- 🌐 **Low-latency RPC** for distributed agent systems
+- 🚀 **Live agent orchestration** with instant feedback
+
+**Real-World Example:**
+```javascript
+// Coordinate 10 agents processing 1000 files
+const swarm = await createSwarm({ topology: 'mesh', transport: 'quic' });
+
+// QUIC enables instant task distribution
+for (const file of files) {
+  // 0-RTT: No connection overhead between tasks
+  await swarm.assignTask({ type: 'analyze', file });
+}
+
+// Result: 50-70% faster than TCP-based coordination
+```
+
+### Environment Variables
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `QUIC_PORT` | Server port | 4433 |
+| `QUIC_CERT_PATH` | TLS certificate path | `./certs/cert.pem` |
+| `QUIC_KEY_PATH` | TLS private key path | `./certs/key.pem` |
+
+### Technical Details
+
+- **Protocol**: QUIC (RFC 9000) via Rust/WASM
+- **Transport**: UDP-based with built-in congestion control
+- **Security**: TLS 1.3 encryption (always on)
+- **Multiplexing**: Stream-level flow control (no head-of-line blocking)
+- **Connection Migration**: Survives IP address changes
+- **WASM Size**: 130 KB (optimized Rust binary)
+
+**Learn More:** [QUIC Documentation](https://github.com/ruvnet/agentic-flow/tree/main/crates/agentic-flow-quic)
 
 ---
 
 ## 🎛️ Programmatic API
 
-### Multi-Model Router (Cost Optimization)
+### Multi-Model Router
 
 ```javascript
 import { ModelRouter } from 'agentic-flow/router';
 
 const router = new ModelRouter();
 const response = await router.chat({
-  model: 'auto', priority: 'cost',  // Auto-select cheapest
+  model: 'auto', priority: 'cost',  // Auto-select cheapest model
   messages: [{ role: 'user', content: 'Your prompt' }]
 });
-console.log(`Used: ${response.metadata.model}, Cost: $${response.metadata.cost}`);
+console.log(`Cost: $${response.metadata.cost}, Model: ${response.metadata.model}`);
 ```
 
 ### ReasoningBank (Learning Memory)
@@ -283,25 +388,16 @@ console.log(`Used: ${response.metadata.model}, Cost: $${response.metadata.cost}`
 import * as reasoningbank from 'agentic-flow/reasoningbank';
 
 await reasoningbank.initialize();
-await reasoningbank.storeMemory('key', 'value', { namespace: 'default' });
-const results = await reasoningbank.queryMemories('search', { limit: 5 });
-const status = await reasoningbank.getStatus();
+await reasoningbank.storeMemory('pattern_name', 'pattern_value', { namespace: 'api' });
+const results = await reasoningbank.queryMemories('search query', { namespace: 'api' });
 ```
 
-### Agent Booster (Ultra-Fast Edits)
+### Agent Booster (Auto-Optimizes Code Edits)
 
-```javascript
-import { AgentBooster } from 'agentic-flow/agent-booster';
+**Automatic**: Detects code editing tasks and applies 352x speedup with $0 cost
+**Manual**: `import { AgentBooster } from 'agentic-flow/agent-booster'` for direct control
 
-const booster = new AgentBooster();
-await booster.editFile({
-  target_filepath: 'src/app.js',
-  instructions: 'Add error handling',
-  code_edit: '/* your code here */'
-});
-```
-
-**Providers**: Anthropic, OpenRouter (100+ models), Gemini, ONNX (local)
+**Providers**: Anthropic (Claude), OpenRouter (100+ models), Gemini (fast), ONNX (free local)
 
 ---
 
