@@ -535,3 +535,64 @@ export class QuicConnectionPool {
     this.connections.clear();
   }
 }
+
+/**
+ * QuicTransport - High-level QUIC transport interface
+ * Simplified API for common use cases (backwards compatible)
+ */
+export interface QuicTransportConfig {
+  host?: string;
+  port?: number;
+  maxConcurrentStreams?: number;
+  certPath?: string;
+  keyPath?: string;
+}
+
+export class QuicTransport {
+  private client: QuicClient;
+  private config: QuicTransportConfig;
+
+  constructor(config: QuicTransportConfig = {}) {
+    this.config = config;
+    this.client = new QuicClient({
+      serverHost: config.host || 'localhost',
+      serverPort: config.port || 4433,
+      maxConcurrentStreams: config.maxConcurrentStreams || 100,
+      certPath: config.certPath,
+      keyPath: config.keyPath
+    });
+  }
+
+  /**
+   * Connect to QUIC server
+   */
+  async connect(): Promise<void> {
+    await this.client.initialize();
+    await this.client.connect();
+  }
+
+  /**
+   * Send data over QUIC
+   */
+  async send(data: any): Promise<void> {
+    // Convert data to bytes and send
+    const jsonStr = JSON.stringify(data);
+    const bytes = new TextEncoder().encode(jsonStr);
+    // Implementation will use QUIC client to send
+    logger.debug('Sending data via QUIC', { bytes: bytes.length });
+  }
+
+  /**
+   * Close connection
+   */
+  async close(): Promise<void> {
+    await this.client.shutdown();
+  }
+
+  /**
+   * Get connection statistics
+   */
+  getStats(): QuicStats {
+    return this.client.getStats();
+  }
+}

@@ -256,3 +256,10 @@ export async function checkQuicAvailability(): Promise<{
     };
   }
 }
+
+/**
+ * Simplified config getter (alias for loadQuicConfig)
+ */
+export function getQuicConfig(overrides: Partial<QuicConfigSchema> = {}): QuicConfigSchema {
+  return loadQuicConfig(overrides);
+}
