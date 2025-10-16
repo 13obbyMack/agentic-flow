@@ -1,7 +1,7 @@
 // CLI argument parsing and help utilities
 
 export interface CliOptions {
-  mode: 'agent' | 'parallel' | 'list' | 'mcp' | 'mcp-manager' | 'config' | 'agent-manager' | 'proxy' | 'claude-code' | 'reasoningbank';
+  mode: 'agent' | 'parallel' | 'list' | 'mcp' | 'mcp-manager' | 'config' | 'agent-manager' | 'proxy' | 'quic' | 'claude-code' | 'reasoningbank';
   agent?: string;
   task?: string;
 
@@ -60,6 +60,12 @@ export function parseArgs(): CliOptions {
   // Check for claude-code command
   if (args[0] === 'claude-code') {
     options.mode = 'claude-code';
+    return options;
+  }
+
+  // Check for quic command
+  if (args[0] === 'quic') {
+    options.mode = 'quic';
     return options;
   }
 
