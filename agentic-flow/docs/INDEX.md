@@ -7,8 +7,8 @@ Complete documentation for the Agentic Flow multi-agent orchestration system.
 ### 🚀 Start Here
 - **[README](../README.md)** - Project overview and getting started
 - **[CLAUDE.md](CLAUDE.md)** - Claude Code configuration and SPARC methodology
-- **[PACKAGE_STRUCTURE.md](PACKAGE_STRUCTURE.md)** - Package organization and structure
-- **[STANDALONE_PROXY_GUIDE.md](STANDALONE_PROXY_GUIDE.md)** - Standalone proxy server setup
+- **[PACKAGE_STRUCTURE.md](architecture/PACKAGE_STRUCTURE.md)** - Package organization and structure
+- **[STANDALONE_PROXY_GUIDE.md](guides/STANDALONE_PROXY_GUIDE.md)** - Standalone proxy server setup
 
 ---
 
@@ -55,13 +55,15 @@ Multi-model router configuration and usage.
 - [Top 20 Models Matrix](router/TOP20_MODELS_MATRIX.md) - Model comparison guide
 
 ### ✅ [Testing & Validation](testing/)
-Current test results, validation reports, and quality assurance.
+Current test results and development testing documentation.
 
 - [Testing Overview](testing/README.md) - Current testing documentation
 - [Agent System Validation](testing/AGENT-SYSTEM-VALIDATION.md) - Multi-agent testing
 - [Final Testing Summary](testing/FINAL-TESTING-SUMMARY.md) - Comprehensive coverage
 - [Regression Test Results](testing/REGRESSION-TEST-RESULTS.md) - Regression testing
 - [Streaming & MCP Validation](testing/STREAMING-AND-MCP-VALIDATION.md) - Integration tests
+
+For production validation reports, see [Validation Reports](validation-reports/)
 
 ### 🔍 [MCP Validation](mcp-validation/)
 Model Context Protocol implementation and validation.
@@ -71,13 +73,47 @@ Model Context Protocol implementation and validation.
 - [CLI Validation Report](mcp-validation/MCP-CLI-VALIDATION-REPORT.md) - CLI tool testing
 - [Strange Loops Test](mcp-validation/strange-loops-test.md) - Advanced patterns
 
-### 📦 [Releases](releases/)
+### 📦 [Version Releases](version-releases/)
 Version-specific release notes and publishing documentation.
 
-- [Release Overview](releases/README.md) - Release documentation index
-- [v1.2.0 Release](releases/RELEASE-v1.2.0.md) - Latest stable release
-- [v1.2.0 Publishing Guide](releases/NPM-PUBLISH-GUIDE-v1.2.0.md) - Publishing process
-- [v1.2.1 Hotfix](releases/HOTFIX-v1.2.1.md) - Critical fixes
+- [Release Overview](version-releases/README.md) - Release documentation index
+- [v1.5.11 Publication Report](version-releases/PUBLICATION_REPORT_v1.5.11.md) - Latest release
+- [v1.5.9 Release Summary](version-releases/v1.5.9-RELEASE-SUMMARY.md) - Previous release
+- [v1.5.9 Docker Verification](version-releases/v1.5.9-DOCKER-VERIFICATION.md) - Docker validation
+
+### 🧠 [ReasoningBank](reasoningbank/)
+Cognitive memory system with pattern recognition and adaptive learning.
+
+- [ReasoningBank Overview](reasoningbank/README.md) - Feature documentation index
+- [Architecture](reasoningbank/REASONINGBANK_ARCHITECTURE.md) - System architecture
+- [Backends](reasoningbank/REASONINGBANK_BACKENDS.md) - Storage backend options
+- [Validation](reasoningbank/REASONINGBANK_VALIDATION.md) - Testing and validation
+- [Benchmarks](reasoningbank/REASONINGBANK-BENCHMARK-RESULTS.md) - Performance metrics
+
+### ✅ [Validation Reports](validation-reports/)
+Comprehensive testing, benchmarking, and quality assurance reports.
+
+- [Validation Overview](validation-reports/README.md) - Testing documentation index
+- [Performance Benchmarks](validation-reports/BENCHMARK_AND_OPTIMIZATION_REPORT.md) - Optimization analysis
+- [Docker Validation](validation-reports/DOCKER_VALIDATION_RESULTS.md) - Container testing
+- [Regression Tests](validation-reports/NO_REGRESSIONS_CONFIRMED.md) - Stability verification
+- [Alpha Validation](validation-reports/V2.7.0-ALPHA.10_FINAL_VALIDATION.md) - Release validation
+
+### 🔌 [Integration Documentation](integration-docs/)
+System integrations, implementations, and compatibility reports.
+
+- [Integration Overview](integration-docs/README.md) - Integration documentation index
+- [Agent Booster](integration-docs/AGENT-BOOSTER-INTEGRATION.md) - Ultra-fast code editing
+- [Claude Flow](integration-docs/CLAUDE-FLOW-INTEGRATION-ANALYSIS.md) - Orchestration integration
+- [WASM Integration](integration-docs/WASM_INTEGRATION_COMPLETE.md) - WebAssembly support
+- [CLI Tools](integration-docs/CLI-INTEGRATION-COMPLETE.md) - Command-line integration
+
+### 🔬 [Quantum Research](quantum-research/)
+Quantum computing research, literature reviews, and experimental plans.
+
+- [Quantum Overview](quantum-research/README.md) - Research documentation index
+- [Literature Review](quantum-research/QUANTUM_RESEARCH_LITERATURE_REVIEW.md) - Comprehensive research
+- [Observer-Agnostic Experiment](../examples/Observer-Agnostic%20Measurement%20and%20No-Retrocausal%20Marginals%20Theorem/) - Quantum measurement testing
 
 ### 🗄️ [Validation Archive](validation/)
 Historical validation reports and test archives.
@@ -220,9 +256,19 @@ Historical reports, completed implementations, and superseded guides are in the 
 ---
 
 **Documentation Status**: ✅ Reorganized and up-to-date
-**Last Updated**: October 6, 2025
+**Last Updated**: October 14, 2025
 
 ## 📋 Recent Documentation Updates
+
+**v2.7.0 Reorganization (Oct 14, 2025)**:
+- Created `reasoningbank/` for all ReasoningBank feature documentation
+- Created `validation-reports/` for production testing and validation
+- Created `integration-docs/` for system integration documentation
+- Created `quantum-research/` for quantum computing research
+- Created `version-releases/` for release notes and changelogs
+- Added comprehensive README files to all new categories
+- Consolidated loose files into organized subdirectories
+- Improved navigation and discoverability
 
 **v2.0 Reorganization (Oct 6, 2025)**:
 - Created dedicated `releases/` directory for version-specific documentation

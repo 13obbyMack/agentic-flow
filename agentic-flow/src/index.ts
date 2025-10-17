@@ -8,6 +8,10 @@ import { startHealthServer } from "./health.js";
 import { parseArgs, printHelp, validateOptions } from "./utils/cli.js";
 import { getAgent, listAgents } from "./utils/agentLoader.js";
 import { handleMCPCommand } from "./utils/mcpCommands.js";
+import { handleReasoningBankCommand } from "./utils/reasoningbankCommands.js";
+
+// Re-export ReasoningBank plugin for npm package users
+export * as reasoningbank from "./reasoningbank/index.js";
 
 async function runParallelMode() {
   const topic = process.env.TOPIC ?? "migrate payments service";
@@ -151,6 +155,13 @@ async function main() {
   // Handle MCP mode
   if (options.mode === 'mcp') {
     await handleMCPCommand(options.mcpCommand || 'start', options.mcpServer || 'all');
+    process.exit(0);
+  }
+
+  // Handle ReasoningBank mode
+  if (options.mode === 'reasoningbank') {
+    const subcommand = process.argv[3] || 'help';
+    await handleReasoningBankCommand(subcommand);
     process.exit(0);
   }
 

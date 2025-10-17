@@ -42,9 +42,14 @@ export class AnthropicProvider implements LLMProvider {
 
   async chat(params: ChatParams): Promise<ChatResponse> {
     try {
+      // Extract system message if present (Anthropic requires it as top-level parameter)
+      const systemMessage = params.messages.find(m => m.role === 'system');
+      const nonSystemMessages = params.messages.filter(m => m.role !== 'system');
+
       const response = await this.client.messages.create({
         model: params.model,
-        messages: params.messages as any,
+        messages: nonSystemMessages as any,
+        system: systemMessage ? (typeof systemMessage.content === 'string' ? systemMessage.content : JSON.stringify(systemMessage.content)) : undefined,
         temperature: params.temperature,
         max_tokens: params.maxTokens || 4096,
         tools: params.tools as any,
@@ -73,9 +78,14 @@ export class AnthropicProvider implements LLMProvider {
 
   async *stream(params: ChatParams): AsyncGenerator<StreamChunk> {
     try {
+      // Extract system message if present (Anthropic requires it as top-level parameter)
+      const systemMessage = params.messages.find(m => m.role === 'system');
+      const nonSystemMessages = params.messages.filter(m => m.role !== 'system');
+
       const stream = await this.client.messages.create({
         model: params.model,
-        messages: params.messages as any,
+        messages: nonSystemMessages as any,
+        system: systemMessage ? (typeof systemMessage.content === 'string' ? systemMessage.content : JSON.stringify(systemMessage.content)) : undefined,
         temperature: params.temperature,
         max_tokens: params.maxTokens || 4096,
         tools: params.tools as any,

@@ -1,7 +1,7 @@
 // CLI argument parsing and help utilities
 
 export interface CliOptions {
-  mode: 'agent' | 'parallel' | 'list' | 'mcp' | 'mcp-manager' | 'config' | 'agent-manager' | 'proxy' | 'claude-code';
+  mode: 'agent' | 'parallel' | 'list' | 'mcp' | 'mcp-manager' | 'config' | 'agent-manager' | 'proxy' | 'quic' | 'claude-code' | 'reasoningbank';
   agent?: string;
   task?: string;
 
@@ -36,6 +36,8 @@ export interface CliOptions {
 
   // Agent Booster Integration
   claudeCode?: boolean; // Use Agent Booster for 57x faster code edits
+  agentBooster?: boolean; // Enable Agent Booster pre-processing
+  boosterThreshold?: number; // Confidence threshold for Agent Booster
 
   help?: boolean;
   version?: boolean;
@@ -58,6 +60,12 @@ export function parseArgs(): CliOptions {
   // Check for claude-code command
   if (args[0] === 'claude-code') {
     options.mode = 'claude-code';
+    return options;
+  }
+
+  // Check for quic command
+  if (args[0] === 'quic') {
+    options.mode = 'quic';
     return options;
   }
 
@@ -89,6 +97,12 @@ export function parseArgs(): CliOptions {
   // Check for agent management command
   if (args[0] === 'agent') {
     options.mode = 'agent-manager';
+    return options;
+  }
+
+  // Check for reasoningbank command
+  if (args[0] === 'reasoningbank') {
+    options.mode = 'reasoningbank';
     return options;
   }
 
@@ -191,7 +205,25 @@ export function parseArgs(): CliOptions {
       case '--max-cost':
         options.maxCost = parseFloat(args[++i]);
         break;
+
+      // Agent Booster
+      case '--agent-booster':
+      case '--booster':
+        options.agentBooster = true;
+        break;
+
+      case '--booster-threshold':
+        options.boosterThreshold = parseFloat(args[++i]);
+        break;
     }
+  }
+
+  // Check environment variable for Agent Booster
+  if (process.env.AGENTIC_FLOW_AGENT_BOOSTER === 'true') {
+    options.agentBooster = true;
+  }
+  if (process.env.AGENTIC_FLOW_BOOSTER_THRESHOLD) {
+    options.boosterThreshold = parseFloat(process.env.AGENTIC_FLOW_BOOSTER_THRESHOLD);
   }
 
   return options;
@@ -205,6 +237,7 @@ USAGE:
   npx agentic-flow [COMMAND] [OPTIONS]
 
 COMMANDS:
+  reasoningbank <cmd>     Memory system that learns from experience (demo, test, init)
   claude-code [options]   Spawn Claude Code with proxy + Agent Booster (57x faster edits)
   mcp <command> [server]  Manage MCP servers (start, stop, status, list)
   config [command]        Configuration wizard (set, get, list, delete, reset)
@@ -212,6 +245,13 @@ COMMANDS:
   --list, -l              List all available agents
   --agent, -a <name>      Run specific agent mode
   (default)               Run parallel mode (3 agents)
+
+REASONINGBANK COMMANDS:
+  npx agentic-flow reasoningbank demo         Run interactive demo comparison
+  npx agentic-flow reasoningbank test         Run validation tests
+  npx agentic-flow reasoningbank init         Initialize database
+  npx agentic-flow reasoningbank benchmark    Run performance benchmarks
+  npx agentic-flow reasoningbank status       Show memory statistics
 
 MCP COMMANDS:
   npx agentic-flow mcp start [server]    Start MCP server(s)
@@ -246,15 +286,30 @@ OPTIONS:
   --timeout <ms>              Execution timeout
   --retry                     Auto-retry on errors
 
-  MODEL OPTIMIZATION (NEW!):
+  MODEL OPTIMIZATION:
   --optimize, -O              Auto-select best model for agent/task
   --priority <type>           Optimization priority (quality|balanced|cost|speed|privacy)
   --max-cost <dollars>        Maximum cost per task in dollars
 
+  AGENT BOOSTER (200x faster code edits!):
+  --agent-booster             Enable Agent Booster pre-processing
+  --booster-threshold <0-1>   Confidence threshold (default: 0.7)
+
   --help, -h                  Show this help message
 
 EXAMPLES:
-  # Claude Code with Agent Booster (57x faster code edits)
+  # ReasoningBank (Learn from agent experience!)
+  npx agentic-flow reasoningbank demo       # See 0% → 100% success transformation
+  npx agentic-flow reasoningbank test       # Run 27 validation tests
+  npx agentic-flow reasoningbank init       # Setup memory database
+  export ANTHROPIC_API_KEY=sk-ant-...      # Enable LLM-based learning
+
+  # Agent Booster Integration (200x faster code edits!)
+  npx agentic-flow --agent coder --task "Convert var to const in utils.js" --agent-booster
+  npx agentic-flow --agent coder --task "Add types to api.ts" --agent-booster --provider openrouter
+  export AGENTIC_FLOW_AGENT_BOOSTER=true  # Enable for all tasks
+
+  # Claude Code with Agent Booster
   npx agentic-flow claude-code --provider openrouter --agent-booster
   npx agentic-flow claude-code --provider gemini "Write a REST API"
   npx agentic-flow claude-code --help     # See all claude-code options

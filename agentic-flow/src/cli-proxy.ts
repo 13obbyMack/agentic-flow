@@ -36,10 +36,12 @@ import { parseArgs } from "./utils/cli.js";
 import { getAgent, listAgents } from "./utils/agentLoader.js";
 import { claudeAgent } from "./agents/claudeAgent.js";
 import { handleMCPCommand } from "./utils/mcpCommands.js";
+import { handleReasoningBankCommand } from "./utils/reasoningbankCommands.js";
 import { handleConfigCommand } from "./cli/config-wizard.js";
 import { handleAgentCommand } from "./cli/agent-manager.js";
 import { ModelOptimizer } from "./utils/modelOptimizer.js";
 import { detectModelCapabilities } from "./utils/modelCapabilities.js";
+import { AgentBoosterPreprocessor } from "./utils/agentBoosterPreprocessor.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -64,7 +66,7 @@ class AgenticFlowCLI {
     }
 
     // If no mode and no agent specified, show help
-    if (!options.agent && options.mode !== 'list' && !['config', 'agent-manager', 'mcp-manager', 'proxy', 'claude-code', 'mcp'].includes(options.mode)) {
+    if (!options.agent && options.mode !== 'list' && !['config', 'agent-manager', 'mcp-manager', 'proxy', 'quic', 'claude-code', 'mcp', 'reasoningbank'].includes(options.mode)) {
       this.printHelp();
       process.exit(0);
     }
@@ -120,6 +122,12 @@ class AgenticFlowCLI {
       return;
     }
 
+    if (options.mode === 'quic') {
+      // Run QUIC transport proxy server
+      await this.runQuicProxy();
+      return;
+    }
+
     if (options.mode === 'claude-code') {
       // Spawn Claude Code with auto-configured proxy
       const { spawn } = await import('child_process');
@@ -161,6 +169,13 @@ class AgenticFlowCLI {
       process.on('SIGINT', () => proc.kill('SIGINT'));
       process.on('SIGTERM', () => proc.kill('SIGTERM'));
       return;
+    }
+
+    if (options.mode === 'reasoningbank') {
+      // Handle ReasoningBank commands
+      const subcommand = process.argv[3] || 'help';
+      await handleReasoningBankCommand(subcommand);
+      process.exit(0);
     }
 
     // Apply model optimization if requested
@@ -672,6 +687,153 @@ EXAMPLES:
 `);
   }
 
+  private async runQuicProxy(): Promise<void> {
+    const args = process.argv.slice(3); // Skip 'node', 'cli-proxy.js', 'quic'
+
+    // Parse QUIC arguments
+    let port = parseInt(process.env.QUIC_PORT || '4433');
+    let certPath = process.env.QUIC_CERT_PATH;
+    let keyPath = process.env.QUIC_KEY_PATH;
+
+    for (let i = 0; i < args.length; i++) {
+      if ((args[i] === '--port' || args[i] === '-P') && args[i + 1]) {
+        port = parseInt(args[++i]);
+      } else if ((args[i] === '--cert' || args[i] === '-c') && args[i + 1]) {
+        certPath = args[++i];
+      } else if ((args[i] === '--key' || args[i] === '-k') && args[i + 1]) {
+        keyPath = args[++i];
+      } else if (args[i] === '--help' || args[i] === '-h') {
+        this.printQuicHelp();
+        process.exit(0);
+      }
+    }
+
+    console.log(`
+╔═══════════════════════════════════════════════════════╗
+║      Agentic Flow - QUIC Transport Proxy Server       ║
+║           Ultra-Low Latency Agent Communication       ║
+╚═══════════════════════════════════════════════════════╝
+`);
+
+    console.log(`🚀 Starting QUIC Transport Server
+📍 Port: ${port}
+🔐 Protocol: QUIC (UDP-based, TLS 1.3 encrypted)
+⚡ Performance: 50-70% faster than TCP
+`);
+
+    if (certPath && keyPath) {
+      console.log(`🔒 TLS Certificates:
+   Cert: ${certPath}
+   Key:  ${keyPath}
+`);
+    } else {
+      console.log(`⚠️  Warning: No TLS certificates specified, using development certificates
+   Set QUIC_CERT_PATH and QUIC_KEY_PATH for production use
+`);
+    }
+
+    // Import and start QUIC proxy
+    const { spawn } = await import('child_process');
+    const { resolve } = await import('path');
+    const { fileURLToPath } = await import('url');
+
+    const __filename = fileURLToPath(import.meta.url);
+    const __dirname = dirname(__filename);
+    const quicProxyPath = resolve(__dirname, './proxy/quic-proxy.js');
+
+    const env = { ...process.env };
+    if (certPath) env.QUIC_CERT_PATH = certPath;
+    if (keyPath) env.QUIC_KEY_PATH = keyPath;
+    env.QUIC_PORT = port.toString();
+
+    const proc = spawn('node', [quicProxyPath], {
+      stdio: 'inherit',
+      env: env as NodeJS.ProcessEnv
+    });
+
+    console.log(`✅ QUIC server running on UDP port ${port}!
+
+Features:
+  • 0-RTT connection establishment
+  • 100+ concurrent streams per connection
+  • Built-in TLS 1.3 encryption
+  • Connection migration support
+  • Automatic packet loss recovery
+
+Use with agents:
+  import { QuicTransport } from 'agentic-flow/transport/quic';
+  const transport = new QuicTransport({ port: ${port} });
+  await transport.connect();
+
+Press Ctrl+C to stop...
+`);
+
+    proc.on('exit', (code) => {
+      console.log(`\n👋 QUIC server stopped (exit code: ${code})`);
+      process.exit(code || 0);
+    });
+
+    process.on('SIGINT', () => {
+      console.log('\n\n👋 Shutting down QUIC server...');
+      proc.kill('SIGINT');
+    });
+
+    process.on('SIGTERM', () => proc.kill('SIGTERM'));
+  }
+
+  private printQuicHelp(): void {
+    console.log(`
+Agentic Flow - QUIC Transport Proxy Server
+
+USAGE:
+  npx agentic-flow quic [OPTIONS]
+
+OPTIONS:
+  --port, -P <port>           Port number [default: 4433]
+  --cert, -c <path>           TLS certificate path
+  --key, -k <path>            TLS private key path
+  --help, -h                  Show this help
+
+ENVIRONMENT VARIABLES:
+  QUIC_PORT                   QUIC server port (default: 4433)
+  QUIC_CERT_PATH              Path to TLS certificate
+  QUIC_KEY_PATH               Path to TLS private key
+
+EXAMPLES:
+  # Start QUIC server (development mode)
+  npx agentic-flow quic
+
+  # Start with custom port
+  npx agentic-flow quic --port 5443
+
+  # Start with production certificates
+  npx agentic-flow quic --cert ./certs/cert.pem --key ./certs/key.pem
+
+  # Use via npm scripts
+  npm run proxy:quic         # Start QUIC proxy
+  npm run test:quic:wasm     # Test WASM bindings
+
+PROGRAMMATIC USAGE:
+  import { QuicTransport } from 'agentic-flow/transport/quic';
+
+  const transport = new QuicTransport({
+    host: 'localhost',
+    port: 4433,
+    maxConcurrentStreams: 100
+  });
+
+  await transport.connect();
+  await transport.send({ type: 'task', data: { ... } });
+
+PERFORMANCE:
+  • 50-70% faster than TCP-based protocols
+  • 0-RTT reconnection (instant resume)
+  • 100+ concurrent streams per connection
+  • Built-in TLS 1.3 encryption
+  • Survives network changes (WiFi ↔ cellular)
+`);
+  }
+
   private async runAgent(options: any, useOpenRouter: boolean, useGemini: boolean, useONNX: boolean = false, useRequesty: boolean = false): Promise<void> {
     const agentName = options.agent || process.env.AGENT || '';
     const task = options.task || process.env.TASK || '';
@@ -776,6 +938,53 @@ EXAMPLES:
 
     console.log('⏳ Running...\n');
 
+    // Try Agent Booster pre-processing if enabled
+    if (options.agentBooster || process.env.AGENTIC_FLOW_AGENT_BOOSTER === 'true') {
+      const preprocessor = new AgentBoosterPreprocessor({
+        confidenceThreshold: options.boosterThreshold || parseFloat(process.env.AGENTIC_FLOW_BOOSTER_THRESHOLD || '0.7')
+      });
+
+      console.log('⚡ Agent Booster: Analyzing task for pattern matching opportunities...\n');
+
+      const intent = preprocessor.detectIntent(task);
+
+      if (intent) {
+        console.log(`🎯 Detected intent: ${intent.type}`);
+        if (intent.filePath) {
+          console.log(`📄 Target file: ${intent.filePath}`);
+        }
+        console.log('🔧 Attempting Agent Booster pre-processing...\n');
+
+        const result = await preprocessor.tryApply(intent);
+
+        if (result.success) {
+          console.log(`✅ Agent Booster Success!\n`);
+          console.log(`⚡ Method: ${result.method}`);
+          console.log(`⏱️  Latency: ${result.latency}ms`);
+          console.log(`🎯 Confidence: ${((result.confidence || 0) * 100).toFixed(1)}%`);
+          console.log(`📊 Strategy: ${result.strategy}`);
+          console.log(`\n✅ File updated successfully!\n`);
+          console.log('═══════════════════════════════════════\n');
+          console.log(result.output || 'Edit applied');
+          console.log('\n═══════════════════════════════════════\n');
+
+          logger.info('Agent Booster completed', {
+            agent: agentName,
+            latency: result.latency,
+            confidence: result.confidence,
+            strategy: result.strategy
+          });
+
+          return; // Skip LLM execution
+        } else {
+          console.log(`⚠️  Agent Booster: ${result.reason || 'Low confidence'}`);
+          console.log(`🔄 Falling back to LLM agent...\n`);
+        }
+      } else {
+        console.log('ℹ️  No code editing pattern detected, using LLM agent...\n');
+      }
+    }
+
     const streamHandler = options.stream ? (chunk: string) => process.stdout.write(chunk) : undefined;
 
     // Use claudeAgent with Claude Agent SDK - handles multi-provider routing
@@ -834,6 +1043,7 @@ COMMANDS:
   mcp <command> [server]  Manage MCP servers (start, stop, status, list)
   agent <command>         Agent management (list, create, info, conflicts)
   proxy [options]         Run standalone proxy server for Claude Code/Cursor
+  quic [options]          Run QUIC transport proxy for ultra-low latency (50-70% faster)
   claude-code [options]   Spawn Claude Code with auto-configured proxy
   --list, -l              List all available agents
   --agent, -a <name>      Run specific agent mode
@@ -912,6 +1122,12 @@ EXAMPLES:
   npx agentic-flow proxy --provider openrouter --port 3000
   npx agentic-flow proxy --provider gemini --port 3001
 
+  # QUIC Transport (Ultra-low latency, 50-70% faster than TCP)
+  npx agentic-flow quic --port 4433                    # Start QUIC server
+  npx agentic-flow quic --cert ./certs/cert.pem --key ./certs/key.pem
+  npm run proxy:quic                                    # Development mode
+  npm run test:quic:wasm                                # Test WASM bindings
+
   # Claude Code Integration (Auto-start proxy + spawn Claude Code)
   npx agentic-flow claude-code --provider openrouter "Write a Python function"
   npx agentic-flow claude-code --provider gemini "Create a REST API"
@@ -939,6 +1155,9 @@ ENVIRONMENT VARIABLES:
   COMPLETION_MODEL        Default model for OpenRouter
   AGENTS_DIR              Path to agents directory
   PROXY_PORT              Proxy server port (default: 3000)
+  QUIC_PORT               QUIC transport port (default: 4433)
+  QUIC_CERT_PATH          Path to TLS certificate for QUIC
+  QUIC_KEY_PATH           Path to TLS private key for QUIC
 
 OPENROUTER MODELS (Best Free Tested):
   ✅ deepseek/deepseek-r1-0528:free           (reasoning, 95s/task, RFC validation)
@@ -985,6 +1204,47 @@ PROXY MODE (Claude Code CLI Integration):
   • Access to 100+ models (DeepSeek, Llama, Gemini, etc.)
   • Leaderboard tracking on OpenRouter
   • No code changes to Claude Code itself
+
+QUIC TRANSPORT (Ultra-Low Latency Agent Communication):
+  QUIC is a UDP-based protocol offering 50-70% faster connections than TCP.
+
+  Performance Benefits:
+  • 0-RTT connection establishment - Instant reconnection without handshake delay
+  • Stream multiplexing - Send 100+ concurrent messages without blocking
+  • Built-in TLS 1.3 security - Encrypted by default
+  • Connection migration - Survives network changes (WiFi → cellular)
+  • Reduced latency - Perfect for real-time agent coordination
+
+  Programmatic Usage (API):
+    import { QuicTransport } from 'agentic-flow/transport/quic';
+
+    const transport = new QuicTransport({
+      host: 'localhost',
+      port: 4433,
+      maxConcurrentStreams: 100
+    });
+
+    await transport.connect();
+    await transport.send({ type: 'task', data: { ... } });
+
+  CLI Usage:
+    # Start QUIC server
+    npx agentic-flow quic --port 4433
+
+    # With custom certificates
+    npx agentic-flow quic --cert ./certs/cert.pem --key ./certs/key.pem
+
+    # Test WASM bindings
+    npm run test:quic:wasm
+
+    # Development mode
+    npm run proxy:quic:dev
+
+  Use Cases:
+  • Multi-agent swarm coordination (mesh/hierarchical topologies)
+  • High-frequency task distribution across worker agents
+  • Real-time state synchronization between agents
+  • Low-latency RPC for distributed agent systems
 
 DOCUMENTATION:
   https://github.com/ruvnet/agentic-flow

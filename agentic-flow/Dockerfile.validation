@@ -1,0 +1,31 @@
+FROM node:22-slim
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    curl \
+    build-essential \
+    bc \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Rust and wasm-pack for WASM builds
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+ENV PATH="/root/.cargo/bin:${PATH}"
+RUN cargo install wasm-pack
+
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+COPY tsconfig.json ./
+COPY config/tsconfig.json ./config/
+
+# Copy source code
+COPY src ./src
+COPY validation ./validation
+COPY ../reasoningbank /reasoningbank
+
+# Copy existing WASM binaries (if built)
+COPY wasm ./wasm
+
+# Run validation
+CMD ["bash", "validation/docker-e2e-validation.sh"]

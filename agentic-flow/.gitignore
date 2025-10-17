@@ -10,3 +10,4 @@ models/
 *~
 .vscode/
 .idea/
+agentic-flow/examples/crispr-cas13-pipeline/target/
