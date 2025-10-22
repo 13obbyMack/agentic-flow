@@ -103,18 +103,19 @@ export class ExplainableRecall {
     const merkleTree = this.buildMerkleTree(sourceHashes);
     const merkleRoot = merkleTree.root;
 
-    // 4. Generate proof chain for each chunk
-    const proofChain = chunks.map((chunk, idx) =>
-      this.getMerkleProof(merkleTree, idx)
-    ).flat();
+    // 4. Generate chunk metadata first (needed for certificate ID)
+    const chunkIds = chunks.map(c => c.id);
+    const chunkTypes = chunks.map(c => c.type);
 
     // 5. Create certificate ID
     const certificateId = this.generateCertificateId(queryId, chunkIds);
 
-    const chunkIds = chunks.map(c => c.id);
-    const chunkTypes = chunks.map(c => c.type);
+    // 6. Generate proof chain for each chunk
+    const proofChain = chunks.map((chunk, idx) =>
+      this.getMerkleProof(merkleTree, idx)
+    ).flat();
 
-    // 6. Store certificate
+    // 7. Store certificate
     this.db.prepare(`
       INSERT INTO recall_certificates (
         id, query_id, query_text, chunk_ids, chunk_types,

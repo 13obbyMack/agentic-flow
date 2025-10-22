@@ -14,9 +14,9 @@
  */
 
 import { Database } from 'better-sqlite3';
-import { CausalMemoryGraph, CausalEdge } from './CausalMemoryGraph';
-import { ExplainableRecall, RecallCertificate } from './ExplainableRecall';
-import { EmbeddingService } from './EmbeddingService';
+import { CausalMemoryGraph, CausalEdge } from './CausalMemoryGraph.js';
+import { ExplainableRecall, RecallCertificate } from './ExplainableRecall.js';
+import { EmbeddingService } from './EmbeddingService.js';
 
 export interface RerankConfig {
   alpha: number; // Similarity weight (default: 0.7)
@@ -160,14 +160,15 @@ export class CausalRecall {
     `).all(k * 2);
 
     for (const ep of episodes) {
-      const embedding = new Float32Array(JSON.parse(ep.embedding));
+      const episodeRow = ep as any;
+      const embedding = new Float32Array(JSON.parse(episodeRow.embedding));
       const similarity = this.cosineSimilarity(queryEmbedding, embedding);
       results.push({
-        id: ep.id.toString(),
-        type: ep.type,
-        content: ep.content,
+        id: episodeRow.id.toString(),
+        type: episodeRow.type,
+        content: episodeRow.content,
         similarity,
-        latencyMs: ep.latency_ms || 0
+        latencyMs: episodeRow.latency_ms || 0
       });
     }
 

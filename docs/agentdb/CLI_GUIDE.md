@@ -321,6 +321,333 @@ agentdb learner prune 0.0 0.0 60
 
 ---
 
+## Reflexion Commands
+
+### `reflexion store`
+
+Store an episode with self-critique for agent self-improvement.
+
+**Syntax:**
+```bash
+agentdb reflexion store <session-id> <task> <reward> <success> [critique] [input] [output] [latency-ms] [tokens]
+```
+
+**Parameters:**
+- `session-id` - Session identifier (string)
+- `task` - Task description (string)
+- `reward` - Reward score 0-1 (number)
+- `success` - Task success flag (true/false)
+- `critique` - Self-critique or lesson learned (optional, string)
+- `input` - Task input data (optional, string)
+- `output` - Task output data (optional, string)
+- `latency-ms` - Execution time in ms (optional, number)
+- `tokens` - Tokens consumed (optional, number)
+
+**Example:**
+```bash
+# Store successful authentication implementation
+agentdb reflexion store "session-1" "implement_oauth2" 0.95 true \
+  "Used industry-standard OAuth2 flow with refresh tokens" \
+  "Requirements: secure authentication" \
+  "JWT-based OAuth2 implementation"
+
+# Store failed attempt with critique
+agentdb reflexion store "session-2" "fix_memory_leak" 0.3 false \
+  "Forgot to cleanup event listeners - must always call removeEventListener()" \
+  "Memory growing unbounded" \
+  "Attempted fix with WeakMap but missed cleanup"
+```
+
+---
+
+### `reflexion retrieve`
+
+Retrieve relevant past episodes for learning from experience.
+
+**Syntax:**
+```bash
+agentdb reflexion retrieve <task> [k] [min-reward] [only-failures] [only-successes]
+```
+
+**Parameters:**
+- `task` - Query task (string)
+- `k` - Number of episodes to retrieve (optional, default: 10)
+- `min-reward` - Minimum reward threshold (optional, default: 0.0)
+- `only-failures` - Return only failures (optional, true/false)
+- `only-successes` - Return only successes (optional, true/false)
+
+**Examples:**
+```bash
+# Get top 10 authentication episodes
+agentdb reflexion retrieve "implement authentication" 10
+
+# Get only successful episodes with high reward
+agentdb reflexion retrieve "bug fix" 20 0.8 false true
+
+# Get only failures to learn from mistakes
+agentdb reflexion retrieve "performance optimization" 15 0.0 true false
+```
+
+**Output:**
+```
+🔍 Retrieving Episodes
+
+ℹ Query: "implement authentication"
+ℹ k: 10
+
+================================================================================
+Results (3)
+================================================================================
+
+#1: Episode 142
+  Task: implement_oauth2_authentication
+  Similarity: 0.892
+  Reward: 0.95
+  Success: Yes
+  Critique: "Used industry-standard OAuth2 flow with refresh tokens"
+
+#2: Episode 89
+  Task: add_jwt_tokens
+  Similarity: 0.845
+  Reward: 0.91
+  Success: Yes
+  Critique: "Implemented secure token rotation"
+
+...
+```
+
+---
+
+### `reflexion critique-summary`
+
+Get aggregated critique summary from past episodes.
+
+**Syntax:**
+```bash
+agentdb reflexion critique-summary <task> [only-failures]
+```
+
+**Parameters:**
+- `task` - Task pattern (string)
+- `only-failures` - Focus on failure lessons (optional, true/false)
+
+**Example:**
+```bash
+# Get all lessons about authentication
+agentdb reflexion critique-summary "authentication"
+
+# Get failure lessons about bug fixes
+agentdb reflexion critique-summary "bug_fix" true
+```
+
+**Output:**
+```
+📝 Critique Summary
+
+ℹ Task: "authentication"
+ℹ Episodes analyzed: 25
+
+================================================================================
+Key Lessons
+================================================================================
+
+• Always use refresh tokens for long-lived sessions (15 episodes)
+• CSRF protection required for OAuth2 flows (12 episodes)
+• Never store tokens in localStorage, use httpOnly cookies (10 episodes)
+• Rate-limit authentication attempts to prevent brute force (8 episodes)
+
+✅ Success rate: 88.0%
+✅ Avg reward: 0.87
+```
+
+---
+
+### `reflexion prune`
+
+Clean up old or low-value episodes.
+
+**Syntax:**
+```bash
+agentdb reflexion prune [max-age-days] [max-reward]
+```
+
+**Parameters:**
+- `max-age-days` - Remove episodes older than X days (optional, default: 90)
+- `max-reward` - Remove episodes with reward below X (optional, default: 0.3)
+
+**Examples:**
+```bash
+# Conservative: remove old episodes only
+agentdb reflexion prune 180
+
+# Aggressive: remove low-value episodes
+agentdb reflexion prune 30 0.5
+
+# Default: 90 days, reward < 0.3
+agentdb reflexion prune
+```
+
+---
+
+## Skill Commands
+
+### `skill create`
+
+Create a reusable skill from experience.
+
+**Syntax:**
+```bash
+agentdb skill create <name> <description> [code]
+```
+
+**Parameters:**
+- `name` - Skill name (string)
+- `description` - What this skill does (string)
+- `code` - Implementation code (optional, string)
+
+**Example:**
+```bash
+# Create authentication skill
+agentdb skill create "jwt_authentication" \
+  "Generate and validate JWT tokens with refresh rotation" \
+  "function generateJWT(payload) { /* code */ }"
+
+# Create skill without code (metadata only)
+agentdb skill create "rate_limiting" \
+  "Implement token-bucket rate limiting for API endpoints"
+```
+
+---
+
+### `skill search`
+
+Find applicable skills by semantic similarity.
+
+**Syntax:**
+```bash
+agentdb skill search <query> [k]
+```
+
+**Parameters:**
+- `query` - Search query (string)
+- `k` - Number of results (optional, default: 10)
+
+**Example:**
+```bash
+# Find authentication skills
+agentdb skill search "secure user login" 5
+
+# Find performance optimization skills
+agentdb skill search "reduce latency" 10
+```
+
+**Output:**
+```
+🔍 Searching Skills
+
+ℹ Query: "secure user login"
+ℹ k: 5
+
+================================================================================
+Results (5)
+================================================================================
+
+#1: jwt_authentication
+  Description: Generate and validate JWT tokens with refresh rotation
+  Similarity: 0.912
+  Success Rate: 95.3%
+  Uses: 47
+  Avg Reward: 0.91
+  Avg Latency: 125ms
+
+#2: oauth2_flow
+  Description: Complete OAuth2 authorization code flow
+  Similarity: 0.875
+  Success Rate: 88.1%
+  Uses: 32
+  Avg Reward: 0.87
+  Avg Latency: 280ms
+
+...
+```
+
+---
+
+### `skill consolidate`
+
+Automatically create skills from successful episodes.
+
+**Syntax:**
+```bash
+agentdb skill consolidate [min-reward] [min-success-rate]
+```
+
+**Parameters:**
+- `min-reward` - Minimum episode reward (optional, default: 0.8)
+- `min-success-rate` - Minimum success rate for patterns (optional, default: 0.7)
+
+**Examples:**
+```bash
+# Conservative: high-quality skills only
+agentdb skill consolidate 0.9 0.8
+
+# Balanced: default thresholds
+agentdb skill consolidate
+
+# Aggressive: capture more patterns
+agentdb skill consolidate 0.6 0.6
+```
+
+**Output:**
+```
+🎓 Consolidating Skills
+
+ℹ Min Reward: 0.8
+ℹ Min Success Rate: 0.7
+✅ Created 7 new skills from successful episodes
+
+================================================================================
+#1: error_handling_pattern
+  Episodes: 15
+  Success rate: 93.3%
+  Avg reward: 0.89
+─────────────────────────────────────────────────────────────────────────────
+#2: database_transaction
+  Episodes: 12
+  Success rate: 91.7%
+  Avg reward: 0.87
+...
+```
+
+---
+
+### `skill prune`
+
+Remove underperforming skills.
+
+**Syntax:**
+```bash
+agentdb skill prune [min-success-rate] [max-latency-ms]
+```
+
+**Parameters:**
+- `min-success-rate` - Keep skills above this rate (optional, default: 0.5)
+- `max-latency-ms` - Remove skills slower than this (optional, default: 5000)
+
+**Examples:**
+```bash
+# Conservative: remove obvious failures only
+agentdb skill prune 0.3 10000
+
+# Balanced: default thresholds
+agentdb skill prune
+
+# Aggressive: keep high performers only
+agentdb skill prune 0.8 500
+```
+
+---
+
 ## Database Commands
 
 ### `db stats`

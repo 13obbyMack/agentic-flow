@@ -9,7 +9,7 @@
  */
 
 import { Database } from 'better-sqlite3';
-import { EmbeddingService } from './EmbeddingService';
+import { EmbeddingService } from './EmbeddingService.js';
 
 export interface Episode {
   id?: number;

@@ -9,7 +9,7 @@
  */
 
 import { Database } from 'better-sqlite3';
-import { EmbeddingService } from './EmbeddingService';
+import { EmbeddingService } from './EmbeddingService.js';
 
 export interface Skill {
   id?: number;
@@ -106,6 +106,10 @@ export class SkillLibrary {
   /**
    * Retrieve skills relevant to a task
    */
+  async searchSkills(query: SkillQuery): Promise<Skill[]> {
+    return this.retrieveSkills(query);
+  }
+
   async retrieveSkills(query: SkillQuery): Promise<Skill[]> {
     const { task, k = 5, minSuccessRate = 0.5, preferRecent = true } = query;
 

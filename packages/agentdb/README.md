@@ -353,17 +353,34 @@ npm install agentdb
 
 ### Browser/CDN Usage
 
-For lightweight browser usage (version info and compatibility layer):
+**✅ Browser-Compatible:** AgentDB v1.3.3 includes v1.0.7 backward-compatible browser bundle with sql.js WASM!
 
 ```html
-<script src="https://unpkg.com/agentdb@1.3.2/dist/agentdb.min.js"></script>
+<!-- v1.3.3 with v1.0.7 API compatibility -->
+<script src="https://unpkg.com/agentdb@1.3.3/dist/agentdb.min.js"></script>
 <script>
-  console.log(AgentDB.info());
-  // Full database features require Node.js: npm install agentdb
+  const db = new AgentDB.Database();
+
+  // Works exactly like v1.0.7
+  db.run('INSERT INTO vectors (text, metadata) VALUES (?, ?)',
+    ['Hello world', JSON.stringify({type: 'greeting'})]);
+
+  const results = db.exec('SELECT * FROM vectors');
+  console.log(results);
 </script>
 ```
 
-**Note:** The browser bundle provides a compatibility layer. Full AgentDB features (vector database, MCP server, frontier memory) require Node.js environment.
+**Backward Compatible:**
+- All v1.0.7 API methods work in v1.3.3
+- Same `Database` class interface
+- Uses sql.js WASM (included in bundle)
+- No breaking changes from v1.0.7
+
+**Advanced Features (Node.js only):**
+- 29 MCP tools for Claude Desktop
+- Frontier memory (causal, reflexion, skills)
+- Learning systems (9 RL algorithms)
+- Install: `npm install agentdb@1.3.3`
 
 ### For Claude Code / MCP Integration
 

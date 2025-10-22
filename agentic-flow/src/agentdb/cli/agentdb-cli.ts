@@ -10,11 +10,13 @@
  */
 
 import Database from 'better-sqlite3';
-import { CausalMemoryGraph } from '../controllers/CausalMemoryGraph';
-import { CausalRecall } from '../controllers/CausalRecall';
-import { ExplainableRecall } from '../controllers/ExplainableRecall';
-import { NightlyLearner } from '../controllers/NightlyLearner';
-import { EmbeddingService } from '../controllers/EmbeddingService';
+import { CausalMemoryGraph } from '../controllers/CausalMemoryGraph.js';
+import { CausalRecall } from '../controllers/CausalRecall.js';
+import { ExplainableRecall } from '../controllers/ExplainableRecall.js';
+import { NightlyLearner } from '../controllers/NightlyLearner.js';
+import { ReflexionMemory, Episode, ReflexionQuery, ReflexionCritiqueSummary, ReflexionPruneConfig } from '../controllers/ReflexionMemory.js';
+import { SkillLibrary, Skill, SkillQuery } from '../controllers/SkillLibrary.js';
+import { EmbeddingService } from '../controllers/EmbeddingService.js';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -43,6 +45,8 @@ class AgentDBCLI {
   private causalRecall?: CausalRecall;
   private explainableRecall?: ExplainableRecall;
   private nightlyLearner?: NightlyLearner;
+  private reflexion?: ReflexionMemory;
+  private skills?: SkillLibrary;
   private embedder?: EmbeddingService;
 
   async initialize(dbPath: string = './agentdb.db'): Promise<void> {
@@ -74,6 +78,8 @@ class AgentDBCLI {
     this.explainableRecall = new ExplainableRecall(this.db);
     this.causalRecall = new CausalRecall(this.db, this.embedder, this.causalGraph, this.explainableRecall);
     this.nightlyLearner = new NightlyLearner(this.db, this.embedder, this.causalGraph);
+    this.reflexion = new ReflexionMemory(this.db, this.embedder);
+    this.skills = new SkillLibrary(this.db, this.embedder);
   }
 
   // ============================================================================
@@ -247,9 +253,9 @@ class AgentDBCLI {
     });
 
     console.log('\n' + '═'.repeat(80));
-    log.info(`Certificate ID: ${result.certificate.certificateId}`);
-    log.info(`Provenance Hash: ${result.certificate.provenanceHash.substring(0, 16)}...`);
-    log.info(`Retrieved at: ${new Date(result.certificate.retrievedAt).toISOString()}`);
+    log.info(`Certificate ID: ${result.certificate.id}`);
+    log.info(`Query: ${result.certificate.queryText}`);
+    log.info(`Completeness: ${result.certificate.completenessScore.toFixed(2)}`);
     log.success(`Completed in ${duration}ms`);
   }
 
@@ -285,7 +291,7 @@ class AgentDBCLI {
 
     if (discovered.length > 0) {
       console.log('\n' + '═'.repeat(80));
-      discovered.slice(0, 10).forEach((edge, i) => {
+      discovered.slice(0, 10).forEach((edge: any, i: number) => {
         console.log(`${colors.bright}#${i + 1}: ${edge.cause} → ${edge.effect}${colors.reset}`);
         console.log(`  Uplift: ${colors.green}${edge.uplift.toFixed(3)}${colors.reset} (CI: ${edge.confidence.toFixed(2)})`);
         console.log(`  Sample size: ${edge.sampleSize}`);
@@ -303,13 +309,228 @@ class AgentDBCLI {
 
     log.header('\n🧹 Pruning Low-Quality Edges');
 
-    const pruned = await this.nightlyLearner.pruneEdges({
-      minConfidence: params.minConfidence || 0.5,
-      minUplift: params.minUplift || 0.05,
-      maxAgeDays: params.maxAgeDays || 90
-    });
+    const pruned = await this.nightlyLearner.pruneEdges(params);
 
     log.success(`Pruned ${pruned} edges`);
+  }
+
+  // ============================================================================
+  // Reflexion Commands
+  // ============================================================================
+
+  async reflexionStoreEpisode(params: {
+    sessionId: string;
+    task: string;
+    input?: string;
+    output?: string;
+    critique?: string;
+    reward: number;
+    success: boolean;
+    latencyMs?: number;
+    tokensUsed?: number;
+  }): Promise<void> {
+    if (!this.reflexion) throw new Error('Not initialized');
+
+    log.header('\n💭 Storing Episode');
+    log.info(`Task: ${params.task}`);
+    log.info(`Success: ${params.success ? 'Yes' : 'No'}`);
+    log.info(`Reward: ${params.reward.toFixed(2)}`);
+
+    const episodeId = await this.reflexion.storeEpisode(params as Episode);
+
+    log.success(`Stored episode #${episodeId}`);
+    if (params.critique) {
+      log.info(`Critique: "${params.critique}"`);
+    }
+  }
+
+  async reflexionRetrieve(params: {
+    task: string;
+    k?: number;
+    onlyFailures?: boolean;
+    onlySuccesses?: boolean;
+    minReward?: number;
+  }): Promise<void> {
+    if (!this.reflexion) throw new Error('Not initialized');
+
+    log.header('\n🔍 Retrieving Past Episodes');
+    log.info(`Task: "${params.task}"`);
+    log.info(`k: ${params.k || 5}`);
+    if (params.onlyFailures) log.info('Filter: Failures only');
+    if (params.onlySuccesses) log.info('Filter: Successes only');
+
+    const episodes = await this.reflexion.retrieveRelevant({
+      task: params.task,
+      k: params.k || 5,
+      onlyFailures: params.onlyFailures,
+      onlySuccesses: params.onlySuccesses,
+      minReward: params.minReward
+    });
+
+    if (episodes.length === 0) {
+      log.warning('No episodes found');
+      return;
+    }
+
+    console.log('\n' + '═'.repeat(80));
+    episodes.forEach((ep, i) => {
+      console.log(`${colors.bright}#${i + 1}: Episode ${ep.id}${colors.reset}`);
+      console.log(`  Task: ${ep.task}`);
+      console.log(`  Reward: ${colors.green}${ep.reward.toFixed(2)}${colors.reset}`);
+      console.log(`  Success: ${ep.success ? colors.green + 'Yes' : colors.red + 'No'}${colors.reset}`);
+      console.log(`  Similarity: ${colors.cyan}${ep.similarity?.toFixed(3) || 'N/A'}${colors.reset}`);
+      if (ep.critique) {
+        console.log(`  Critique: "${ep.critique}"`);
+      }
+      console.log('─'.repeat(80));
+    });
+
+    log.success(`Retrieved ${episodes.length} relevant episodes`);
+  }
+
+  async reflexionGetCritiqueSummary(params: {
+    task: string;
+    k?: number;
+  }): Promise<void> {
+    if (!this.reflexion) throw new Error('Not initialized');
+
+    log.header('\n📋 Critique Summary');
+    log.info(`Task: "${params.task}"`);
+
+    const summary = await this.reflexion.getCritiqueSummary({
+      task: params.task,
+      k: params.k || 5
+    });
+
+    console.log('\n' + '═'.repeat(80));
+    console.log(colors.bright + 'Past Lessons:' + colors.reset);
+    console.log(summary);
+    console.log('═'.repeat(80));
+  }
+
+  async reflexionPrune(params: {
+    minReward?: number;
+    maxAgeDays?: number;
+    keepMinPerTask?: number;
+  }): Promise<void> {
+    if (!this.reflexion) throw new Error('Not initialized');
+
+    log.header('\n🧹 Pruning Episodes');
+
+    const pruned = await this.reflexion.pruneEpisodes({
+      minReward: params.minReward || 0.3,
+      maxAgeDays: params.maxAgeDays || 30,
+      keepMinPerTask: params.keepMinPerTask || 5
+    });
+
+    log.success(`Pruned ${pruned} low-quality episodes`);
+  }
+
+  // ============================================================================
+  // Skill Library Commands
+  // ============================================================================
+
+  async skillCreate(params: {
+    name: string;
+    description: string;
+    code?: string;
+    successRate?: number;
+    episodeId?: number;
+  }): Promise<void> {
+    if (!this.skills) throw new Error('Not initialized');
+
+    log.header('\n🎯 Creating Skill');
+    log.info(`Name: ${params.name}`);
+    log.info(`Description: ${params.description}`);
+
+    const skillId = await this.skills.createSkill({
+      name: params.name,
+      description: params.description,
+      signature: { inputs: {}, outputs: {} },
+      code: params.code,
+      successRate: params.successRate || 0.0,
+      uses: 0,
+      avgReward: 0.0,
+      avgLatencyMs: 0.0,
+      createdFromEpisode: params.episodeId
+    });
+
+    log.success(`Created skill #${skillId}`);
+  }
+
+  async skillSearch(params: {
+    task: string;
+    k?: number;
+    minSuccessRate?: number;
+  }): Promise<void> {
+    if (!this.skills) throw new Error('Not initialized');
+
+    log.header('\n🔍 Searching Skills');
+    log.info(`Task: "${params.task}"`);
+    log.info(`Min Success Rate: ${params.minSuccessRate || 0.0}`);
+
+    const skills = await this.skills.searchSkills({
+      task: params.task,
+      k: params.k || 10,
+      minSuccessRate: params.minSuccessRate || 0.0
+    });
+
+    if (skills.length === 0) {
+      log.warning('No skills found');
+      return;
+    }
+
+    console.log('\n' + '═'.repeat(80));
+    skills.forEach((skill: any, i: number) => {
+      console.log(`${colors.bright}#${i + 1}: ${skill.name}${colors.reset}`);
+      console.log(`  Description: ${skill.description}`);
+      console.log(`  Success Rate: ${colors.green}${(skill.successRate * 100).toFixed(1)}%${colors.reset}`);
+      console.log(`  Uses: ${skill.uses}`);
+      console.log(`  Avg Reward: ${skill.avgReward.toFixed(2)}`);
+      console.log(`  Avg Latency: ${skill.avgLatencyMs.toFixed(0)}ms`);
+      console.log('─'.repeat(80));
+    });
+
+    log.success(`Found ${skills.length} matching skills`);
+  }
+
+  async skillConsolidate(params: {
+    minAttempts?: number;
+    minReward?: number;
+    timeWindowDays?: number;
+  }): Promise<void> {
+    if (!this.skills) throw new Error('Not initialized');
+
+    log.header('\n🔄 Consolidating Episodes into Skills');
+    log.info(`Min Attempts: ${params.minAttempts || 3}`);
+    log.info(`Min Reward: ${params.minReward || 0.7}`);
+    log.info(`Time Window: ${params.timeWindowDays || 7} days`);
+
+    const created = this.skills.consolidateEpisodesIntoSkills({
+      minAttempts: params.minAttempts || 3,
+      minReward: params.minReward || 0.7,
+      timeWindowDays: params.timeWindowDays || 7
+    });
+
+    log.success(`Created ${created} new skills from successful episodes`);
+  }
+
+  async skillPrune(params: {
+    minUses?: number;
+    minSuccessRate?: number;
+    maxAgeDays?: number;
+  }): Promise<void> {
+    if (!this.skills) throw new Error('Not initialized');
+
+    log.header('\n🧹 Pruning Skills');
+
+    const pruned = this.skills.pruneSkills({
+      minUses: params.minUses || 3,
+      minSuccessRate: params.minSuccessRate || 0.4,
+      maxAgeDays: params.maxAgeDays || 60
+    });
+
+    log.success(`Pruned ${pruned} underperforming skills`);
   }
 
   // ============================================================================
@@ -364,6 +585,10 @@ async function main() {
       await handleRecallCommands(cli, subcommand, args.slice(2));
     } else if (command === 'learner') {
       await handleLearnerCommands(cli, subcommand, args.slice(2));
+    } else if (command === 'reflexion') {
+      await handleReflexionCommands(cli, subcommand, args.slice(2));
+    } else if (command === 'skill') {
+      await handleSkillCommands(cli, subcommand, args.slice(2));
     } else if (command === 'db') {
       await handleDbCommands(cli, subcommand, args.slice(2));
     } else {
@@ -451,6 +676,73 @@ async function handleLearnerCommands(cli: AgentDBCLI, subcommand: string, args: 
   }
 }
 
+async function handleReflexionCommands(cli: AgentDBCLI, subcommand: string, args: string[]) {
+  if (subcommand === 'store') {
+    await cli.reflexionStoreEpisode({
+      sessionId: args[0],
+      task: args[1],
+      reward: parseFloat(args[2]),
+      success: args[3] === 'true',
+      critique: args[4],
+      input: args[5],
+      output: args[6],
+      latencyMs: args[7] ? parseInt(args[7]) : undefined,
+      tokensUsed: args[8] ? parseInt(args[8]) : undefined
+    });
+  } else if (subcommand === 'retrieve') {
+    await cli.reflexionRetrieve({
+      task: args[0],
+      k: args[1] ? parseInt(args[1]) : undefined,
+      minReward: args[2] ? parseFloat(args[2]) : undefined,
+      onlyFailures: args[3] === 'true' ? true : undefined,
+      onlySuccesses: args[4] === 'true' ? true : undefined
+    });
+  } else if (subcommand === 'critique-summary') {
+    await cli.reflexionGetCritiqueSummary({
+      task: args[0],
+      onlyFailures: args[1] === 'true'
+    });
+  } else if (subcommand === 'prune') {
+    await cli.reflexionPrune({
+      maxAgeDays: args[0] ? parseInt(args[0]) : undefined,
+      minReward: args[1] ? parseFloat(args[1]) : undefined
+    });
+  } else {
+    log.error(`Unknown reflexion subcommand: ${subcommand}`);
+    printHelp();
+  }
+}
+
+async function handleSkillCommands(cli: AgentDBCLI, subcommand: string, args: string[]) {
+  if (subcommand === 'create') {
+    await cli.skillCreate({
+      name: args[0],
+      description: args[1],
+      code: args[2]
+    });
+  } else if (subcommand === 'search') {
+    await cli.skillSearch({
+      task: args[0],
+      k: args[1] ? parseInt(args[1]) : undefined
+    });
+  } else if (subcommand === 'consolidate') {
+    await cli.skillConsolidate({
+      minAttempts: args[0] ? parseInt(args[0]) : undefined,
+      minReward: args[1] ? parseFloat(args[1]) : undefined,
+      timeWindowDays: args[2] ? parseInt(args[2]) : undefined
+    });
+  } else if (subcommand === 'prune') {
+    await cli.skillPrune({
+      minUses: args[0] ? parseInt(args[0]) : undefined,
+      minSuccessRate: args[1] ? parseFloat(args[1]) : undefined,
+      maxAgeDays: args[2] ? parseInt(args[2]) : undefined
+    });
+  } else {
+    log.error(`Unknown skill subcommand: ${subcommand}`);
+    printHelp();
+  }
+}
+
 async function handleDbCommands(cli: AgentDBCLI, subcommand: string, args: string[]) {
   if (subcommand === 'stats') {
     await cli.dbStats();
@@ -462,6 +754,9 @@ async function handleDbCommands(cli: AgentDBCLI, subcommand: string, args: strin
 
 function printHelp() {
   console.log(`
+${colors.bright}${colors.cyan}█▀█ █▀▀ █▀▀ █▄░█ ▀█▀ █▀▄ █▄▄
+█▀█ █▄█ ██▄ █░▀█ ░█░ █▄▀ █▄█${colors.reset}
+
 ${colors.bright}${colors.cyan}AgentDB CLI - Frontier Memory Features${colors.reset}
 
 ${colors.bright}USAGE:${colors.reset}
@@ -497,6 +792,32 @@ ${colors.bright}LEARNER COMMANDS:${colors.reset}
     Remove low-quality or old causal edges
     Defaults: min-confidence=0.5, min-uplift=0.05, max-age-days=90
 
+${colors.bright}REFLEXION COMMANDS:${colors.reset}
+  agentdb reflexion store <session-id> <task> <reward> <success> [critique] [input] [output] [latency-ms] [tokens]
+    Store episode with self-critique
+
+  agentdb reflexion retrieve <task> [k] [min-reward] [only-failures] [only-successes]
+    Retrieve relevant past episodes
+
+  agentdb reflexion critique-summary <task> [only-failures]
+    Get aggregated critique lessons
+
+  agentdb reflexion prune [max-age-days] [max-reward]
+    Clean up old or low-value episodes
+
+${colors.bright}SKILL COMMANDS:${colors.reset}
+  agentdb skill create <name> <description> [code]
+    Create a reusable skill
+
+  agentdb skill search <query> [k]
+    Find applicable skills by similarity
+
+  agentdb skill consolidate [min-attempts] [min-reward] [time-window-days]
+    Auto-create skills from successful episodes (defaults: 3, 0.7, 7)
+
+  agentdb skill prune [min-uses] [min-success-rate] [max-age-days]
+    Remove underperforming skills (defaults: 3, 0.4, 60)
+
 ${colors.bright}DATABASE COMMANDS:${colors.reset}
   agentdb db stats
     Show database statistics
@@ -505,13 +826,20 @@ ${colors.bright}ENVIRONMENT:${colors.reset}
   AGENTDB_PATH    Database file path (default: ./agentdb.db)
 
 ${colors.bright}EXAMPLES:${colors.reset}
-  # Add a causal edge
-  agentdb causal add-edge "add_tests" "code_quality" 0.25 0.95 100
+  # Reflexion: Store and retrieve episodes
+  agentdb reflexion store "session-1" "implement_auth" 0.95 true "Used OAuth2"
+  agentdb reflexion retrieve "authentication" 10 0.8
+  agentdb reflexion critique-summary "bug_fix" true
 
-  # Create and run an experiment
+  # Skills: Create and search
+  agentdb skill create "jwt_auth" "Generate JWT tokens" "code here..."
+  agentdb skill search "authentication" 5
+  agentdb skill consolidate 3 0.7 7
+
+  # Causal: Add edges and run experiments
+  agentdb causal add-edge "add_tests" "code_quality" 0.25 0.95 100
   agentdb causal experiment create "test-coverage-quality" "test_coverage" "bug_rate"
   agentdb causal experiment add-observation 1 true 0.15
-  agentdb causal experiment add-observation 1 false 0.35
   agentdb causal experiment calculate 1
 
   # Retrieve with causal utility
@@ -525,7 +853,8 @@ ${colors.bright}EXAMPLES:${colors.reset}
 `);
 }
 
-if (require.main === module) {
+// ESM entry point check
+if (import.meta.url === `file://${process.argv[1]}`) {
   main().catch(console.error);
 }
 

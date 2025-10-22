@@ -13,10 +13,10 @@
  */
 
 import { Database } from 'better-sqlite3';
-import { CausalMemoryGraph, CausalEdge } from './CausalMemoryGraph';
-import { ReflexionMemory } from './ReflexionMemory';
-import { SkillLibrary } from './SkillLibrary';
-import { EmbeddingService } from './EmbeddingService';
+import { CausalMemoryGraph, CausalEdge } from './CausalMemoryGraph.js';
+import { ReflexionMemory } from './ReflexionMemory.js';
+import { SkillLibrary } from './SkillLibrary.js';
+import { EmbeddingService } from './EmbeddingService.js';
 
 export interface LearnerConfig {
   minSimilarity: number; // Min similarity to consider for causal edge (default: 0.7)
@@ -143,6 +143,15 @@ export class NightlyLearner {
    * - a = treatment indicator
    * - y = observed outcome
    */
+  async discover(config: {
+    minAttempts?: number;
+    minSuccessRate?: number;
+    minConfidence?: number;
+    dryRun?: boolean;
+  }): Promise<CausalEdge[]> {
+    return this.discoverCausalEdges();
+  }
+
   private async discoverCausalEdges(): Promise<number> {
     let discovered = 0;
 

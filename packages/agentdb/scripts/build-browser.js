@@ -2,51 +2,106 @@
 
 /**
  * Browser bundle builder for AgentDB
- * Creates a minified UMD bundle for CDN usage
+ * Creates v1.0.7 backward-compatible browser bundle
  */
 
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import fs from 'fs';
+import { execSync } from 'child_process';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const rootDir = join(__dirname, '..');
 
-function buildBrowser() {
-  console.log('🏗️  Building browser bundle...');
+async function buildBrowser() {
+  console.log('🏗️  Building v1.0.7 backward-compatible browser bundle...');
 
   try {
     const pkg = JSON.parse(fs.readFileSync(join(rootDir, 'package.json'), 'utf8'));
 
-    // Create minimal browser bundle
+    // Download sql.js WASM bundle
+    console.log('📥 Downloading sql.js...');
+    const sqlJsUrl = 'https://cdn.jsdelivr.net/npm/sql.js@1.13.0/dist/sql-wasm.js';
+    const sqlJs = await fetch(sqlJsUrl).then(r => r.text());
+
+    // Create v1.0.7 compatible wrapper
     const browserBundle = `/*! AgentDB Browser Bundle v${pkg.version} | MIT License | https://agentdb.ruv.io */
-(function(global) {
+/*! Backward compatible with v1.0.7 API | Uses sql.js WASM SQLite */
+${sqlJs}
+
+;(function(global) {
   'use strict';
 
+  // AgentDB v${pkg.version} - v1.0.7 Compatible Browser Bundle
   var AgentDB = {
     version: '${pkg.version}',
 
-    // Note: Full AgentDB functionality requires Node.js environment
-    // This browser bundle provides version information and compatibility layer
+    // Backward compatible Database class
+    Database: function(data) {
+      var db = null;
+      var SQL = global.SQL || (typeof module !== 'undefined' && module.exports ? module.exports.SQL : null);
 
-    info: function() {
-      return {
-        name: 'AgentDB',
-        version: '${pkg.version}',
-        description: 'Frontier Memory Features with MCP Integration',
-        homepage: 'https://agentdb.ruv.io',
-        docs: 'https://github.com/ruvnet/agentic-flow/tree/main/packages/agentdb',
-        note: 'Full database features require Node.js environment. Use npm install agentdb or npx agentdb.'
+      if (!SQL) {
+        throw new Error('sql.js not loaded. Include sql-wasm.js first.');
+      }
+
+      // Initialize database
+      if (data) {
+        db = new SQL.Database(data);
+      } else {
+        db = new SQL.Database();
+      }
+
+      // v1.0.7 compatible methods
+      this.run = function(sql, params) {
+        try {
+          if (params) {
+            var stmt = db.prepare(sql);
+            stmt.bind(params);
+            stmt.step();
+            stmt.free();
+          } else {
+            db.run(sql);
+          }
+          return this;
+        } catch(e) {
+          throw new Error('SQL Error: ' + e.message);
+        }
       };
-    },
 
-    getInstallCommand: function() {
-      return 'npm install agentdb';
-    },
+      this.exec = function(sql) {
+        try {
+          return db.exec(sql);
+        } catch(e) {
+          throw new Error('SQL Error: ' + e.message);
+        }
+      };
 
-    getMCPCommand: function() {
-      return 'npx agentdb@latest mcp start';
+      this.prepare = function(sql) {
+        return db.prepare(sql);
+      };
+
+      this.export = function() {
+        return db.export();
+      };
+
+      this.close = function() {
+        db.close();
+      };
+
+      // Initialize with basic schema if new database
+      if (!data) {
+        this.run(\`
+          CREATE TABLE IF NOT EXISTS vectors (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            embedding BLOB,
+            metadata TEXT,
+            text TEXT,
+            created_at INTEGER DEFAULT (strftime('%s', 'now'))
+          )
+        \`);
+      }
     }
   };
 
@@ -59,20 +114,19 @@ function buildBrowser() {
     global.AgentDB = AgentDB;
   }
 
-  console.log('AgentDB v${pkg.version} loaded. Note: Full database features require Node.js. Run: npm install agentdb');
+  console.log('AgentDB v${pkg.version} loaded (v1.0.7 API compatible)');
 
 })(typeof window !== 'undefined' ? window : this);
 `;
 
-    // Write minified bundle
+    // Write bundle
     const outPath = join(rootDir, 'dist', 'agentdb.min.js');
     fs.writeFileSync(outPath, browserBundle);
 
     const stats = fs.statSync(outPath);
     console.log(`✅ Browser bundle created: ${(stats.size / 1024).toFixed(2)} KB`);
     console.log('📦 Output: dist/agentdb.min.js');
-    console.log('ℹ️  Note: This is a minimal browser compatibility layer.');
-    console.log('   Full AgentDB features require Node.js environment.');
+    console.log('✨ v1.0.7 API compatible with sql.js WASM');
 
   } catch (error) {
     console.error('❌ Browser build failed:', error);

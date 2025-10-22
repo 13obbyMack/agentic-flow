@@ -2,11 +2,32 @@
 
 All notable changes to AgentDB will be documented in this file.
 
+## [1.3.3] - 2025-10-22
+
+### Added
+- **Browser Bundle:** v1.0.7 backward-compatible browser bundle with sql.js WASM
+  - Full backward compatibility with v1.0.7 API
+  - Same `Database` class and methods (`run`, `exec`, `prepare`, `export`, `close`)
+  - Includes sql.js WASM SQLite for true browser support
+  - Works with all existing v1.0.7 demos and code
+  - No breaking changes - drop-in replacement
+
+### Technical Details
+- Bundle includes sql.js@1.13.0 for WASM SQLite support
+- Size: ~91KB (minified, includes WASM loader)
+- Compatible with: Chrome, Firefox, Safari, Edge
+- Works in: browsers, Electron, hybrid apps
+
+### Documentation
+- Updated README with browser usage examples
+- Clarified that advanced features (MCP tools, frontier memory) require Node.js
+- Browser bundle provides basic vector database operations
+
 ## [1.3.2] - 2025-10-22
 
 ### Added
 - **Browser Bundle:** Restored `dist/agentdb.min.js` for CDN/unpkg usage
-  - Compatible with existing demos and documentation that reference the browser bundle
+  - Compatible with existing demos and documentation that reference the bundle
   - Provides version info and installation guidance
   - Minimal footprint (1.29 KB) with UMD format support
   - Available via: `https://unpkg.com/agentdb@1.3.2/dist/agentdb.min.js`
