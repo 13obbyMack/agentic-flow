@@ -53,19 +53,33 @@ Most AI coding agents are **painfully slow** and **frustratingly forgetful**. Th
 | Component | Description | Performance | Documentation |
 |-----------|-------------|-------------|---------------|
 | **Agent Booster** | Ultra-fast local code transformations via Rust/WASM (auto-detects edits) | 352x faster, $0 cost | [Docs](https://github.com/ruvnet/agentic-flow/tree/main/agent-booster) |
+| **AgentDB** | State-of-the-art memory with causal reasoning, reflexion, and skill learning | p95 < 50ms, 80% hit rate | [Docs](./agentic-flow/src/agentdb/README.md) |
 | **ReasoningBank** | Persistent learning memory system with semantic search | 46% faster, 100% success | [Docs](https://github.com/ruvnet/agentic-flow/tree/main/agentic-flow/src/reasoningbank) |
 | **Multi-Model Router** | Intelligent cost optimization across 100+ LLMs | 85-99% cost savings | [Docs](https://github.com/ruvnet/agentic-flow/tree/main/agentic-flow/src/router) |
 | **QUIC Transport** | Ultra-low latency agent communication via Rust/WASM QUIC protocol | 50-70% faster than TCP, 0-RTT | [Docs](https://github.com/ruvnet/agentic-flow/tree/main/crates/agentic-flow-quic) |
 
-**CLI Usage**: Multi-Model Router via `--optimize`, Agent Booster (automatic), ReasoningBank (API only), QUIC Transport (API only)
-**Programmatic**: All components importable: `agentic-flow/router`, `agentic-flow/reasoningbank`, `agentic-flow/agent-booster`, `agentic-flow/transport/quic`
+**CLI Usage**:
+- **AgentDB**: Full CLI with 17 commands (`npx agentdb <command>`)
+- **Multi-Model Router**: Via `--optimize` flag
+- **Agent Booster**: Automatic on code edits
+- **ReasoningBank**: API only
+- **QUIC Transport**: API only
+
+**Programmatic**: All components importable: `agentic-flow/agentdb`, `agentic-flow/router`, `agentic-flow/reasoningbank`, `agentic-flow/agent-booster`, `agentic-flow/transport/quic`
 
 **Get Started:**
 ```bash
+# CLI: AgentDB memory operations
+npx agentdb reflexion store "session-1" "implement_auth" 0.95 true "Success!"
+npx agentdb skill search "authentication" 10
+npx agentdb causal query "" "code_quality" 0.8
+npx agentdb learner run
+
 # CLI: Auto-optimization (Agent Booster runs automatically on code edits)
 npx agentic-flow --agent coder --task "Build a REST API" --optimize
 
 # Programmatic: Import any component
+import { ReflexionMemory, SkillLibrary, CausalMemoryGraph } from 'agentic-flow/agentdb';
 import { ModelRouter } from 'agentic-flow/router';
 import * as reasoningbank from 'agentic-flow/reasoningbank';
 import { AgentBooster } from 'agentic-flow/agent-booster';

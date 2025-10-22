@@ -5,7 +5,8 @@
   "type": "module",
   "main": "dist/index.js",
   "bin": {
-    "agentic-flow": "dist/cli-proxy.js"
+    "agentic-flow": "dist/cli-proxy.js",
+    "agentdb": "dist/agentdb/cli/agentdb-cli.js"
   },
   "exports": {
     ".": "./dist/index.js",
