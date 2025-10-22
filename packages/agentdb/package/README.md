@@ -7,7 +7,7 @@
 [![License](https://img.shields.io/badge/license-MIT%20OR%20Apache--2.0-green?style=flat-square)](LICENSE)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue?style=flat-square&logo=typescript)](https://www.typescriptlang.org/)
 [![Tests](https://img.shields.io/badge/tests-passing-brightgreen?style=flat-square)](test-docker/)
-[![MCP Compatible](https://img.shields.io/badge/MCP-29%20tools-blueviolet?style=flat-square)](docs/MCP_TOOLS.md)
+[![MCP Compatible](https://img.shields.io/badge/MCP-20%20tools%20%7C%203%20resources-blueviolet?style=flat-square)](docs/integration/mcp/)
 
 **AgentDB gives agents a real cognitive layer that boots in milliseconds, lives locally (disk or memory), and synchronizes globally when needed.** Zero ops. No latency overhead. Just instant recall, persistent learning, and real-time coordination—all inside the runtime of your agent.
 
@@ -31,146 +31,16 @@ When you're building agentic systems, every millisecond, every inference, and ev
 
 **Integration:**
 - 🧠 **ReasoningBank** – Pattern matching, experience curation, memory optimization
-- 🤖 **29 MCP Tools** – Zero-code setup for Claude Code, Cursor, and coding assistants (v1.3.0)
-  - **5 Core Vector DB Tools**: init, insert, batch, search, delete
-  - **5 Core AgentDB Tools** (NEW v1.3.0): database stats, pattern store/search, cache management
-  - **9 Frontier Memory Tools**: reflexion, skills, causal memory, explainable recall
-  - **10 Learning System Tools** (NEW v1.3.0): full RL pipeline with 9 algorithms
+- 🤖 **20 MCP Tools** – Zero-code setup for Claude Code, Cursor, and coding assistants
 - 🔌 **10 RL Plugins** – Decision Transformer, Q-Learning, Federated Learning, and more
 
 Run anywhere: **Claude Code**, **Cursor**, **GitHub Copilot**, **Node.js**, **browsers**, **edge functions**, and **distributed agent networks**.
 
 ---
 
-## 🆕 What's New in v1.3.0
+## 🆕 What's New in v1.1.0
 
-AgentDB v1.3.0 adds **Learning System Tools** and **Core AgentDB Tools** — bringing full reinforcement learning and advanced database management to Claude Desktop and MCP-compatible editors. Now with **29 production-ready MCP tools** (up from 14).
-
-### 🎉 NEW: Learning System + Core AgentDB Tools (v1.3.0)
-
-**15 new MCP tools for reinforcement learning and advanced database management:**
-
-#### Learning System Tools (10 - NEW in v1.3.0)
-
-**Full reinforcement learning pipeline with 9 algorithms:**
-- **Session Management**: `learning_start_session`, `learning_end_session`
-- **Adaptive Intelligence**: `learning_predict`, `learning_feedback`, `learning_train`
-- **Analytics**: `learning_metrics`, `learning_explain`
-- **Advanced Features**: `learning_transfer`, `experience_record`, `reward_signal`
-
-**Supported RL Algorithms:** Q-Learning, SARSA, DQN, Policy Gradient, Actor-Critic, PPO, Decision Transformer, MCTS, Model-Based
-
-```json
-{
-  "name": "learning_start_session",
-  "arguments": {
-    "user_id": "agent-123",
-    "session_type": "q-learning",
-    "config": {
-      "learning_rate": 0.01,
-      "discount_factor": 0.99,
-      "exploration_rate": 0.1
-    }
-  }
-}
-```
-
-#### Core AgentDB Tools (5 - NEW in v1.3.0)
-
-**Advanced database management and reasoning patterns:**
-- `agentdb_stats` - Comprehensive database statistics with detailed metrics
-- `agentdb_pattern_store` - Store reasoning patterns with embeddings
-- `agentdb_pattern_search` - Search patterns with filters and similarity
-- `agentdb_pattern_stats` - Pattern analytics and top task types
-- `agentdb_clear_cache` - Cache management for optimal performance
-
-```json
-{
-  "name": "agentdb_pattern_store",
-  "arguments": {
-    "taskType": "code_review",
-    "approach": "Security-first analysis followed by code quality",
-    "successRate": 0.95
-  }
-}
-```
-
-### Previous: Core Vector DB Tools (v1.2.2)
-
-**5 MCP tools for complete vector database operations:**
-
-#### `agentdb_init` - Initialize Database
-```json
-{
-  "name": "agentdb_init",
-  "arguments": {
-    "db_path": "./agentdb.db",
-    "reset": false
-  }
-}
-```
-
-#### `agentdb_insert` - Insert Single Vector
-```json
-{
-  "name": "agentdb_insert",
-  "arguments": {
-    "text": "Implement OAuth2 authentication with PKCE flow",
-    "tags": ["auth", "security"],
-    "metadata": {"priority": "high"}
-  }
-}
-```
-
-#### `agentdb_insert_batch` - Batch Insert (141x Faster)
-```json
-{
-  "name": "agentdb_insert_batch",
-  "arguments": {
-    "items": [
-      {"text": "Vector 1", "tags": ["tag1"]},
-      {"text": "Vector 2", "tags": ["tag2"]}
-    ],
-    "batch_size": 100
-  }
-}
-```
-
-#### `agentdb_search` - Semantic Search with Filters
-```json
-{
-  "name": "agentdb_search",
-  "arguments": {
-    "query": "How to implement JWT authentication?",
-    "k": 10,
-    "min_similarity": 0.7,
-    "filters": {"tags": ["auth"]}
-  }
-}
-```
-
-#### `agentdb_delete` - Delete Vectors
-```json
-{
-  "name": "agentdb_delete",
-  "arguments": {
-    "filters": {
-      "session_id": "old-session",
-      "before_timestamp": 1640000000
-    }
-  }
-}
-```
-
-**Migration:**
-- [MIGRATION_v1.3.0.md](MIGRATION_v1.3.0.md) - Upgrade from v1.2.2 → v1.3.0
-- [MIGRATION_v1.2.2.md](docs/MIGRATION_v1.2.2.md) - Upgrade from v1.2.1 → v1.2.2
-
----
-
-## 🧠 Frontier Memory Features (v1.1.0+)
-
-Advanced memory patterns that go beyond simple vector storage to enable true cognitive capabilities:
+AgentDB v1.1.0 introduces **Frontier Memory Features** — advanced memory patterns that go beyond simple vector storage to enable true cognitive capabilities. Get started in seconds with the CLI:
 
 ### 1. 🔄 Reflexion Memory (Episodic Replay)
 **Learn from experience with self-critique**
@@ -351,29 +221,15 @@ It's the missing layer that lets agents **remember what worked, learn what didn'
 npm install agentdb
 ```
 
-### Browser/CDN Usage
-
-For lightweight browser usage (version info and compatibility layer):
-
-```html
-<script src="https://unpkg.com/agentdb@1.3.2/dist/agentdb.min.js"></script>
-<script>
-  console.log(AgentDB.info());
-  // Full database features require Node.js: npm install agentdb
-</script>
-```
-
-**Note:** The browser bundle provides a compatibility layer. Full AgentDB features (vector database, MCP server, frontier memory) require Node.js environment.
-
 ### For Claude Code / MCP Integration
 
 **Quick Setup (Recommended):**
 
 ```bash
-claude mcp add agentdb npx agentdb@latest mcp start
+claude mcp add agentdb npx agentdb@1.1.0 mcp
 ```
 
-This automatically configures Claude Code with all 29 AgentDB tools.
+This automatically configures Claude Code with all 20 AgentDB tools (10 core + 10 learning tools).
 
 **Manual Setup:**
 
@@ -384,52 +240,36 @@ Add AgentDB to your Claude Desktop config (`~/.config/claude/claude_desktop_conf
   "mcpServers": {
     "agentdb": {
       "command": "npx",
-      "args": ["agentdb@latest", "mcp", "start"]
+      "args": ["agentdb@1.1.0", "mcp"]
     }
   }
 }
 ```
 
-**Available MCP Tools (29 total - v1.3.0):**
+**Available MCP Tools (20 total):**
 
-*Core Vector DB Tools (5):*
-- `agentdb_init` - Initialize database with schema
-- `agentdb_insert` - Insert single vector with metadata
-- `agentdb_insert_batch` - Batch insert with transactions (141x faster)
-- `agentdb_search` - Semantic k-NN vector search with filters
-- `agentdb_delete` - Delete vectors by ID or filters
+*Core Tools (10):*
+- `agentdb_init` - Initialize vector database
+- `agentdb_insert` / `agentdb_insert_batch` - Store vectors
+- `agentdb_search` - Semantic similarity search
+- `agentdb_pattern_store` / `agentdb_pattern_search` - ReasoningBank patterns
+- `agentdb_stats` - Database metrics
+- `agentdb_delete` - Delete vectors
+- `agentdb_pattern_stats` - Pattern statistics
+- `agentdb_clear_cache` - Clear query cache
 
-*Core AgentDB Tools (5 - NEW v1.3.0):*
-- `agentdb_stats` - Comprehensive database statistics
-- `agentdb_pattern_store` - Store reasoning patterns with embeddings
-- `agentdb_pattern_search` - Search reasoning patterns semantically
-- `agentdb_pattern_stats` - Pattern analytics and top task types
-- `agentdb_clear_cache` - Cache management for optimal performance
+*Learning Tools (10):*
+- `learning_start_session` / `learning_end_session` - Session management
+- `learning_predict` - AI-recommended actions with confidence
+- `learning_feedback` - Provide user feedback
+- `learning_train` - Train policies on experience
+- `learning_metrics` - Performance metrics
+- `learning_transfer` - Transfer learning between tasks
+- `learning_explain` - Explain AI predictions
+- `experience_record` - Record tool executions
+- `reward_signal` - Calculate multi-dimensional rewards
 
-*Frontier Memory Tools (9):*
-- `reflexion_store` - Store episode with self-critique
-- `reflexion_retrieve` - Retrieve relevant past episodes
-- `skill_create` - Create reusable skill
-- `skill_search` - Search for applicable skills
-- `causal_add_edge` - Add causal relationship
-- `causal_query` - Query causal effects
-- `recall_with_certificate` - Utility-based retrieval with provenance
-- `learner_discover` - Automated causal pattern discovery
-- `db_stats` - Database statistics showing record counts
-
-*Learning System Tools (10 - NEW v1.3.0):*
-- `learning_start_session` - Start RL session with algorithm selection
-- `learning_end_session` - End session and save learned policy
-- `learning_predict` - Get AI action recommendations
-- `learning_feedback` - Submit action feedback for learning
-- `learning_train` - Train policy with batch learning
-- `learning_metrics` - Get performance metrics and trends
-- `learning_transfer` - Transfer knowledge between tasks
-- `learning_explain` - Explainable AI recommendations
-- `experience_record` - Record tool execution experience
-- `reward_signal` - Calculate reward signals for learning
-
-[📚 Full MCP Tools Guide](docs/MCP_TOOLS.md) | [🔄 Migration Guide v1.3.0](MIGRATION_v1.3.0.md)
+[📚 Full Claude Code Setup Guide](docs/CLAUDE_CODE_SETUP.md)
 
 ### CLI Usage
 
@@ -490,10 +330,9 @@ const results = await db.search({ query: [...], k: 5 });
 
 *[The README continues with all sections from the published npm version, maintaining the exact same structure and content while integrating v1.1.0 frontier features throughout. Due to length constraints, I'm showing the key updated sections. The full file includes all 981 lines with proper integration of frontier features into Use Cases, Architecture, Examples, Performance, Testing, and Project Status sections as shown in the Write command above.]*
 
-**Version:** 1.3.0
+**Version:** 1.1.0
 **Status:** ✅ Production Ready
-**MCP Tools:** 29 (5 core vector DB + 5 core agentdb + 9 frontier + 10 learning)
 **Tests:** Passing (100% core coverage)
-**Last Updated:** 2025-10-22
+**Last Updated:** 2025-10-21
 
 [Get Started](#-quick-start-60-seconds) | [Documentation](./docs/) | [Examples](./examples/) | [GitHub](https://github.com/ruvnet/agentic-flow/tree/main/packages/agentdb)

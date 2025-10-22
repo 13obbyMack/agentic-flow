@@ -2,6 +2,21 @@
 
 All notable changes to AgentDB will be documented in this file.
 
+## [1.3.2] - 2025-10-22
+
+### Added
+- **Browser Bundle:** Restored `dist/agentdb.min.js` for CDN/unpkg usage
+  - Compatible with existing demos and documentation that reference the browser bundle
+  - Provides version info and installation guidance
+  - Minimal footprint (1.29 KB) with UMD format support
+  - Available via: `https://unpkg.com/agentdb@1.3.2/dist/agentdb.min.js`
+
+### Technical Details
+- Added `build:browser` script to package.json
+- Browser bundle includes version info and helper methods
+- Note: Full database features still require Node.js environment
+- Browser bundle provides compatibility layer for existing integrations
+
 ## [1.3.1] - 2025-10-22
 
 ### Fixed
