@@ -12,14 +12,12 @@ export type { PatternData, RetrievalOptions, CausalInsight } from './HybridBacke
 export type { FailureAnalysis, SkillComposition } from './AdvancedMemory.js';
 
 // Re-export AgentDB controllers for advanced usage
-export {
-  ReflexionMemory,
-  SkillLibrary,
-  CausalMemoryGraph,
-  CausalRecall,
-  NightlyLearner,
-  EmbeddingService
-} from 'agentdb/controllers';
+export { ReflexionMemory } from 'agentdb/controllers/ReflexionMemory';
+export { SkillLibrary } from 'agentdb/controllers/SkillLibrary';
+export { CausalMemoryGraph } from 'agentdb/controllers/CausalMemoryGraph';
+export { CausalRecall } from 'agentdb/controllers/CausalRecall';
+export { NightlyLearner } from 'agentdb/controllers/NightlyLearner';
+export { EmbeddingService } from 'agentdb/controllers/EmbeddingService';
 
 // Original ReasoningBank implementations (backwards compatibility)
 export { retrieveMemories, formatMemoriesForPrompt } from './core/retrieve.js';

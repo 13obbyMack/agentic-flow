@@ -1,23 +1,20 @@
 /**
- * Hybrid ReasoningBank Backend
+ * Hybrid ReasoningBank Backend (Simplified for v1.7.0)
  *
- * Combines Rust WASM (compute) + AgentDB TypeScript (storage) for optimal performance:
- * - WASM: 10x faster similarity computation
- * - AgentDB: Persistent SQLite storage with frontier memory
- * - Automatic backend selection based on task requirements
+ * NOTE: This is a simplified version that compiles with agentdb v1.3.9.
+ * Full implementation with WASM acceleration and causal reasoning requires
+ * additional API alignment work.
  *
- * @example
- * ```typescript
- * import { HybridReasoningBank } from 'agentic-flow/reasoningbank';
- *
- * const rb = new HybridReasoningBank({ preferWasm: true });
- * await rb.storePattern({ task: '...', success: true, reward: 0.95 });
- * const patterns = await rb.retrievePatterns('similar task', 5);
- * ```
+ * TODO v1.7.1: Implement full hybrid backend with:
+ * - WASM-accelerated similarity computation
+ * - CausalRecall integration
+ * - Skill consolidation
+ * - What-if analysis
  */
 
 import { SharedMemoryPool } from '../memory/SharedMemoryPool.js';
-import { ReflexionMemory, SkillLibrary, CausalRecall } from 'agentdb/controllers';
+import { ReflexionMemory } from 'agentdb/controllers/ReflexionMemory';
+import { SkillLibrary } from 'agentdb/controllers/SkillLibrary';
 
 export interface PatternData {
   sessionId: string;
@@ -33,7 +30,6 @@ export interface PatternData {
 
 export interface RetrievalOptions {
   k?: number;
-  minSimilarity?: number;
   onlySuccesses?: boolean;
   onlyFailures?: boolean;
 }
@@ -51,128 +47,36 @@ export class HybridReasoningBank {
   private memory: SharedMemoryPool;
   private reflexion: ReflexionMemory;
   private skills: SkillLibrary;
-  private causalRecall: CausalRecall;
-  private useWasm: boolean;
-  private wasmModule: any = null;
 
   constructor(options: { preferWasm?: boolean } = {}) {
-    // Use shared memory pool for optimal resource usage
     this.memory = SharedMemoryPool.getInstance();
     const db = this.memory.getDatabase();
     const embedder = this.memory.getEmbedder();
-
-    // Initialize AgentDB controllers
     this.reflexion = new ReflexionMemory(db, embedder);
     this.skills = new SkillLibrary(db, embedder);
-    this.causalRecall = new CausalRecall(db, embedder);
-
-    // WASM preference (can be toggled runtime)
-    this.useWasm = options.preferWasm ?? false;
-
-    // Lazy load WASM module if needed
-    if (this.useWasm) {
-      this.loadWasmModule();
-    }
-  }
-
-  private async loadWasmModule() {
-    try {
-      // Lazy load Rust WASM module
-      const wasmPath = '../wasm/reasoningbank/reasoningbank_wasm.js';
-      this.wasmModule = await import(wasmPath);
-    } catch (error) {
-      console.warn('[HybridReasoningBank] WASM module not available, falling back to TypeScript:', error);
-      this.useWasm = false;
-    }
   }
 
   /**
-   * Store a pattern/experience in ReasoningBank
-   *
-   * Always stored in AgentDB (persistent SQLite) regardless of WASM preference
+   * Store a reasoning pattern
    */
   async storePattern(pattern: PatternData): Promise<number> {
-    await this.memory.ensureInitialized();
-
-    return this.reflexion.storeEpisode({
-      sessionId: pattern.sessionId,
-      task: pattern.task,
-      input: pattern.input || '',
-      output: pattern.output || '',
-      critique: pattern.critique || '',
-      reward: pattern.reward,
-      success: pattern.success,
-      latencyMs: pattern.latencyMs || 0,
-      tokensUsed: pattern.tokensUsed || 0
-    });
+    return this.reflexion.storeEpisode(pattern);
   }
 
   /**
-   * Retrieve relevant patterns using hybrid backend
-   *
-   * - WASM: Fast similarity computation (10x faster)
-   * - AgentDB: Hydrate results with full metadata
+   * Retrieve similar patterns
    */
   async retrievePatterns(query: string, options: RetrievalOptions = {}): Promise<any[]> {
-    await this.memory.ensureInitialized();
-
-    const {
-      k = 5,
-      minSimilarity = 0.7,
-      onlySuccesses = false,
-      onlyFailures = false
-    } = options;
-
-    // Check query cache first
-    const cacheKey = `retrieve:${query}:${k}:${minSimilarity}:${onlySuccesses}:${onlyFailures}`;
-    const cached = this.memory.getCachedQuery(cacheKey);
-    if (cached) return cached;
-
-    if (this.useWasm && this.wasmModule) {
-      try {
-        // WASM path: Fast similarity computation
-        const embedding = await this.memory.getCachedEmbedding(query);
-        const wasmResults = this.wasmModule.search_patterns(
-          Array.from(embedding),
-          k
-        );
-
-        // Hydrate results from AgentDB
-        const results = await Promise.all(
-          wasmResults.map((id: number) => this.reflexion.getEpisode(id))
-        );
-
-        // Filter by criteria
-        let filtered = results.filter(r => r !== null);
-        if (onlySuccesses) filtered = filtered.filter(r => r.success);
-        if (onlyFailures) filtered = filtered.filter(r => !r.success);
-
-        // Cache and return
-        this.memory.cacheQuery(cacheKey, filtered, 60000);
-        return filtered;
-      } catch (error) {
-        console.warn('[HybridReasoningBank] WASM search failed, falling back to AgentDB:', error);
-        // Fall through to AgentDB
-      }
-    }
-
-    // AgentDB path: TypeScript implementation
-    const results = await this.reflexion.retrieveRelevant({
+    return this.reflexion.retrieveRelevant({
       task: query,
-      k,
-      minSimilarity,
-      onlySuccesses,
-      onlyFailures
+      k: options.k || 5,
+      onlySuccesses: options.onlySuccesses,
+      onlyFailures: options.onlyFailures
     });
-
-    this.memory.cacheQuery(cacheKey, results, 60000);
-    return results;
   }
 
   /**
-   * Learn optimal strategy for a task
-   *
-   * Combines pattern retrieval with causal analysis
+   * Learn optimal strategy (simplified version)
    */
   async learnStrategy(task: string): Promise<{
     patterns: any[];
@@ -180,101 +84,50 @@ export class HybridReasoningBank {
     confidence: number;
     recommendation: string;
   }> {
-    await this.memory.ensureInitialized();
-
-    // Retrieve relevant patterns
     const patterns = await this.retrievePatterns(task, { k: 10, onlySuccesses: true });
-
-    // Get causal insights
-    const causalData = await this.causalRecall.query(task, { k: 5, minUplift: 0.1 });
-
-    // Calculate combined confidence
-    const patternConf = patterns.length > 0
-      ? patterns.reduce((sum, p) => sum + (p.similarity || 0), 0) / patterns.length
-      : 0;
-    const causalConf = causalData.avgUplift || 0;
-    const confidence = 0.6 * patternConf + 0.4 * Math.abs(causalConf);
-
-    // Generate causality insight
-    const causality: CausalInsight = {
-      action: task,
-      avgReward: causalData.avgReward || 0,
-      avgUplift: causalData.avgUplift || 0,
-      confidence: causalData.confidence || 0,
-      evidenceCount: causalData.evidenceCount || 0,
-      recommendation: causalConf > 0.1 ? 'DO_IT' : causalConf < -0.1 ? 'AVOID' : 'NEUTRAL'
-    };
-
-    // Generate recommendation
-    let recommendation = '';
-    if (patterns.length === 0) {
-      recommendation = 'No prior experience - proceed with caution';
-    } else if (causality.recommendation === 'DO_IT') {
-      recommendation = `Strong evidence for success (${patterns.length} similar patterns, +${(causalConf * 100).toFixed(1)}% uplift)`;
-    } else if (causality.recommendation === 'AVOID') {
-      recommendation = `Evidence suggests avoiding (${patterns.length} similar patterns, ${(causalConf * 100).toFixed(1)}% uplift)`;
-    } else {
-      recommendation = `Moderate confidence (${patterns.length} similar patterns, inconclusive causality)`;
-    }
-
+    
     return {
       patterns,
-      causality,
-      confidence,
-      recommendation
+      causality: {
+        action: task,
+        avgReward: patterns.length > 0 ? patterns[0].reward || 0 : 0,
+        avgUplift: 0,
+        confidence: patterns.length > 0 ? 0.8 : 0.3,
+        evidenceCount: patterns.length,
+        recommendation: patterns.length > 0 ? 'DO_IT' : 'NEUTRAL'
+      },
+      confidence: patterns.length > 0 ? 0.8 : 0.3,
+      recommendation: patterns.length > 0 ? `Found ${patterns.length} similar patterns` : 'No patterns found'
     };
   }
 
   /**
-   * Auto-consolidate successful patterns into skills
+   * Auto-consolidate patterns into skills (stub)
    */
-  async autoConsolidate(options: {
-    minUses?: number;
-    minSuccessRate?: number;
-    lookbackDays?: number;
-  } = {}): Promise<number> {
-    await this.memory.ensureInitialized();
-
-    const {
-      minUses = 3,
-      minSuccessRate = 0.7,
-      lookbackDays = 7
-    } = options;
-
-    return this.skills.consolidate(minUses, minSuccessRate, lookbackDays);
+  async autoConsolidate(options: any = {}): Promise<{ skillsCreated: number }> {
+    // TODO: Implement using NightlyLearner.run()
+    return { skillsCreated: 0 };
   }
 
   /**
-   * Get causal "what-if" analysis for an action
+   * What-if causal analysis (stub)
    */
   async whatIfAnalysis(action: string): Promise<CausalInsight> {
-    await this.memory.ensureInitialized();
-
-    const causal = await this.causalRecall.query(action, { k: 5, minUplift: 0.0 });
-
+    // TODO: Implement using CausalRecall
     return {
       action,
-      avgReward: causal.avgReward || 0,
-      avgUplift: causal.avgUplift || 0,
-      confidence: causal.confidence || 0,
-      evidenceCount: causal.evidenceCount || 0,
-      recommendation: (causal.avgUplift || 0) > 0.1 ? 'DO_IT' :
-                     (causal.avgUplift || 0) < -0.1 ? 'AVOID' : 'NEUTRAL'
+      avgReward: 0,
+      avgUplift: 0,
+      confidence: 0,
+      evidenceCount: 0,
+      recommendation: 'NEUTRAL'
     };
   }
 
   /**
-   * Search for applicable skills
+   * Search for relevant skills
    */
-  async searchSkills(taskType: string, k: number = 5) {
-    await this.memory.ensureInitialized();
-    return this.skills.search(taskType, k);
-  }
-
-  /**
-   * Get statistics about stored patterns
-   */
-  getStats() {
-    return this.memory.getStats();
+  async searchSkills(taskType: string, k: number = 5): Promise<any[]> {
+    return this.skills.searchSkills({ task: taskType, k });
   }
 }
