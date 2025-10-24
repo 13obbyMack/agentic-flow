@@ -10,5 +10,12 @@
     "esModuleInterop": true
   },
   "include": ["../src"],
-  "exclude": ["../src/examples/parallel-swarm-deployment.ts"]
+  "exclude": [
+    "../src/examples/parallel-swarm-deployment.ts",
+    "../src/agentdb/cli/**",
+    "../src/agentdb/benchmarks/**",
+    "../src/agentdb/tests/**",
+    "../src/agentdb/controllers/**",
+    "../src/agentdb/optimizations/**"
+  ]
 }
