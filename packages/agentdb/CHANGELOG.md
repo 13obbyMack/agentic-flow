@@ -2,6 +2,111 @@
 
 All notable changes to AgentDB will be documented in this file.
 
+## [1.3.9] - 2025-10-22
+
+### Fixed
+- **Browser Bundle:** `initializeAsync()` now properly creates all database tables
+  - Previously only returned resolved Promise without creating schemas
+  - Now creates all 5 tables: vectors, patterns, episodes, causal_edges, skills
+  - Ensures database is fully ready before resolving Promise
+  - Adds console logging for initialization confirmation
+  - Graceful error handling with fallback
+
+### Enhanced
+- **Initialization:** More robust async initialization pattern
+- **Developer Experience:** Clear console feedback when tables are created
+- **Error Handling:** Catches and logs initialization errors without breaking
+
+## [1.3.8] - 2025-10-22
+
+### Added
+- **Browser Bundle:** Added controller-style wrapper methods for frontier features
+  - `storePattern(patternData)` - Store reasoning patterns with metadata
+  - `storeEpisode(episodeData)` - Store Reflexion learning episodes
+  - `addCausalEdge(edgeData)` - Track causal relationships
+  - `storeSkill(skillData)` - Store reusable skills
+
+### Enhanced
+- **insert() method:** Now supports both signatures:
+  - `insert(text, metadata)` - Insert into vectors table (v1.0.7 compatible)
+  - `insert(table, data)` - Insert into any table with column mapping
+  - Automatic signature detection based on parameter types
+
+### Fixed
+- Full compatibility with marketing optimization demo
+- All frontier features now accessible via simple controller methods
+- Insert method handles both legacy and new API patterns
+
+## [1.3.7] - 2025-10-22
+
+### Added
+- **Browser Bundle:** Added higher-level database methods for full demo compatibility
+  - `insert(table, data)` - Insert records with automatic column mapping
+  - `search(query, options)` - Vector search with limit support
+  - `delete(table, condition)` - Delete records with WHERE conditions
+
+### Enhanced
+- **Database Schema:** Comprehensive schema with all AgentDB tables
+  - `vectors` - Core vector storage
+  - `patterns` - Skill library patterns
+  - `episodes` - Reflexion memory episodes
+  - `causal_edges` - Causal memory graph
+  - `skills` - Skill definitions
+
+### Fixed
+- Browser demos now work with all AgentDB frontier features
+- Full compatibility with pattern storage, episode tracking, and causal reasoning
+
+## [1.3.6] - 2025-10-22
+
+### Added
+- **Browser Bundle:** Added `initializeAsync()` method for newer demo compatibility
+  - Returns a resolved Promise for async/await patterns
+  - Maintains backward compatibility with v1.0.7 synchronous API
+  - Supports demos that use `await db.initializeAsync()`
+
+### Enhanced
+- Full compatibility with both old and new demo patterns
+- Synchronous v1.0.7 API: `new Database()` works immediately
+- Async newer API: `await db.initializeAsync()` also supported
+
+## [1.3.5] - 2025-10-22
+
+### Fixed
+- **Browser Bundle:** Fixed sql.js async initialization for browser compatibility
+  - Added `AgentDB.onReady(callback)` for async initialization
+  - Added `AgentDB.ready` flag to check initialization status
+  - sql.js now properly initializes before Database creation
+  - Fixes "sql.js not loaded" error in browser environments
+
+### Usage
+```html
+<script src="https://unpkg.com/agentdb@1.3.5/dist/agentdb.min.js"></script>
+<script>
+  // Wait for sql.js to initialize
+  AgentDB.onReady(function() {
+    const db = new AgentDB.Database();
+    // or
+    const db2 = new AgentDB.SQLiteVectorDB();
+  });
+</script>
+```
+
+## [1.3.4] - 2025-10-22
+
+### Fixed
+- **Browser Bundle:** Added `SQLiteVectorDB` export for compatibility with newer demos
+  - Export both `Database` (v1.0.7) and `SQLiteVectorDB` (newer API)
+  - Added `createVectorDB()` helper function
+  - Fixed ES6 module import support
+  - Backward compatible with all versions
+
+### Exports
+- `AgentDB.Database` - v1.0.7 compatible class
+- `AgentDB.SQLiteVectorDB` - Alias for newer demos
+- `AgentDB.createVectorDB()` - Helper function
+- Direct exports: `Database`, `SQLiteVectorDB`
+
 ## [1.3.3] - 2025-10-22
 
 ### Added

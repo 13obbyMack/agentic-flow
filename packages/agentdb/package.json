@@ -1,6 +1,6 @@
 {
   "name": "agentdb",
-  "version": "1.3.3",
+  "version": "1.3.9",
   "description": "AgentDB - Frontier Memory Features with MCP Integration: Causal reasoning, reflexion memory, skill library, and automated learning. 150x faster vector search. Full Claude Desktop support via Model Context Protocol.",
   "type": "module",
   "main": "dist/index.js",
@@ -26,6 +26,10 @@
     "build:browser": "node scripts/build-browser.js",
     "dev": "tsx src/cli/agentdb-cli.ts",
     "test": "vitest",
+    "test:unit": "vitest --run",
+    "test:browser": "vitest browser-bundle-unit.test.js --run",
+    "test:ci": "npm run test:browser && npm run build && npm run verify:bundle",
+    "verify:bundle": "node scripts/verify-bundle.js",
     "cli": "node dist/cli/agentdb-cli.js"
   },
   "keywords": [
