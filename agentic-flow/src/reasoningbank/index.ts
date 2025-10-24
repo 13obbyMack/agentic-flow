@@ -5,6 +5,9 @@
  * @since v1.7.0 - Integrated AgentDB for optimal performance
  */
 
+// Apply AgentDB runtime patch before any AgentDB imports
+import '../utils/agentdb-runtime-patch.js';
+
 // New hybrid backend (recommended for new code)
 export { HybridReasoningBank } from './HybridBackend.js';
 export { AdvancedMemorySystem } from './AdvancedMemory.js';
