@@ -29,7 +29,7 @@ export class EmbeddingService {
     if (this.config.provider === 'transformers') {
       // Use transformers.js for local embeddings
       try {
-        const { pipeline } = await import('@xenova/transformers');
+        const { pipeline } = await import('@xenova/transformers' as any);
         this.pipeline = await pipeline('feature-extraction', this.config.model);
       } catch (error) {
         console.warn('Transformers.js not available, falling back to mock embeddings');

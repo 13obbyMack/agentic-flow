@@ -8,7 +8,8 @@
  * - Progress tracking
  */
 
-import { Database } from 'better-sqlite3';
+// Database type from db-fallback
+type Database = any;
 import { EmbeddingService } from '../controllers/EmbeddingService';
 import { Episode } from '../controllers/ReflexionMemory';
 

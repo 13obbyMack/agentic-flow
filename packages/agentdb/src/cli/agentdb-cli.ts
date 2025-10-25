@@ -9,7 +9,7 @@
  * - Database management
  */
 
-import Database from 'better-sqlite3';
+import { createDatabase } from '../db-fallback.js';
 import { CausalMemoryGraph } from '../controllers/CausalMemoryGraph.js';
 import { CausalRecall } from '../controllers/CausalRecall.js';
 import { ExplainableRecall } from '../controllers/ExplainableRecall.js';
@@ -45,7 +45,7 @@ const log = {
 };
 
 class AgentDBCLI {
-  private db?: Database.Database;
+  private db?: any; // Database instance from createDatabase
   private causalGraph?: CausalMemoryGraph;
   private causalRecall?: CausalRecall;
   private explainableRecall?: ExplainableRecall;
@@ -56,7 +56,7 @@ class AgentDBCLI {
 
   async initialize(dbPath: string = './agentdb.db'): Promise<void> {
     // Initialize database
-    this.db = new Database(dbPath);
+    this.db = await createDatabase(dbPath);
 
     // Configure for performance
     this.db.pragma('journal_mode = WAL');
@@ -697,6 +697,12 @@ async function main() {
     return;
   }
 
+  // Handle init command
+  if (command === 'init') {
+    await handleInitCommand(args.slice(1));
+    return;
+  }
+
   const cli = new AgentDBCLI();
   const dbPath = process.env.AGENTDB_PATH || './agentdb.db';
 
@@ -729,6 +735,39 @@ async function main() {
 }
 
 // Command handlers
+
+// Init command handler
+async function handleInitCommand(args: string[]) {
+  const dbPath = args[0] || './agentdb.db';
+
+  log.info(`Initializing AgentDB at: ${dbPath}`);
+
+  // Check if database already exists
+  if (fs.existsSync(dbPath)) {
+    log.warning(`Database already exists at ${dbPath}`);
+    log.info('Use a different path or remove the existing file to reinitialize');
+    return;
+  }
+
+  // Create new database with schemas
+  const cli = new AgentDBCLI();
+  await cli.initialize(dbPath);
+
+  log.success(`✅ AgentDB initialized successfully at ${dbPath}`);
+  log.info('Database includes:');
+  log.info('  - Core vector tables (episodes, embeddings)');
+  log.info('  - Causal memory graph');
+  log.info('  - Reflexion memory');
+  log.info('  - Skill library');
+  log.info('  - Learning system');
+  log.info('');
+  log.info('Next steps:');
+  log.info('  - Use "agentdb mcp start" to start MCP server');
+  log.info('  - Use "agentdb causal add" to add causal edges');
+  log.info('  - Use "agentdb reflexion add" to store episodes');
+  log.info('  - See "agentdb help" for all commands');
+}
+
 async function handleMcpCommand(args: string[]) {
   const subcommand = args[0];
 
@@ -917,6 +956,10 @@ ${colors.bright}${colors.cyan}AgentDB CLI - Frontier Memory Features${colors.res
 
 ${colors.bright}USAGE:${colors.reset}
   agentdb <command> <subcommand> [options]
+
+${colors.bright}SETUP COMMANDS:${colors.reset}
+  agentdb init [db-path]
+    Initialize a new AgentDB database (default: ./agentdb.db)
 
 ${colors.bright}MCP COMMANDS:${colors.reset}
   agentdb mcp start

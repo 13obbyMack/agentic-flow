@@ -13,7 +13,8 @@
  * - Policy compliance
  */
 
-import { Database } from 'better-sqlite3';
+// Database type from db-fallback
+type Database = any;
 import { CausalMemoryGraph, CausalEdge } from './CausalMemoryGraph.js';
 import { ExplainableRecall, RecallCertificate } from './ExplainableRecall.js';
 import { EmbeddingService } from './EmbeddingService.js';

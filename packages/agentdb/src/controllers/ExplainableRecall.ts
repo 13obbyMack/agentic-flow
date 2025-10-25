@@ -12,7 +12,8 @@
  * - Explainable AI techniques
  */
 
-import { Database } from 'better-sqlite3';
+// Database type from db-fallback
+type Database = any;
 import * as crypto from 'crypto';
 
 export interface RecallCertificate {

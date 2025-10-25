@@ -19,7 +19,8 @@
  * - Model-Based RL
  */
 
-import { Database } from 'better-sqlite3';
+// Database type from db-fallback
+type Database = any;
 import { EmbeddingService } from './EmbeddingService.js';
 
 export interface LearningSession {

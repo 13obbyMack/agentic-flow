@@ -11,7 +11,8 @@ import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
 } from '@modelcontextprotocol/sdk/types.js';
-import Database from 'better-sqlite3';
+// Database type from db-fallback
+type Database = any;
 import { createDatabase } from '../db-fallback.js';
 import { CausalMemoryGraph } from '../controllers/CausalMemoryGraph.js';
 import { CausalRecall } from '../controllers/CausalRecall.js';
