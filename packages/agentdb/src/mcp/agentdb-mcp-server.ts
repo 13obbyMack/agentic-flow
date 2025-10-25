@@ -12,6 +12,7 @@ import {
   ListToolsRequestSchema,
 } from '@modelcontextprotocol/sdk/types.js';
 import Database from 'better-sqlite3';
+import { createDatabase } from '../db-fallback.js';
 import { CausalMemoryGraph } from '../controllers/CausalMemoryGraph.js';
 import { CausalRecall } from '../controllers/CausalRecall.js';
 import { ReflexionMemory } from '../controllers/ReflexionMemory.js';
@@ -28,7 +29,7 @@ import * as fs from 'fs';
 // Initialize AgentDB Controllers
 // ============================================================================
 const dbPath = process.env.AGENTDB_PATH || './agentdb.db';
-const db = new Database(dbPath);
+const db = await createDatabase(dbPath);
 
 // Configure for performance
 db.pragma('journal_mode = WAL');
