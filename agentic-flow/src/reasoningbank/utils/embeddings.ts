@@ -29,7 +29,8 @@ async function initializeEmbeddings(): Promise<void> {
   }
 
   // Detect npx environment (known transformer initialization issues)
-  const isNpxEnv = process.env.npm_config_user_agent?.includes('npx') ||
+  const isNpxEnv = process.env.npm_lifecycle_event === 'npx' ||
+                   process.env.npm_execpath?.includes('npx') ||
                    process.cwd().includes('/_npx/') ||
                    process.cwd().includes('\\_npx\\');
 
