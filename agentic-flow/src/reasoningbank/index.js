@@ -32,7 +32,7 @@ export { db };
 export async function initialize() {
     const config = loadConfig();
     console.log('[ReasoningBank] Initializing...');
-    console.log(`[ReasoningBank] Enabled: ${!!process.env.REASONINGBANK_ENABLED}`);
+    console.log('[ReasoningBank] Enabled: true (initializing...)');
     console.log(`[ReasoningBank] Database: ${process.env.CLAUDE_FLOW_DB_PATH || '.swarm/memory.db'}`);
     console.log(`[ReasoningBank] Embeddings: ${config.embeddings.provider}`);
     console.log(`[ReasoningBank] Retrieval k: ${config.retrieve.k}`);
