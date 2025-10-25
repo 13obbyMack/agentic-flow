@@ -19,6 +19,11 @@ import { SkillLibrary, Skill, SkillQuery } from '../controllers/SkillLibrary.js'
 import { EmbeddingService } from '../controllers/EmbeddingService.js';
 import * as fs from 'fs';
 import * as path from 'path';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 // Color codes for terminal output
 const colors = {
@@ -58,11 +63,44 @@ class AgentDBCLI {
     this.db.pragma('synchronous = NORMAL');
     this.db.pragma('cache_size = -64000');
 
-    // Load schema if needed
-    const schemaPath = path.join(__dirname, '../schemas/frontier-schema.sql');
-    if (fs.existsSync(schemaPath)) {
-      const schema = fs.readFileSync(schemaPath, 'utf-8');
-      this.db.exec(schema);
+    // Load both schemas: main schema (episodes, skills) + frontier schema (causal)
+    const schemaFiles = ['schema.sql', 'frontier-schema.sql'];
+    const basePaths = [
+      path.join(__dirname, '../schemas'),  // dist/cli/../schemas
+      path.join(__dirname, '../../src/schemas'),  // dist/cli/../../src/schemas
+      path.join(process.cwd(), 'dist/schemas'),  // current/dist/schemas
+      path.join(process.cwd(), 'src/schemas'),  // current/src/schemas
+      path.join(process.cwd(), 'node_modules/agentdb/dist/schemas')  // installed package
+    ];
+
+    let schemasLoaded = 0;
+    for (const basePath of basePaths) {
+      if (fs.existsSync(basePath)) {
+        for (const schemaFile of schemaFiles) {
+          const schemaPath = path.join(basePath, schemaFile);
+          if (fs.existsSync(schemaPath)) {
+            try {
+              const schema = fs.readFileSync(schemaPath, 'utf-8');
+              this.db.exec(schema);
+              schemasLoaded++;
+            } catch (error) {
+              log.error(`Failed to load schema from ${schemaPath}: ${(error as Error).message}`);
+            }
+          }
+        }
+        // If we found at least one schema in this path, we're done
+        if (schemasLoaded > 0) break;
+      }
+    }
+
+    if (schemasLoaded === 0) {
+      log.warning('Schema files not found, database may not be initialized properly');
+      log.info('__dirname: ' + __dirname);
+      log.info('process.cwd(): ' + process.cwd());
+      log.info('Tried base paths:');
+      basePaths.forEach(p => {
+        log.info(`  - ${p} (exists: ${fs.existsSync(p)})`);
+      });
     }
 
     // Initialize embedding service
@@ -651,13 +689,20 @@ async function main() {
     process.exit(0);
   }
 
+  const command = args[0];
+
+  // Handle MCP server command separately (doesn't need CLI initialization)
+  if (command === 'mcp') {
+    await handleMcpCommand(args.slice(1));
+    return;
+  }
+
   const cli = new AgentDBCLI();
   const dbPath = process.env.AGENTDB_PATH || './agentdb.db';
 
   try {
     await cli.initialize(dbPath);
 
-    const command = args[0];
     const subcommand = args[1];
 
     if (command === 'causal') {
@@ -684,6 +729,35 @@ async function main() {
 }
 
 // Command handlers
+async function handleMcpCommand(args: string[]) {
+  const subcommand = args[0];
+
+  if (subcommand === 'start' || !subcommand) {
+    log.info('Starting AgentDB MCP Server...');
+
+    // Dynamically import and run the MCP server
+    const mcpServerPath = path.join(__dirname, '../mcp/agentdb-mcp-server.js');
+
+    if (!fs.existsSync(mcpServerPath)) {
+      log.error('MCP server not found. Please rebuild the package: npm run build');
+      process.exit(1);
+    }
+
+    // Import and execute the MCP server module
+    try {
+      await import(mcpServerPath);
+      // The MCP server will run indefinitely, so we don't exit here
+    } catch (error) {
+      log.error(`Failed to start MCP server: ${(error as Error).message}`);
+      process.exit(1);
+    }
+  } else {
+    log.error(`Unknown mcp subcommand: ${subcommand}`);
+    log.info('Usage: agentdb mcp start');
+    process.exit(1);
+  }
+}
+
 async function handleCausalCommands(cli: AgentDBCLI, subcommand: string, args: string[]) {
   if (subcommand === 'add-edge') {
     await cli.causalAddEdge({
@@ -844,6 +918,10 @@ ${colors.bright}${colors.cyan}AgentDB CLI - Frontier Memory Features${colors.res
 ${colors.bright}USAGE:${colors.reset}
   agentdb <command> <subcommand> [options]
 
+${colors.bright}MCP COMMANDS:${colors.reset}
+  agentdb mcp start
+    Start the MCP server for Claude Desktop integration
+
 ${colors.bright}CAUSAL COMMANDS:${colors.reset}
   agentdb causal add-edge <cause> <effect> <uplift> [confidence] [sample-size]
     Add a causal edge manually
@@ -938,9 +1016,21 @@ ${colors.bright}EXAMPLES:${colors.reset}
 `);
 }
 
-// ESM entry point check
-if (import.meta.url === `file://${process.argv[1]}`) {
-  main().catch(console.error);
+// ESM entry point check - run if this is the main module
+// Handle both direct execution and npx/symlink scenarios
+const isMainModule = import.meta.url === `file://${process.argv[1]}` ||
+                     import.meta.url.endsWith('/agentdb-cli.js');
+
+if (isMainModule && process.argv.length > 2) {
+  main()
+    .then(() => {
+      // Force immediate exit to avoid onnxruntime cleanup crash
+      process.exit(0);
+    })
+    .catch((error) => {
+      console.error('AgentDB CLI Error:', error);
+      process.exit(1);
+    });
 }
 
 export { AgentDBCLI };
