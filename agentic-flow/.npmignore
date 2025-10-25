@@ -68,3 +68,9 @@ bun.lockb
 test-output/
 coverage/
 .nyc_output/
+
+# Rust build artifacts (massive - exclude from npm)
+reasoningbank/target/
+**/target/
+*.rlib
+*.rmeta
