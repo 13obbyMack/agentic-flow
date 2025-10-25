@@ -3,7 +3,9 @@
  * Operates on Claude Flow's memory.db at .swarm/memory.db
  */
 
-import BetterSqlite3, { Database } from 'better-sqlite3';
+// Use AgentDB's sql.js fallback instead of better-sqlite3
+type Database = any;
+const BetterSqlite3: any = null; // Not used
 import { existsSync, mkdirSync } from 'fs';
 import { join, dirname } from 'path';
 import type { ReasoningMemory, PatternEmbedding, TaskTrajectory, MattsRun } from './schema.js';

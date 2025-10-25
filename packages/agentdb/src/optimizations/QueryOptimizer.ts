@@ -9,7 +9,8 @@
  * - Query plan analysis
  */
 
-import { Database } from 'better-sqlite3';
+// Database type from db-fallback
+type Database = any;
 
 export interface CacheConfig {
   maxSize: number;

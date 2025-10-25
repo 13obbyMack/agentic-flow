@@ -1,16 +1,28 @@
 /**
- * ReasoningBank Plugin for Agentic-Flow
+ * ReasoningBank - Closed-loop memory system for AI agents
+ * Based on arXiv:2509.25140 (Google DeepMind)
  *
- * Main entry point and public API
- *
- * Paper: https://arxiv.org/html/2509.25140v1
- *
- * This is the Node.js backend using SQLite for persistent storage.
- * For browser environments, use './wasm-adapter.js' instead.
- * For automatic backend selection, use './backend-selector.js'.
+ * @since v1.7.0 - Integrated AgentDB for optimal performance
  */
 
-// Core algorithms
+// Apply AgentDB runtime patch before any AgentDB imports
+import '../utils/agentdb-runtime-patch.js';
+
+// New hybrid backend (recommended for new code)
+export { HybridReasoningBank } from './HybridBackend.js';
+export { AdvancedMemorySystem } from './AdvancedMemory.js';
+export type { PatternData, RetrievalOptions, CausalInsight } from './HybridBackend.js';
+export type { FailureAnalysis, SkillComposition } from './AdvancedMemory.js';
+
+// Re-export AgentDB controllers for advanced usage
+export { ReflexionMemory } from 'agentdb/controllers/ReflexionMemory';
+export { SkillLibrary } from 'agentdb/controllers/SkillLibrary';
+export { CausalMemoryGraph } from 'agentdb/controllers/CausalMemoryGraph';
+export { CausalRecall } from 'agentdb/controllers/CausalRecall';
+export { NightlyLearner } from 'agentdb/controllers/NightlyLearner';
+export { EmbeddingService } from 'agentdb/controllers/EmbeddingService';
+
+// Original ReasoningBank implementations (backwards compatibility)
 export { retrieveMemories, formatMemoriesForPrompt } from './core/retrieve.js';
 export type { RetrievedMemory } from './core/retrieve.js';
 
@@ -26,23 +38,13 @@ export type { ConsolidationResult } from './core/consolidate.js';
 export { mattsParallel, mattsSequential } from './core/matts.js';
 export type { MattsResult } from './core/matts.js';
 
-// Utilities
 export { computeEmbedding, clearEmbeddingCache } from './utils/embeddings.js';
 export { mmrSelection, cosineSimilarity } from './utils/mmr.js';
 export { scrubPII, containsPII, scrubMemory } from './utils/pii-scrubber.js';
 export { loadConfig } from './utils/config.js';
 
-// Import for internal use
-import { loadConfig } from './utils/config.js';
+// Re-export database utilities
 import * as db from './db/queries.js';
-import { retrieveMemories } from './core/retrieve.js';
-import { judgeTrajectory } from './core/judge.js';
-import { distillMemories } from './core/distill.js';
-import { shouldConsolidate, consolidate } from './core/consolidate.js';
-import type { Verdict } from './core/judge.js';
-import type { RetrievedMemory } from './core/retrieve.js';
-
-// Database
 export { db };
 export type {
   ReasoningMemory,
@@ -55,20 +57,21 @@ export type {
   TrajectoryStep
 } from './db/schema.js';
 
-/**
- * Initialize ReasoningBank
- * Run migrations and check configuration
- */
+// Original functions (backwards compatibility)
+import { loadConfig } from './utils/config.js';
+import { retrieveMemories } from './core/retrieve.js';
+import { judgeTrajectory } from './core/judge.js';
+import { distillMemories } from './core/distill.js';
+import { shouldConsolidate as shouldCons, consolidate as cons } from './core/consolidate.js';
+
 export async function initialize(): Promise<void> {
   const config = loadConfig();
-
   console.log('[ReasoningBank] Initializing...');
   console.log(`[ReasoningBank] Enabled: ${!!process.env.REASONINGBANK_ENABLED}`);
   console.log(`[ReasoningBank] Database: ${process.env.CLAUDE_FLOW_DB_PATH || '.swarm/memory.db'}`);
   console.log(`[ReasoningBank] Embeddings: ${config.embeddings.provider}`);
   console.log(`[ReasoningBank] Retrieval k: ${config.retrieve.k}`);
 
-  // Run migrations to create database and tables
   try {
     await db.runMigrations();
     console.log(`[ReasoningBank] Database migrated successfully`);
@@ -77,7 +80,6 @@ export async function initialize(): Promise<void> {
     throw new Error('ReasoningBank initialization failed: could not run migrations');
   }
 
-  // Check database connection
   try {
     const dbConn = db.getDb();
     const tables = dbConn.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name LIKE 'pattern%'").all();
@@ -90,10 +92,6 @@ export async function initialize(): Promise<void> {
   console.log('[ReasoningBank] Initialization complete');
 }
 
-/**
- * Full task execution with ReasoningBank
- * Combines retrieve → execute → judge → distill → consolidate
- */
 export async function runTask(options: {
   taskId: string;
   agentId: string;
@@ -101,54 +99,34 @@ export async function runTask(options: {
   domain?: string;
   executeFn: (memories: any[]) => Promise<any>;
 }): Promise<{
-  verdict: Verdict;
-  usedMemories: RetrievedMemory[];
+  verdict: any;
+  usedMemories: any[];
   newMemories: string[];
   consolidated: boolean;
 }> {
   console.log(`[ReasoningBank] Running task: ${options.taskId}`);
-
-  // 1. Retrieve memories
   const memories = await retrieveMemories(options.query, {
     domain: options.domain,
     agent: options.agentId
   });
-
   console.log(`[ReasoningBank] Retrieved ${memories.length} memories`);
-
-  // 2. Execute task with memories
   const trajectory = await options.executeFn(memories);
-
-  // 3. Judge trajectory
   const verdict = await judgeTrajectory(trajectory, options.query);
-
   console.log(`[ReasoningBank] Verdict: ${verdict.label} (${verdict.confidence})`);
-
-  // 4. Distill new memories
   const newMemories = await distillMemories(trajectory, verdict, options.query, {
     taskId: options.taskId,
     agentId: options.agentId,
     domain: options.domain
   });
-
   console.log(`[ReasoningBank] Distilled ${newMemories.length} new memories`);
-
-  // 5. Consolidate if needed
   let consolidated = false;
-  if (shouldConsolidate()) {
+  if (shouldCons()) {
     console.log('[ReasoningBank] Running consolidation...');
-    await consolidate();
+    await cons();
     consolidated = true;
   }
-
-  return {
-    verdict,
-    usedMemories: memories,
-    newMemories,
-    consolidated
-  };
+  return { verdict, usedMemories: memories, newMemories, consolidated };
 }
 
-// Version info
-export const VERSION = '1.0.0';
+export const VERSION = '1.7.1';
 export const PAPER_URL = 'https://arxiv.org/html/2509.25140v1';

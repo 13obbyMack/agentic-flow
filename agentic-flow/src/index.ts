@@ -1,3 +1,6 @@
+// Apply AgentDB runtime patch before any imports
+import "./utils/agentdb-runtime-patch.js";
+
 import "dotenv/config";
 import { webResearchAgent } from "./agents/webResearchAgent.js";
 import { codeReviewAgent } from "./agents/codeReviewAgent.js";

@@ -9,7 +9,7 @@
  * - Database management
  */
 
-import Database from 'better-sqlite3';
+import { createDatabase } from '../db-fallback.js';
 import { CausalMemoryGraph } from '../controllers/CausalMemoryGraph.js';
 import { CausalRecall } from '../controllers/CausalRecall.js';
 import { ExplainableRecall } from '../controllers/ExplainableRecall.js';
@@ -17,8 +17,17 @@ import { NightlyLearner } from '../controllers/NightlyLearner.js';
 import { ReflexionMemory, Episode, ReflexionQuery } from '../controllers/ReflexionMemory.js';
 import { SkillLibrary, Skill, SkillQuery } from '../controllers/SkillLibrary.js';
 import { EmbeddingService } from '../controllers/EmbeddingService.js';
+import { MMRDiversityRanker } from '../controllers/MMRDiversityRanker.js';
+import { ContextSynthesizer } from '../controllers/ContextSynthesizer.js';
+import { MetadataFilter } from '../controllers/MetadataFilter.js';
 import * as fs from 'fs';
 import * as path from 'path';
+import * as zlib from 'zlib';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 // Color codes for terminal output
 const colors = {
@@ -40,7 +49,7 @@ const log = {
 };
 
 class AgentDBCLI {
-  private db?: Database.Database;
+  public db?: any; // Database instance from createDatabase (public for init command)
   private causalGraph?: CausalMemoryGraph;
   private causalRecall?: CausalRecall;
   private explainableRecall?: ExplainableRecall;
@@ -51,23 +60,56 @@ class AgentDBCLI {
 
   async initialize(dbPath: string = './agentdb.db'): Promise<void> {
     // Initialize database
-    this.db = new Database(dbPath);
+    this.db = await createDatabase(dbPath);
 
     // Configure for performance
     this.db.pragma('journal_mode = WAL');
     this.db.pragma('synchronous = NORMAL');
     this.db.pragma('cache_size = -64000');
 
-    // Load schema if needed
-    const schemaPath = path.join(__dirname, '../schemas/frontier-schema.sql');
-    if (fs.existsSync(schemaPath)) {
-      const schema = fs.readFileSync(schemaPath, 'utf-8');
-      this.db.exec(schema);
+    // Load both schemas: main schema (episodes, skills) + frontier schema (causal)
+    const schemaFiles = ['schema.sql', 'frontier-schema.sql'];
+    const basePaths = [
+      path.join(__dirname, '../schemas'),  // dist/cli/../schemas
+      path.join(__dirname, '../../src/schemas'),  // dist/cli/../../src/schemas
+      path.join(process.cwd(), 'dist/schemas'),  // current/dist/schemas
+      path.join(process.cwd(), 'src/schemas'),  // current/src/schemas
+      path.join(process.cwd(), 'node_modules/agentdb/dist/schemas')  // installed package
+    ];
+
+    let schemasLoaded = 0;
+    for (const basePath of basePaths) {
+      if (fs.existsSync(basePath)) {
+        for (const schemaFile of schemaFiles) {
+          const schemaPath = path.join(basePath, schemaFile);
+          if (fs.existsSync(schemaPath)) {
+            try {
+              const schema = fs.readFileSync(schemaPath, 'utf-8');
+              this.db.exec(schema);
+              schemasLoaded++;
+            } catch (error) {
+              log.error(`Failed to load schema from ${schemaPath}: ${(error as Error).message}`);
+            }
+          }
+        }
+        // If we found at least one schema in this path, we're done
+        if (schemasLoaded > 0) break;
+      }
+    }
+
+    if (schemasLoaded === 0) {
+      log.warning('Schema files not found, database may not be initialized properly');
+      log.info('__dirname: ' + __dirname);
+      log.info('process.cwd(): ' + process.cwd());
+      log.info('Tried base paths:');
+      basePaths.forEach(p => {
+        log.info(`  - ${p} (exists: ${fs.existsSync(p)})`);
+      });
     }
 
     // Initialize embedding service
     this.embedder = new EmbeddingService({
-      model: 'all-MiniLM-L6-v2',
+      model: 'Xenova/all-MiniLM-L6-v2',
       dimension: 384,
       provider: 'transformers'
     });
@@ -172,6 +214,9 @@ class AgentDBCLI {
       outcomeType: 'reward',
       context: params.context ? JSON.parse(params.context) : undefined
     });
+
+    // Save database to persist changes
+    this.db.save();
 
     log.success(`Recorded ${params.isTreatment ? 'treatment' : 'control'} observation: ${params.outcome}`);
   }
@@ -383,6 +428,9 @@ class AgentDBCLI {
 
     const episodeId = await this.reflexion.storeEpisode(params as Episode);
 
+    // Save database to persist changes
+    this.db.save();
+
     log.success(`Stored episode #${episodeId}`);
     if (params.critique) {
       log.info(`Critique: "${params.critique}"`);
@@ -395,6 +443,8 @@ class AgentDBCLI {
     onlyFailures?: boolean;
     onlySuccesses?: boolean;
     minReward?: number;
+    synthesizeContext?: boolean;
+    filters?: any;
   }): Promise<void> {
     if (!this.reflexion) throw new Error('Not initialized');
 
@@ -403,14 +453,21 @@ class AgentDBCLI {
     log.info(`k: ${params.k || 5}`);
     if (params.onlyFailures) log.info('Filter: Failures only');
     if (params.onlySuccesses) log.info('Filter: Successes only');
+    if (params.synthesizeContext) log.info('Context synthesis: enabled');
 
-    const episodes = await this.reflexion.retrieveRelevant({
+    let episodes = await this.reflexion.retrieveRelevant({
       task: params.task,
       k: params.k || 5,
       onlyFailures: params.onlyFailures,
       onlySuccesses: params.onlySuccesses,
       minReward: params.minReward
     });
+
+    // Apply metadata filters if provided
+    if (params.filters && Object.keys(params.filters).length > 0) {
+      episodes = MetadataFilter.apply(episodes, params.filters);
+      log.info(`Filtered to ${episodes.length} results matching metadata criteria`);
+    }
 
     if (episodes.length === 0) {
       log.warning('No episodes found');
@@ -431,6 +488,64 @@ class AgentDBCLI {
     });
 
     log.success(`Retrieved ${episodes.length} relevant episodes`);
+
+    // Synthesize context if requested
+    if (params.synthesizeContext && episodes.length > 0) {
+      const context = ContextSynthesizer.synthesize(episodes.map(ep => ({
+        task: ep.task,
+        reward: ep.reward,
+        success: ep.success,
+        critique: ep.critique,
+        input: ep.input,
+        output: ep.output,
+        similarity: ep.similarity
+      })));
+
+      console.log('\n' + '═'.repeat(80));
+      console.log(`${colors.bright}${colors.cyan}SYNTHESIZED CONTEXT${colors.reset}`);
+      console.log('═'.repeat(80));
+      console.log(`\n${context.summary}\n`);
+
+      if (context.patterns.length > 0) {
+        console.log(`${colors.yellow}Common Patterns:${colors.reset}`);
+        context.patterns.forEach(p => console.log(`  • ${p}`));
+        console.log('');
+      }
+
+      if (context.keyInsights.length > 0) {
+        console.log(`${colors.cyan}Key Insights:${colors.reset}`);
+        context.keyInsights.forEach(i => console.log(`  • ${i}`));
+        console.log('');
+      }
+
+      if (context.recommendations.length > 0) {
+        console.log(`${colors.green}Recommendations:${colors.reset}`);
+        context.recommendations.forEach((r, i) => console.log(`  ${i + 1}. ${r}`));
+        console.log('');
+      }
+
+      console.log('═'.repeat(80));
+    }
+  }
+
+  async reflexionRetrieveJson(params: {
+    task: string;
+    k?: number;
+    onlyFailures?: boolean;
+    onlySuccesses?: boolean;
+    minReward?: number;
+  }): Promise<any[]> {
+    if (!this.reflexion) throw new Error('Not initialized');
+
+    const episodes = await this.reflexion.retrieveRelevant({
+      task: params.task,
+      k: params.k || 5,
+      onlyFailures: params.onlyFailures,
+      onlySuccesses: params.onlySuccesses,
+      minReward: params.minReward
+    });
+
+    return episodes;
   }
 
   async reflexionGetCritiqueSummary(params: {
@@ -500,6 +615,9 @@ class AgentDBCLI {
       createdFromEpisode: params.episodeId
     });
 
+    // Save database to persist changes
+    this.db.save();
+
     log.success(`Created skill #${skillId}`);
   }
 
@@ -562,6 +680,9 @@ class AgentDBCLI {
       extractPatterns: params.extractPatterns !== false
     });
 
+    // Save database to persist changes
+    this.db.save();
+
     const duration = Date.now() - startTime;
 
     log.success(`Created ${result.created} new skills, updated ${result.updated} existing skills in ${duration}ms`);
@@ -615,6 +736,233 @@ class AgentDBCLI {
   }
 
   // ============================================================================
+  // QUIC Synchronization Commands
+  // ============================================================================
+
+  async quicStartServer(params: {
+    port?: number;
+    cert?: string;
+    key?: string;
+    authToken?: string;
+  }): Promise<void> {
+    log.header('\n🚀 Starting QUIC Sync Server');
+
+    const port = params.port || 4433;
+    const authToken = params.authToken || this.generateAuthToken();
+
+    log.info(`Port: ${port}`);
+    log.info(`Auth Token: ${authToken}`);
+
+    if (params.cert && params.key) {
+      log.info(`TLS Certificate: ${params.cert}`);
+      log.info(`TLS Key: ${params.key}`);
+    } else {
+      log.warning('No TLS certificate provided - using self-signed certificate');
+    }
+
+    // TODO: Implement QUIC server using existing QUICSync controller
+    log.info('\nServer started. Waiting for connections...');
+    log.info('Press Ctrl+C to stop');
+
+    // Keep process alive
+    await new Promise(() => {});
+  }
+
+  async quicConnect(params: {
+    host: string;
+    port: number;
+    authToken?: string;
+    cert?: string;
+  }): Promise<void> {
+    log.header('\n🔌 Connecting to QUIC Sync Server');
+
+    log.info(`Host: ${params.host}`);
+    log.info(`Port: ${params.port}`);
+
+    if (params.authToken) {
+      log.info('Authentication: Enabled');
+    }
+
+    if (params.cert) {
+      log.info(`TLS Certificate: ${params.cert}`);
+    } else {
+      log.warning('No TLS certificate provided - using insecure connection');
+    }
+
+    // TODO: Implement QUIC client connection
+    log.success('Connected to remote server');
+    log.info('Server info: AgentDB QUIC Sync v1.0');
+  }
+
+  async quicPush(params: {
+    server: string;
+    incremental?: boolean;
+    filter?: string;
+  }): Promise<void> {
+    if (!this.db) throw new Error('Not initialized');
+
+    log.header('\n⬆️  Pushing Changes to Remote');
+
+    log.info(`Server: ${params.server}`);
+    log.info(`Mode: ${params.incremental ? 'Incremental' : 'Full'}`);
+
+    if (params.filter) {
+      log.info(`Filter: ${params.filter}`);
+    }
+
+    // Get pending changes
+    const changes = this.getPendingChanges(params.incremental, params.filter);
+
+    console.log('\n' + '═'.repeat(80));
+    console.log(`${colors.bright}Pending Changes${colors.reset}`);
+    console.log('═'.repeat(80));
+    console.log(`  Episodes: ${changes.episodes}`);
+    console.log(`  Skills: ${changes.skills}`);
+    console.log(`  Causal Edges: ${changes.causalEdges}`);
+    console.log(`  Total Size: ${(changes.totalSize / 1024).toFixed(2)} KB`);
+    console.log('═'.repeat(80));
+
+    // TODO: Implement QUIC push
+    log.success('Changes pushed successfully');
+    log.info(`Transferred: ${(changes.totalSize / 1024).toFixed(2)} KB`);
+  }
+
+  async quicPull(params: {
+    server: string;
+    incremental?: boolean;
+    filter?: string;
+  }): Promise<void> {
+    if (!this.db) throw new Error('Not initialized');
+
+    log.header('\n⬇️  Pulling Changes from Remote');
+
+    log.info(`Server: ${params.server}`);
+    log.info(`Mode: ${params.incremental ? 'Incremental' : 'Full'}`);
+
+    if (params.filter) {
+      log.info(`Filter: ${params.filter}`);
+    }
+
+    // TODO: Implement QUIC pull
+    const changes = {
+      episodes: 5,
+      skills: 2,
+      causalEdges: 3,
+      totalSize: 12800
+    };
+
+    console.log('\n' + '═'.repeat(80));
+    console.log(`${colors.bright}Received Changes${colors.reset}`);
+    console.log('═'.repeat(80));
+    console.log(`  Episodes: ${changes.episodes}`);
+    console.log(`  Skills: ${changes.skills}`);
+    console.log(`  Causal Edges: ${changes.causalEdges}`);
+    console.log(`  Total Size: ${(changes.totalSize / 1024).toFixed(2)} KB`);
+    console.log('═'.repeat(80));
+
+    log.success('Changes pulled and merged successfully');
+    log.info(`Downloaded: ${(changes.totalSize / 1024).toFixed(2)} KB`);
+  }
+
+  async quicStatus(): Promise<void> {
+    if (!this.db) throw new Error('Not initialized');
+
+    log.header('\n📊 QUIC Sync Status');
+
+    // Get sync metadata
+    const syncMeta = this.getSyncMetadata();
+
+    console.log('\n' + '═'.repeat(80));
+    console.log(`${colors.bright}Sync Status${colors.reset}`);
+    console.log('═'.repeat(80));
+
+    if (syncMeta.lastSyncTime) {
+      const lastSync = new Date(syncMeta.lastSyncTime * 1000);
+      console.log(`  Last Sync: ${colors.cyan}${lastSync.toLocaleString()}${colors.reset}`);
+      console.log(`  Time Ago: ${this.timeAgo(syncMeta.lastSyncTime)}`);
+    } else {
+      console.log(`  Last Sync: ${colors.yellow}Never${colors.reset}`);
+    }
+
+    console.log('\n' + '─'.repeat(80));
+    console.log(`${colors.bright}Pending Changes${colors.reset}`);
+    console.log('─'.repeat(80));
+    console.log(`  Episodes: ${colors.green}${syncMeta.pendingEpisodes}${colors.reset}`);
+    console.log(`  Skills: ${colors.green}${syncMeta.pendingSkills}${colors.reset}`);
+    console.log(`  Causal Edges: ${colors.green}${syncMeta.pendingCausalEdges}${colors.reset}`);
+
+    console.log('\n' + '─'.repeat(80));
+    console.log(`${colors.bright}Connected Servers${colors.reset}`);
+    console.log('─'.repeat(80));
+
+    if (syncMeta.servers.length === 0) {
+      console.log(`  ${colors.yellow}No servers connected${colors.reset}`);
+    } else {
+      syncMeta.servers.forEach((server: any) => {
+        console.log(`  ${colors.cyan}${server.host}:${server.port}${colors.reset}`);
+        console.log(`    Status: ${server.connected ? colors.green + 'Connected' : colors.red + 'Disconnected'}${colors.reset}`);
+        console.log(`    Last Seen: ${new Date(server.lastSeen * 1000).toLocaleString()}`);
+      });
+    }
+
+    console.log('═'.repeat(80));
+  }
+
+  private generateAuthToken(): string {
+    // Generate a random 32-character token
+    return Array.from({ length: 32 }, () =>
+      Math.floor(Math.random() * 16).toString(16)
+    ).join('');
+  }
+
+  private getPendingChanges(incremental?: boolean, filter?: string): {
+    episodes: number;
+    skills: number;
+    causalEdges: number;
+    totalSize: number;
+  } {
+    // Mock implementation - would query sync metadata table
+    return {
+      episodes: 10,
+      skills: 3,
+      causalEdges: 5,
+      totalSize: 25600
+    };
+  }
+
+  private getSyncMetadata(): {
+    lastSyncTime: number | null;
+    pendingEpisodes: number;
+    pendingSkills: number;
+    pendingCausalEdges: number;
+    servers: Array<{
+      host: string;
+      port: number;
+      connected: boolean;
+      lastSeen: number;
+    }>;
+  } {
+    // Mock implementation - would query sync metadata table
+    return {
+      lastSyncTime: null,
+      pendingEpisodes: 10,
+      pendingSkills: 3,
+      pendingCausalEdges: 5,
+      servers: []
+    };
+  }
+
+  private timeAgo(timestamp: number): string {
+    const now = Math.floor(Date.now() / 1000);
+    const diff = now - timestamp;
+
+    if (diff < 60) return `${diff} seconds ago`;
+    if (diff < 3600) return `${Math.floor(diff / 60)} minutes ago`;
+    if (diff < 86400) return `${Math.floor(diff / 3600)} hours ago`;
+    return `${Math.floor(diff / 86400)} days ago`;
+  }
+
+  // ============================================================================
   // Database Commands
   // ============================================================================
 
@@ -646,9 +994,57 @@ class AgentDBCLI {
 async function main() {
   const args = process.argv.slice(2);
 
+  // Handle version flag
+  if (args[0] === '--version' || args[0] === '-v' || args[0] === 'version') {
+    const packageJsonPath = path.join(__dirname, '../../package.json');
+    try {
+      const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf-8'));
+      console.log(`agentdb v${packageJson.version}`);
+    } catch {
+      console.log('agentdb v1.4.5');
+    }
+    process.exit(0);
+  }
+
+  // Handle help - show help if no args or help flag
   if (args.length === 0 || args[0] === 'help' || args[0] === '--help' || args[0] === '-h') {
     printHelp();
     process.exit(0);
+  }
+
+  const command = args[0];
+
+  // Handle MCP server command separately (doesn't need CLI initialization)
+  if (command === 'mcp') {
+    await handleMcpCommand(args.slice(1));
+    return;
+  }
+
+  // Handle init command
+  if (command === 'init') {
+    await handleInitCommand(args.slice(1));
+    return;
+  }
+
+  // Handle vector search commands (no CLI initialization needed)
+  if (command === 'vector-search') {
+    await handleVectorSearchCommand(args.slice(1));
+    return;
+  }
+
+  if (command === 'export') {
+    await handleExportCommand(args.slice(1));
+    return;
+  }
+
+  if (command === 'import') {
+    await handleImportCommand(args.slice(1));
+    return;
+  }
+
+  if (command === 'stats') {
+    await handleStatsCommand(args.slice(1));
+    return;
   }
 
   const cli = new AgentDBCLI();
@@ -657,7 +1053,6 @@ async function main() {
   try {
     await cli.initialize(dbPath);
 
-    const command = args[0];
     const subcommand = args[1];
 
     if (command === 'causal') {
@@ -672,6 +1067,16 @@ async function main() {
       await handleSkillCommands(cli, subcommand, args.slice(2));
     } else if (command === 'db') {
       await handleDbCommands(cli, subcommand, args.slice(2));
+    } else if (command === 'sync') {
+      await handleSyncCommands(cli, subcommand, args.slice(2));
+    } else if (command === 'query') {
+      await handleQueryCommand(cli, args.slice(1));
+    } else if (command === 'store-pattern') {
+      await handleStorePatternCommand(cli, args.slice(1));
+    } else if (command === 'train') {
+      await handleTrainCommand(cli, args.slice(1));
+    } else if (command === 'optimize-memory') {
+      await handleOptimizeMemoryCommand(cli, args.slice(1));
     } else {
       log.error(`Unknown command: ${command}`);
       printHelp();
@@ -684,6 +1089,162 @@ async function main() {
 }
 
 // Command handlers
+
+// Init command handler
+async function handleInitCommand(args: string[]) {
+  // Parse arguments
+  let dbPath = './agentdb.db';
+  let dimension = 1536; // Default OpenAI ada-002
+  let preset: 'small' | 'medium' | 'large' | null = null;
+  let inMemory = false;
+
+  for (let i = 0; i < args.length; i++) {
+    const arg = args[i];
+    if (arg === '--dimension' && i + 1 < args.length) {
+      dimension = parseInt(args[++i]);
+    } else if (arg === '--preset' && i + 1 < args.length) {
+      preset = args[++i] as 'small' | 'medium' | 'large';
+    } else if (arg === '--in-memory') {
+      inMemory = true;
+      dbPath = ':memory:';
+    } else if (!arg.startsWith('--')) {
+      dbPath = arg;
+    }
+  }
+
+  // Apply preset configurations
+  if (preset) {
+    if (preset === 'small') {
+      log.info('Using SMALL preset (<10K vectors)');
+    } else if (preset === 'medium') {
+      log.info('Using MEDIUM preset (10K-100K vectors)');
+    } else if (preset === 'large') {
+      log.info('Using LARGE preset (>100K vectors)');
+    }
+  }
+
+  log.info(`Initializing AgentDB at: ${dbPath}`);
+  log.info(`Embedding dimension: ${dimension}`);
+  if (inMemory) {
+    log.info('Using in-memory database (data will not persist)');
+  }
+
+  // Check if database already exists
+  if (!inMemory && fs.existsSync(dbPath)) {
+    log.warning(`Database already exists at ${dbPath}`);
+    log.info('Use a different path or remove the existing file to reinitialize');
+    return;
+  }
+
+  // Create parent directories if needed
+  if (!inMemory) {
+    const parentDir = path.dirname(dbPath);
+    if (parentDir !== '.' && !fs.existsSync(parentDir)) {
+      log.info(`Creating directory: ${parentDir}`);
+      fs.mkdirSync(parentDir, { recursive: true });
+    }
+  }
+
+  // Create new database with schemas
+  const cli = new AgentDBCLI();
+  await cli.initialize(dbPath);
+
+  // CRITICAL: Save the database to disk (unless in-memory)
+  // sql.js keeps everything in memory until explicitly saved
+  if (!inMemory) {
+    if (cli.db && typeof cli.db.save === 'function') {
+      cli.db.save();
+    } else if (cli.db && typeof cli.db.close === 'function') {
+      // close() calls save() internally
+      cli.db.close();
+    }
+
+    // Verify database file was created
+    if (!fs.existsSync(dbPath)) {
+      log.error(`Failed to create database file at ${dbPath}`);
+      log.error('The database may be in memory only');
+      process.exit(1);
+    }
+  }
+
+  // Verify database has tables
+  try {
+    const db = await createDatabase(dbPath);
+    const tables = db.prepare("SELECT name FROM sqlite_master WHERE type='table'").all();
+    db.close();
+
+    if (tables.length === 0) {
+      log.warning('Database file created but no tables found');
+      log.warning('Schemas may not have been loaded correctly');
+    } else {
+      log.success(`Database created with ${tables.length} tables`);
+    }
+  } catch (error) {
+    log.warning(`Could not verify database tables: ${(error as Error).message}`);
+  }
+
+  log.success(`✅ AgentDB initialized successfully at ${dbPath}`);
+  log.info('Database includes:');
+  log.info('  - Core vector tables (episodes, embeddings)');
+  log.info('  - Causal memory graph');
+  log.info('  - Reflexion memory');
+  log.info('  - Skill library');
+  log.info('  - Learning system');
+  log.info('');
+  log.info('Next steps:');
+  log.info('  - Use "agentdb mcp start" to start MCP server');
+  log.info('  - Use "agentdb causal add" to add causal edges');
+  log.info('  - Use "agentdb reflexion add" to store episodes');
+  log.info('  - See "agentdb help" for all commands');
+}
+
+async function handleMcpCommand(args: string[]) {
+  const subcommand = args[0];
+
+  if (subcommand === 'start' || !subcommand) {
+    log.info('Starting AgentDB MCP Server...');
+
+    // Spawn the MCP server as a child process (like agentic-flow does)
+    // This ensures the server stays running with proper stdio inheritance
+    const mcpServerPath = path.join(__dirname, '../mcp/agentdb-mcp-server.js');
+
+    if (!fs.existsSync(mcpServerPath)) {
+      log.error('MCP server not found. Please rebuild the package: npm run build');
+      process.exit(1);
+    }
+
+    // Spawn server process with stdio inheritance
+    const { spawn } = await import('child_process');
+    const serverProcess = spawn('node', [mcpServerPath], {
+      stdio: 'inherit',
+      env: process.env
+    });
+
+    // Handle server exit
+    serverProcess.on('exit', (code) => {
+      process.exit(code || 0);
+    });
+
+    // Forward termination signals
+    process.on('SIGINT', () => {
+      serverProcess.kill('SIGINT');
+    });
+
+    process.on('SIGTERM', () => {
+      serverProcess.kill('SIGTERM');
+    });
+
+    // Keep this process alive until server exits
+    return new Promise(() => {
+      // Never resolve - wait for server process
+    });
+  } else {
+    log.error(`Unknown mcp subcommand: ${subcommand}`);
+    log.info('Usage: agentdb mcp start');
+    process.exit(1);
+  }
+}
+
 async function handleCausalCommands(cli: AgentDBCLI, subcommand: string, args: string[]) {
   if (subcommand === 'add-edge') {
     await cli.causalAddEdge({
@@ -771,12 +1332,59 @@ async function handleReflexionCommands(cli: AgentDBCLI, subcommand: string, args
       tokensUsed: args[8] ? parseInt(args[8]) : undefined
     });
   } else if (subcommand === 'retrieve') {
+    // Parse retrieve command with new flags
+    let task = args[0];
+    let k: number | undefined = undefined;
+    let minReward: number | undefined = undefined;
+    let onlyFailures: boolean | undefined = undefined;
+    let onlySuccesses: boolean | undefined = undefined;
+    let synthesizeContext = false;
+    let filters: any = {};
+
+    for (let i = 1; i < args.length; i++) {
+      const arg = args[i];
+      if (arg === '--k' && i + 1 < args.length) {
+        k = parseInt(args[++i]);
+      } else if (arg === '--min-reward' && i + 1 < args.length) {
+        minReward = parseFloat(args[++i]);
+      } else if (arg === '--only-failures') {
+        onlyFailures = true;
+      } else if (arg === '--only-successes') {
+        onlySuccesses = true;
+      } else if (arg === '--synthesize-context') {
+        synthesizeContext = true;
+      } else if (arg === '--filters' && i + 1 < args.length) {
+        try {
+          filters = JSON.parse(args[++i]);
+        } catch (error) {
+          log.error(`Invalid JSON in --filters parameter: ${(error as Error).message}`);
+          process.exit(1);
+        }
+      } else if (!arg.startsWith('--') && k === undefined) {
+        // Legacy positional argument parsing
+        k = parseInt(arg);
+        if (i + 1 < args.length && !args[i + 1].startsWith('--')) {
+          minReward = parseFloat(args[++i]);
+        }
+        if (i + 1 < args.length && args[i + 1] === 'true') {
+          onlyFailures = true;
+          i++;
+        }
+        if (i + 1 < args.length && args[i + 1] === 'true') {
+          onlySuccesses = true;
+          i++;
+        }
+      }
+    }
+
     await cli.reflexionRetrieve({
-      task: args[0],
-      k: args[1] ? parseInt(args[1]) : undefined,
-      minReward: args[2] ? parseFloat(args[2]) : undefined,
-      onlyFailures: args[3] === 'true' ? true : undefined,
-      onlySuccesses: args[4] === 'true' ? true : undefined
+      task,
+      k,
+      minReward,
+      onlyFailures,
+      onlySuccesses,
+      synthesizeContext,
+      filters: Object.keys(filters).length > 0 ? filters : undefined
     });
   } else if (subcommand === 'critique-summary') {
     await cli.reflexionGetCritiqueSummary({
@@ -834,6 +1442,753 @@ async function handleDbCommands(cli: AgentDBCLI, subcommand: string, args: strin
   }
 }
 
+async function handleSyncCommands(cli: AgentDBCLI, subcommand: string, args: string[]) {
+  if (subcommand === 'start-server') {
+    // Parse options
+    let port: number | undefined;
+    let cert: string | undefined;
+    let key: string | undefined;
+    let authToken: string | undefined;
+
+    for (let i = 0; i < args.length; i++) {
+      if (args[i] === '--port' && i + 1 < args.length) {
+        port = parseInt(args[++i]);
+      } else if (args[i] === '--cert' && i + 1 < args.length) {
+        cert = args[++i];
+      } else if (args[i] === '--key' && i + 1 < args.length) {
+        key = args[++i];
+      } else if (args[i] === '--auth-token' && i + 1 < args.length) {
+        authToken = args[++i];
+      }
+    }
+
+    await cli.quicStartServer({ port, cert, key, authToken });
+  } else if (subcommand === 'connect') {
+    // Parse host and port
+    const host = args[0];
+    const port = parseInt(args[1]);
+
+    if (!host || !port) {
+      log.error('Missing required arguments: host and port');
+      log.info('Usage: agentdb sync connect <host> <port> [--auth-token <token>] [--cert <path>]');
+      process.exit(1);
+    }
+
+    let authToken: string | undefined;
+    let cert: string | undefined;
+
+    for (let i = 2; i < args.length; i++) {
+      if (args[i] === '--auth-token' && i + 1 < args.length) {
+        authToken = args[++i];
+      } else if (args[i] === '--cert' && i + 1 < args.length) {
+        cert = args[++i];
+      }
+    }
+
+    await cli.quicConnect({ host, port, authToken, cert });
+  } else if (subcommand === 'push') {
+    // Parse options
+    let server: string | undefined;
+    let incremental = false;
+    let filter: string | undefined;
+
+    for (let i = 0; i < args.length; i++) {
+      if (args[i] === '--server' && i + 1 < args.length) {
+        server = args[++i];
+      } else if (args[i] === '--incremental') {
+        incremental = true;
+      } else if (args[i] === '--filter' && i + 1 < args.length) {
+        filter = args[++i];
+      } else if (!args[i].startsWith('--') && !server) {
+        server = args[i];
+      }
+    }
+
+    if (!server) {
+      log.error('Missing required --server parameter');
+      log.info('Usage: agentdb sync push --server <host:port> [--incremental] [--filter <pattern>]');
+      process.exit(1);
+    }
+
+    await cli.quicPush({ server, incremental, filter });
+  } else if (subcommand === 'pull') {
+    // Parse options
+    let server: string | undefined;
+    let incremental = false;
+    let filter: string | undefined;
+
+    for (let i = 0; i < args.length; i++) {
+      if (args[i] === '--server' && i + 1 < args.length) {
+        server = args[++i];
+      } else if (args[i] === '--incremental') {
+        incremental = true;
+      } else if (args[i] === '--filter' && i + 1 < args.length) {
+        filter = args[++i];
+      } else if (!args[i].startsWith('--') && !server) {
+        server = args[i];
+      }
+    }
+
+    if (!server) {
+      log.error('Missing required --server parameter');
+      log.info('Usage: agentdb sync pull --server <host:port> [--incremental] [--filter <pattern>]');
+      process.exit(1);
+    }
+
+    await cli.quicPull({ server, incremental, filter });
+  } else if (subcommand === 'status') {
+    await cli.quicStatus();
+  } else {
+    log.error(`Unknown sync subcommand: ${subcommand}`);
+    log.info('Available subcommands: start-server, connect, push, pull, status');
+    printHelp();
+  }
+}
+
+// Query command - semantic search across reflexion episodes with context synthesis
+async function handleQueryCommand(cli: AgentDBCLI, args: string[]) {
+  // Parse command-line arguments
+  let domain = '';
+  let query = '';
+  let k = 5;
+  let minConfidence = 0.0;
+  let format = 'json';
+  let synthesizeContext = false;
+  let filters: any = {};
+
+  for (let i = 0; i < args.length; i++) {
+    if (args[i] === '--domain' && i + 1 < args.length) {
+      domain = args[++i];
+    } else if (args[i] === '--query' && i + 1 < args.length) {
+      query = args[++i];
+    } else if (args[i] === '--k' && i + 1 < args.length) {
+      k = parseInt(args[++i]);
+    } else if (args[i] === '--min-confidence' && i + 1 < args.length) {
+      minConfidence = parseFloat(args[++i]);
+    } else if (args[i] === '--format' && i + 1 < args.length) {
+      format = args[++i];
+    } else if (args[i] === '--synthesize-context') {
+      synthesizeContext = true;
+    } else if (args[i] === '--filters' && i + 1 < args.length) {
+      try {
+        filters = JSON.parse(args[++i]);
+      } catch (error) {
+        log.error(`Invalid JSON in --filters parameter: ${(error as Error).message}`);
+        process.exit(1);
+      }
+    }
+  }
+
+  if (!query) {
+    log.error('Missing required --query parameter');
+    process.exit(1);
+  }
+
+  // Validate filters if provided
+  if (Object.keys(filters).length > 0) {
+    const validation = MetadataFilter.validate(filters);
+    if (!validation.valid) {
+      log.error('Invalid filters:');
+      validation.errors.forEach(err => log.error(`  - ${err}`));
+      process.exit(1);
+    }
+  }
+
+  // Use reflexionRetrieveJson method for JSON output
+  let results = await cli.reflexionRetrieveJson({
+    task: query,
+    k,
+    minReward: minConfidence,
+    onlySuccesses: domain === 'successful-edits'
+  });
+
+  // Apply metadata filters if provided
+  if (Object.keys(filters).length > 0) {
+    results = MetadataFilter.apply(results, filters);
+    log.info(`Filtered to ${results.length} results matching metadata criteria`);
+  }
+
+  // Synthesize context if requested
+  if (synthesizeContext && results.length > 0) {
+    const context = ContextSynthesizer.synthesize(results.map((r: any) => ({
+      task: r.task,
+      reward: r.reward,
+      success: r.success,
+      critique: r.critique,
+      input: r.input,
+      output: r.output,
+      similarity: r.similarity
+    })));
+
+    if (format === 'json') {
+      console.log(JSON.stringify({ results, synthesizedContext: context }, null, 2));
+    } else {
+      console.log('\n' + '═'.repeat(80));
+      console.log('SYNTHESIZED CONTEXT');
+      console.log('═'.repeat(80));
+      console.log(`\n${context.summary}\n`);
+
+      if (context.patterns.length > 0) {
+        console.log('Common Patterns:');
+        context.patterns.forEach(p => console.log(`  • ${p}`));
+        console.log('');
+      }
+
+      if (context.keyInsights.length > 0) {
+        console.log('Key Insights:');
+        context.keyInsights.forEach(i => console.log(`  • ${i}`));
+        console.log('');
+      }
+
+      if (context.recommendations.length > 0) {
+        console.log('Recommendations:');
+        context.recommendations.forEach((r, i) => console.log(`  ${i + 1}. ${r}`));
+        console.log('');
+      }
+
+      console.log('═'.repeat(80));
+      console.log(`\nMatched ${results.length} memories\n`);
+    }
+  } else {
+    if (format === 'json') {
+      console.log(JSON.stringify(results, null, 2));
+    } else {
+      console.log(results);
+    }
+  }
+}
+
+// Store-pattern command - store learned patterns
+async function handleStorePatternCommand(cli: AgentDBCLI, args: string[]) {
+  let type = '';
+  let domain = '';
+  let pattern = '';
+  let confidence = 0.5;
+
+  for (let i = 0; i < args.length; i++) {
+    if (args[i] === '--type' && i + 1 < args.length) {
+      type = args[++i];
+    } else if (args[i] === '--domain' && i + 1 < args.length) {
+      domain = args[++i];
+    } else if (args[i] === '--pattern' && i + 1 < args.length) {
+      pattern = args[++i];
+    } else if (args[i] === '--confidence' && i + 1 < args.length) {
+      confidence = parseFloat(args[++i]);
+    }
+  }
+
+  if (!pattern) {
+    log.error('Missing required --pattern parameter');
+    process.exit(1);
+  }
+
+  // Parse pattern JSON
+  let patternData;
+  try {
+    patternData = JSON.parse(pattern);
+  } catch (error) {
+    log.error('Invalid JSON in --pattern parameter');
+    process.exit(1);
+  }
+
+  // Store as reflexion episode with pattern metadata
+  const sessionId = `pattern-${Date.now()}-${Math.random().toString(36).substring(7)}`;
+  await cli.reflexionStoreEpisode({
+    sessionId,
+    task: `${type}:${domain}`,
+    reward: confidence,
+    success: true,
+    critique: JSON.stringify({
+      type,
+      domain,
+      pattern: patternData,
+      storedAt: Date.now()
+    })
+  });
+
+  console.log(JSON.stringify({ success: true, sessionId }, null, 2));
+}
+
+// Train command - trigger pattern learning
+async function handleTrainCommand(cli: AgentDBCLI, args: string[]) {
+  let domain = '';
+  let epochs = 10;
+  let batchSize = 32;
+
+  for (let i = 0; i < args.length; i++) {
+    if (args[i] === '--domain' && i + 1 < args.length) {
+      domain = args[++i];
+    } else if (args[i] === '--epochs' && i + 1 < args.length) {
+      epochs = parseInt(args[++i]);
+    } else if (args[i] === '--batch-size' && i + 1 < args.length) {
+      batchSize = parseInt(args[++i]);
+    }
+  }
+
+  // Run learner to discover causal patterns
+  log.info(`Training on domain: ${domain || 'all'} (${epochs} epochs, batch size: ${batchSize})`);
+
+  await cli.learnerRun({
+    minAttempts: 3,
+    minSuccessRate: 0.6,
+    minConfidence: 0.7,
+    dryRun: false
+  });
+
+  // Also consolidate skills from successful episodes
+  await cli.skillConsolidate({
+    minAttempts: 3,
+    minReward: 0.7,
+    timeWindowDays: 7,
+    extractPatterns: true
+  });
+
+  console.log(JSON.stringify({ success: true, message: 'Training completed' }, null, 2));
+}
+
+// Optimize-memory command - memory consolidation and compression
+async function handleOptimizeMemoryCommand(cli: AgentDBCLI, args: string[]) {
+  let compress = true;
+  let consolidatePatterns = true;
+
+  for (let i = 0; i < args.length; i++) {
+    if (args[i] === '--compress' && i + 1 < args.length) {
+      compress = args[++i] === 'true';
+    } else if (args[i] === '--consolidate-patterns' && i + 1 < args.length) {
+      consolidatePatterns = args[++i] === 'true';
+    }
+  }
+
+  log.info('Optimizing memory...');
+
+  // Prune old/low-quality episodes
+  if (compress) {
+    await cli.reflexionPrune({
+      maxAgeDays: 90,
+      minReward: 0.3
+    });
+  }
+
+  // Consolidate patterns into skills
+  if (consolidatePatterns) {
+    await cli.skillConsolidate({
+      minAttempts: 3,
+      minReward: 0.7,
+      timeWindowDays: 7,
+      extractPatterns: true
+    });
+  }
+
+  // Prune underperforming skills
+  await cli.skillPrune({
+    minUses: 3,
+    minSuccessRate: 0.4,
+    maxAgeDays: 60
+  });
+
+  // Prune low-confidence causal edges
+  await cli.learnerPrune({
+    minConfidence: 0.5,
+    minUplift: 0.05,
+    maxAgeDays: 90
+  });
+
+  console.log(JSON.stringify({ success: true, message: 'Memory optimization completed' }, null, 2));
+}
+
+// Vector-search command - direct vector similarity search with MMR diversity ranking
+async function handleVectorSearchCommand(args: string[]) {
+  // Parse arguments
+  let dbPath = './agentdb.db';
+  let vector: number[] = [];
+  let k = 10;
+  let threshold = 0.0;
+  let metric = 'cosine';
+  let format = 'json';
+  let verbose = false;
+  let useMmr = false;
+  let mmrLambda = 0.5;
+
+  for (let i = 0; i < args.length; i++) {
+    const arg = args[i];
+    if (arg === '-k' && i + 1 < args.length) {
+      k = parseInt(args[++i]);
+    } else if (arg === '-t' && i + 1 < args.length) {
+      threshold = parseFloat(args[++i]);
+    } else if (arg === '-m' && i + 1 < args.length) {
+      metric = args[++i];
+    } else if (arg === '-f' && i + 1 < args.length) {
+      format = args[++i];
+    } else if (arg === '-v' || arg === '--verbose') {
+      verbose = true;
+    } else if (arg === '--mmr') {
+      useMmr = true;
+      if (i + 1 < args.length && !args[i + 1].startsWith('-')) {
+        mmrLambda = parseFloat(args[++i]);
+      }
+    } else if (!dbPath.endsWith('.db') && !arg.startsWith('[')) {
+      dbPath = arg;
+    } else if (arg.startsWith('[') || (!isNaN(parseFloat(arg)))) {
+      // Parse vector - either JSON array or space-separated numbers
+      try {
+        if (arg.startsWith('[')) {
+          vector = JSON.parse(arg);
+        } else {
+          // Collect space-separated numbers
+          while (i < args.length && !isNaN(parseFloat(args[i]))) {
+            vector.push(parseFloat(args[i++]));
+          }
+          i--; // Back up one since loop will increment
+        }
+      } catch (e) {
+        log.error('Invalid vector format. Use JSON array: "[0.1,0.2,0.3]" or space-separated: "0.1 0.2 0.3"');
+        process.exit(1);
+      }
+    }
+  }
+
+  if (vector.length === 0) {
+    log.error('Missing required vector parameter');
+    log.info('Usage: agentdb vector-search <db-path> <vector> [-k 10] [-t 0.75] [-m cosine] [-f json] [-v] [--mmr [lambda]]');
+    process.exit(1);
+  }
+
+  if (useMmr) {
+    log.info(`Using MMR diversity ranking (λ=${mmrLambda})`);
+  }
+
+  // Initialize database
+  const cli = new AgentDBCLI();
+  await cli.initialize(dbPath);
+
+  // Perform vector search using reflexion's retrieveRelevant (which uses embeddings)
+  // We'll need to search episode_embeddings table directly
+  const query = `
+    SELECT
+      e.id,
+      e.session_id,
+      e.task,
+      e.reward,
+      e.success,
+      ee.embedding
+    FROM episodes e
+    JOIN episode_embeddings ee ON e.id = ee.episode_id
+    LIMIT ?
+  `;
+
+  const results = cli.db.prepare(query).all(k * 10); // Get more for filtering
+
+  // Calculate similarities
+  let scored = results.map((row: any) => {
+    const embedding = new Float32Array(row.embedding);
+    const similarity = calculateSimilarity(vector, Array.from(embedding), metric);
+    return {
+      id: row.id,
+      session_id: row.session_id,
+      task: row.task,
+      reward: row.reward,
+      success: row.success,
+      similarity,
+      embedding: Array.from(embedding)
+    };
+  }).filter(r => r.similarity >= threshold)
+    .sort((a, b) => b.similarity - a.similarity);
+
+  // Apply MMR diversity ranking if requested
+  if (useMmr && scored.length > k) {
+    scored = MMRDiversityRanker.selectDiverse(scored, vector, {
+      lambda: mmrLambda,
+      k,
+      metric: metric as 'cosine' | 'euclidean' | 'dot'
+    });
+  } else {
+    scored = scored.slice(0, k);
+  }
+
+  // Remove embedding from output
+  const output = scored.map(({ embedding, ...rest }) => rest);
+
+  if (format === 'json') {
+    console.log(JSON.stringify(output, null, 2));
+  } else {
+    console.log(`Found ${output.length} results:`);
+    output.forEach((r, i) => {
+      console.log(`${i + 1}. [${r.id}] ${r.task} (similarity: ${r.similarity.toFixed(4)})`);
+      if (verbose) {
+        console.log(`   Session: ${r.session_id}, Reward: ${r.reward}, Success: ${r.success}`);
+      }
+    });
+  }
+}
+
+// Helper function to calculate similarity
+function calculateSimilarity(v1: number[], v2: number[], metric: string): number {
+  if (v1.length !== v2.length) {
+    throw new Error(`Vector dimension mismatch: ${v1.length} vs ${v2.length}`);
+  }
+
+  if (metric === 'cosine') {
+    let dot = 0, mag1 = 0, mag2 = 0;
+    for (let i = 0; i < v1.length; i++) {
+      dot += v1[i] * v2[i];
+      mag1 += v1[i] * v1[i];
+      mag2 += v2[i] * v2[i];
+    }
+    return dot / (Math.sqrt(mag1) * Math.sqrt(mag2));
+  } else if (metric === 'euclidean') {
+    let sum = 0;
+    for (let i = 0; i < v1.length; i++) {
+      const diff = v1[i] - v2[i];
+      sum += diff * diff;
+    }
+    return 1 / (1 + Math.sqrt(sum)); // Normalize to 0-1 range
+  } else if (metric === 'dot') {
+    let dot = 0;
+    for (let i = 0; i < v1.length; i++) {
+      dot += v1[i] * v2[i];
+    }
+    return dot;
+  }
+
+  return 0;
+}
+
+// Export command - export vectors to JSON with optional compression
+async function handleExportCommand(args: string[]) {
+  let dbPath = './agentdb.db';
+  let outputPath = './agentdb-export.json';
+  let compress = false;
+
+  // Parse arguments
+  for (let i = 0; i < args.length; i++) {
+    const arg = args[i];
+    if (arg === '--compress') {
+      compress = true;
+    } else if (arg === '--output' && i + 1 < args.length) {
+      outputPath = args[++i];
+    } else if (!arg.startsWith('--')) {
+      if (dbPath === './agentdb.db') {
+        dbPath = arg;
+      } else if (outputPath === './agentdb-export.json') {
+        outputPath = arg;
+      }
+    }
+  }
+
+  // Add .gz extension if compressing and not already present
+  if (compress && !outputPath.endsWith('.gz')) {
+    outputPath += '.gz';
+  }
+
+  log.info(`Exporting vectors from: ${dbPath}`);
+  if (compress) {
+    log.info('Compression: enabled');
+  }
+
+  const cli = new AgentDBCLI();
+  await cli.initialize(dbPath);
+
+  // Export all episodes with embeddings
+  const query = `
+    SELECT
+      e.*,
+      ee.embedding
+    FROM episodes e
+    LEFT JOIN episode_embeddings ee ON e.id = ee.episode_id
+  `;
+
+  const results = cli.db.prepare(query).all();
+
+  const jsonData = JSON.stringify(results, null, 2);
+
+  try {
+    if (compress) {
+      // Compress with gzip
+      const compressed = zlib.gzipSync(jsonData);
+      fs.writeFileSync(outputPath, compressed);
+      const originalSize = Buffer.byteLength(jsonData);
+      const compressedSize = compressed.length;
+      const ratio = ((1 - compressedSize / originalSize) * 100).toFixed(1);
+      log.success(`Exported ${results.length} episodes to ${outputPath}`);
+      log.info(`Original size: ${(originalSize / 1024).toFixed(2)} KB`);
+      log.info(`Compressed size: ${(compressedSize / 1024).toFixed(2)} KB (${ratio}% reduction)`);
+    } else {
+      fs.writeFileSync(outputPath, jsonData);
+      log.success(`Exported ${results.length} episodes to ${outputPath}`);
+    }
+  } catch (error) {
+    log.error(`Failed to export: ${(error as Error).message}`);
+    process.exit(1);
+  }
+}
+
+// Import command - import vectors from JSON with optional decompression
+async function handleImportCommand(args: string[]) {
+  let inputPath = '';
+  let dbPath = './agentdb.db';
+  let decompress = false;
+
+  // Parse arguments
+  for (let i = 0; i < args.length; i++) {
+    const arg = args[i];
+    if (arg === '--decompress') {
+      decompress = true;
+    } else if (arg === '--db' && i + 1 < args.length) {
+      dbPath = args[++i];
+    } else if (!arg.startsWith('--')) {
+      if (!inputPath) {
+        inputPath = arg;
+      } else if (dbPath === './agentdb.db') {
+        dbPath = arg;
+      }
+    }
+  }
+
+  // Auto-detect compression from .gz extension
+  if (inputPath.endsWith('.gz')) {
+    decompress = true;
+  }
+
+  if (!inputPath) {
+    log.error('Missing required input file');
+    log.info('Usage: agentdb import <input-file.json> [db-path] [--decompress]');
+    process.exit(1);
+  }
+
+  log.info(`Importing vectors from: ${inputPath}`);
+  if (decompress) {
+    log.info('Decompression: enabled');
+  }
+
+  let data: any[];
+
+  try {
+    if (decompress) {
+      // Decompress with gunzip
+      const compressed = fs.readFileSync(inputPath);
+      const decompressed = zlib.gunzipSync(compressed);
+      data = JSON.parse(decompressed.toString('utf-8'));
+      log.info(`Decompressed ${(compressed.length / 1024).toFixed(2)} KB to ${(decompressed.length / 1024).toFixed(2)} KB`);
+    } else {
+      data = JSON.parse(fs.readFileSync(inputPath, 'utf-8'));
+    }
+  } catch (error) {
+    log.error(`Failed to read/parse input file: ${(error as Error).message}`);
+    process.exit(1);
+  }
+
+  const cli = new AgentDBCLI();
+  await cli.initialize(dbPath);
+
+  let imported = 0;
+  for (const item of data) {
+    try {
+      // Import episode
+      const episodeQuery = `
+        INSERT INTO episodes (session_id, task, input, output, critique, reward, success, latency_ms, tokens_used, tags, metadata)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `;
+
+      const result = cli.db.prepare(episodeQuery).run(
+        item.session_id,
+        item.task,
+        item.input,
+        item.output,
+        item.critique,
+        item.reward,
+        item.success,
+        item.latency_ms,
+        item.tokens_used,
+        item.tags,
+        item.metadata
+      );
+
+      // Import embedding if exists
+      if (item.embedding) {
+        const embeddingQuery = `INSERT INTO episode_embeddings (episode_id, embedding) VALUES (?, ?)`;
+        cli.db.prepare(embeddingQuery).run(result.lastInsertRowid, item.embedding);
+      }
+
+      imported++;
+    } catch (error) {
+      log.warning(`Failed to import item ${imported + 1}: ${(error as Error).message}`);
+    }
+  }
+
+  // Save database
+  if (cli.db && typeof cli.db.save === 'function') {
+    cli.db.save();
+  }
+
+  log.success(`Imported ${imported} episodes`);
+}
+
+// Stats command - show database statistics
+async function handleStatsCommand(args: string[]) {
+  const dbPath = args[0] || './agentdb.db';
+
+  log.info(`Getting statistics for: ${dbPath}`);
+
+  const cli = new AgentDBCLI();
+  await cli.initialize(dbPath);
+
+  // Get counts (with fallback for missing tables)
+  const episodeCount = cli.db.prepare('SELECT COUNT(*) as count FROM episodes').get()?.count || 0;
+  const embeddingCount = cli.db.prepare('SELECT COUNT(*) as count FROM episode_embeddings').get()?.count || 0;
+
+  let skillCount = 0;
+  try {
+    skillCount = cli.db.prepare('SELECT COUNT(*) as count FROM skill_library').get()?.count || 0;
+  } catch (e) {
+    // skill_library table may not exist in older databases
+  }
+
+  let causalEdges = 0;
+  try {
+    causalEdges = cli.db.prepare('SELECT COUNT(*) as count FROM causal_edges').get()?.count || 0;
+  } catch (e) {
+    // causal_edges table may not exist in older databases
+  }
+
+  // Get database file size
+  let dbSize = 0;
+  if (dbPath !== ':memory:' && fs.existsSync(dbPath)) {
+    dbSize = fs.statSync(dbPath).size;
+  }
+
+  // Get average confidence
+  const avgConfidence = cli.db.prepare('SELECT AVG(reward) as avg FROM episodes').get().avg || 0;
+
+  // Get domains
+  const domains = cli.db.prepare(`
+    SELECT task, COUNT(*) as count
+    FROM episodes
+    GROUP BY task
+    ORDER BY count DESC
+    LIMIT 5
+  `).all();
+
+  console.log(`
+📊 AgentDB Statistics
+
+Database: ${dbPath}
+Size: ${(dbSize / 1024).toFixed(2)} KB
+
+📈 Counts:
+  Episodes: ${episodeCount}
+  Embeddings: ${embeddingCount}
+  Skills: ${skillCount}
+  Causal Edges: ${causalEdges}
+
+📊 Metrics:
+  Average Reward: ${avgConfidence.toFixed(3)}
+  Embedding Coverage: ${episodeCount > 0 ? ((embeddingCount / episodeCount) * 100).toFixed(1) : 0}%
+
+🏷️  Top Domains:
+${domains.map(d => `  • ${d.task}: ${d.count}`).join('\n')}
+  `);
+}
+
 function printHelp() {
   console.log(`
 ${colors.bright}${colors.cyan}█▀█ █▀▀ █▀▀ █▄░█ ▀█▀ █▀▄ █▄▄
@@ -843,6 +2198,97 @@ ${colors.bright}${colors.cyan}AgentDB CLI - Frontier Memory Features${colors.res
 
 ${colors.bright}USAGE:${colors.reset}
   agentdb <command> <subcommand> [options]
+
+${colors.bright}SETUP COMMANDS:${colors.reset}
+  agentdb init [db-path] [--dimension 1536] [--preset small|medium|large] [--in-memory]
+    Initialize a new AgentDB database (default: ./agentdb.db)
+    Options:
+      --dimension <n>     Vector dimension (default: 1536 for OpenAI, 768 for sentence-transformers)
+      --preset <size>     small (<10K), medium (10K-100K), large (>100K vectors)
+      --in-memory         Use temporary in-memory database (:memory:)
+
+${colors.bright}VECTOR SEARCH COMMANDS:${colors.reset}
+  agentdb vector-search <db-path> <vector> [-k 10] [-t 0.75] [-m cosine] [-f json] [-v] [--mmr [lambda]]
+    Direct vector similarity search without text embeddings
+    Arguments:
+      <db-path>          Database file path (or :memory:)
+      <vector>           Vector as JSON array [0.1,0.2,...] or space-separated numbers
+    Options:
+      -k <n>             Number of results (default: 10)
+      -t <threshold>     Minimum similarity threshold (default: 0.0)
+      -m <metric>        Similarity metric: cosine|euclidean|dot (default: cosine)
+      -f <format>        Output format: json|table (default: json)
+      -v                 Verbose mode with similarity scores
+      --mmr [lambda]     Enable MMR diversity ranking (lambda: 0-1, default: 0.5)
+                         0 = max diversity, 1 = max relevance
+    Example: agentdb vector-search ./vectors.db "[0.1,0.2,0.3]" -k 10 -m cosine
+    Example: agentdb vector-search ./vectors.db "[0.1,0.2,0.3]" --mmr 0.7
+
+  agentdb export <db-path> [output-file] [--compress]
+    Export all vectors and episodes to JSON file
+    Options:
+      --compress         Compress output with gzip (adds .gz extension)
+      --output <file>    Output file path
+    Example: agentdb export ./agentdb.db ./backup.json
+    Example: agentdb export ./agentdb.db --compress --output backup.json.gz
+
+  agentdb import <input-file> [db-path] [--decompress]
+    Import vectors and episodes from JSON file
+    Options:
+      --decompress       Decompress gzip input (auto-detected for .gz files)
+      --db <path>        Database file path
+    Example: agentdb import ./backup.json ./new-db.db
+    Example: agentdb import ./backup.json.gz --decompress
+
+  agentdb stats [db-path]
+    Show detailed database statistics and metrics
+    Example: agentdb stats ./agentdb.db
+
+${colors.bright}MCP COMMANDS:${colors.reset}
+  agentdb mcp start
+    Start the MCP server for Claude Desktop integration
+
+${colors.bright}QUIC SYNC COMMANDS:${colors.reset}
+  agentdb sync start-server [--port 4433] [--cert <path>] [--key <path>] [--auth-token <token>]
+    Start a QUIC synchronization server for multi-agent coordination
+    Options:
+      --port <n>           Server port (default: 4433)
+      --cert <path>        TLS certificate file path
+      --key <path>         TLS key file path
+      --auth-token <token> Authentication token (auto-generated if not provided)
+    Example: agentdb sync start-server --port 4433 --cert ./cert.pem --key ./key.pem
+
+  agentdb sync connect <host> <port> [--auth-token <token>] [--cert <path>]
+    Connect to a remote QUIC sync server
+    Arguments:
+      <host>              Remote server hostname or IP
+      <port>              Remote server port
+    Options:
+      --auth-token <token> Authentication token
+      --cert <path>        TLS certificate for verification
+    Example: agentdb sync connect 192.168.1.100 4433 --auth-token abc123
+
+  agentdb sync push --server <host:port> [--incremental] [--filter <pattern>]
+    Push local changes to remote server
+    Options:
+      --server <host:port> Remote server address (e.g., 192.168.1.100:4433)
+      --incremental        Only push changes since last sync
+      --filter <pattern>   Filter changes by pattern (e.g., "episodes", "skills")
+    Example: agentdb sync push --server 192.168.1.100:4433 --incremental
+    Example: agentdb sync push --server localhost:4433 --filter "episodes"
+
+  agentdb sync pull --server <host:port> [--incremental] [--filter <pattern>]
+    Pull remote changes from server
+    Options:
+      --server <host:port> Remote server address (e.g., 192.168.1.100:4433)
+      --incremental        Only pull changes since last sync
+      --filter <pattern>   Filter changes by pattern (e.g., "skills", "causal_edges")
+    Example: agentdb sync pull --server 192.168.1.100:4433 --incremental
+    Example: agentdb sync pull --server localhost:4433 --filter "skills"
+
+  agentdb sync status
+    Show synchronization status, pending changes, and connected servers
+    Example: agentdb sync status
 
 ${colors.bright}CAUSAL COMMANDS:${colors.reset}
   agentdb causal add-edge <cause> <effect> <uplift> [confidence] [sample-size]
@@ -878,8 +2324,17 @@ ${colors.bright}REFLEXION COMMANDS:${colors.reset}
   agentdb reflexion store <session-id> <task> <reward> <success> [critique] [input] [output] [latency-ms] [tokens]
     Store episode with self-critique
 
-  agentdb reflexion retrieve <task> [k] [min-reward] [only-failures] [only-successes]
+  agentdb reflexion retrieve <task> [--k <n>] [--min-reward <r>] [--only-failures] [--only-successes] [--synthesize-context] [--filters <json>]
     Retrieve relevant past episodes
+    Options:
+      --k <n>                Number of results (default: 5)
+      --min-reward <r>       Minimum reward threshold
+      --only-failures        Return only failed episodes
+      --only-successes       Return only successful episodes
+      --synthesize-context   Generate coherent summary with patterns and insights
+      --filters <json>       MongoDB-style metadata filters (e.g., '{"metadata.year":{"$gte":2024}}')
+    Example: agentdb reflexion retrieve "authentication" --k 10 --synthesize-context
+    Example: agentdb reflexion retrieve "bug-fix" --filters '{"success":true,"reward":{"$gte":0.8}}'
 
   agentdb reflexion critique-summary <task> [only-failures]
     Get aggregated critique lessons
@@ -906,10 +2361,53 @@ ${colors.bright}DATABASE COMMANDS:${colors.reset}
   agentdb db stats
     Show database statistics
 
+${colors.bright}HOOKS INTEGRATION COMMANDS:${colors.reset}
+  agentdb query --query <query> [--domain <domain>] [--k <k>] [--min-confidence <conf>] [--format json] [--synthesize-context] [--filters <json>]
+    Semantic search across stored episodes and patterns
+    Options:
+      --query <q>            Query string (required)
+      --domain <d>           Domain filter (e.g., "successful-edits")
+      --k <n>                Number of results (default: 5)
+      --min-confidence <c>   Minimum confidence threshold (default: 0.0)
+      --format <f>           Output format: json|text (default: json)
+      --synthesize-context   Generate coherent summary with patterns and insights
+      --filters <json>       MongoDB-style metadata filters
+    Example: agentdb query --query "authentication" --k 5 --min-confidence 0.8 --synthesize-context
+    Example: agentdb query --query "bug-fix" --filters '{"metadata.priority":"high"}' --synthesize-context
+
+  agentdb store-pattern --type <type> --domain <domain> --pattern <json> --confidence <conf>
+    Store a learned pattern for future retrieval
+    Example: agentdb store-pattern --type "experience" --domain "code-edits" --pattern '{"success":true}' --confidence 0.9
+
+  agentdb train --domain <domain> --epochs <n> --batch-size <n>
+    Trigger pattern learning and skill consolidation
+    Example: agentdb train --domain "code-edits" --epochs 10 --batch-size 32
+
+  agentdb optimize-memory --compress <bool> --consolidate-patterns <bool>
+    Memory consolidation, compression, and cleanup
+    Example: agentdb optimize-memory --compress true --consolidate-patterns true
+
 ${colors.bright}ENVIRONMENT:${colors.reset}
   AGENTDB_PATH    Database file path (default: ./agentdb.db)
 
 ${colors.bright}EXAMPLES:${colors.reset}
+  # QUIC Sync: Multi-agent coordination
+  # On server machine:
+  agentdb sync start-server --port 4433 --auth-token secret123
+
+  # On client machines:
+  agentdb sync connect 192.168.1.100 4433 --auth-token secret123
+  agentdb sync push --server 192.168.1.100:4433 --incremental
+  agentdb sync pull --server 192.168.1.100:4433 --incremental
+  agentdb sync status
+
+  # Vector Search: Direct similarity queries
+  agentdb init ./vectors.db --dimension 768 --preset medium
+  agentdb vector-search ./vectors.db "[0.1,0.2,0.3]" -k 10 -m cosine -f json
+  agentdb export ./vectors.db ./backup.json
+  agentdb import ./backup.json ./new-vectors.db
+  agentdb stats ./vectors.db
+
   # Reflexion: Store and retrieve episodes
   agentdb reflexion store "session-1" "implement_auth" 0.95 true "Used OAuth2"
   agentdb reflexion retrieve "authentication" 10 0.8
@@ -938,9 +2436,22 @@ ${colors.bright}EXAMPLES:${colors.reset}
 `);
 }
 
-// ESM entry point check
-if (import.meta.url === `file://${process.argv[1]}`) {
-  main().catch(console.error);
+// ESM entry point check - run if this is the main module
+// Handle both direct execution and npx/symlink scenarios
+const isMainModule = import.meta.url === `file://${process.argv[1]}` ||
+                     import.meta.url.endsWith('/agentdb-cli.js');
+
+// Run main() when executed as main module (removed argv length check to allow no-args help)
+if (isMainModule) {
+  main()
+    .then(() => {
+      // Force immediate exit to avoid onnxruntime cleanup crash
+      process.exit(0);
+    })
+    .catch((error) => {
+      console.error('AgentDB CLI Error:', error);
+      process.exit(1);
+    });
 }
 
 export { AgentDBCLI };

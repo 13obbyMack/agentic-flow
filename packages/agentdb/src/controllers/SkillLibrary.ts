@@ -8,7 +8,8 @@
  * https://arxiv.org/abs/2305.16291
  */
 
-import { Database } from 'better-sqlite3';
+// Database type from db-fallback
+type Database = any;
 import { EmbeddingService } from './EmbeddingService.js';
 
 export interface Skill {

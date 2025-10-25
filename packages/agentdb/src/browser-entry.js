@@ -5,6 +5,34 @@
 
 import initSqlJs from 'sql.js';
 
+/**
+ * Detect if running in browser environment
+ */
+function isBrowser() {
+  return typeof window !== 'undefined' && typeof window.document !== 'undefined';
+}
+
+/**
+ * Get appropriate WASM file locator based on environment
+ */
+function getWASMLocator() {
+  if (isBrowser()) {
+    // In browser, use CDN
+    return (file) => `https://cdn.jsdelivr.net/npm/sql.js@1.13.0/dist/${file}`;
+  } else {
+    // In Node.js, try to use local file (if available)
+    return (file) => {
+      try {
+        // This will be resolved at runtime
+        return new URL(`../../node_modules/sql.js/dist/${file}`, import.meta.url).pathname;
+      } catch {
+        // Fallback to CDN if local files not found
+        return `https://cdn.jsdelivr.net/npm/sql.js@1.13.0/dist/${file}`;
+      }
+    };
+  }
+}
+
 class AgentDBBrowser {
   constructor() {
     this.db = null;
@@ -15,13 +43,20 @@ class AgentDBBrowser {
   async init() {
     if (this.initialized) return;
 
-    // Initialize sql.js WASM
-    this.SQL = await initSqlJs({
-      locateFile: file => `https://sql.js.org/dist/${file}`
-    });
+    try {
+      // Initialize sql.js WASM with environment-appropriate path
+      this.SQL = await initSqlJs({
+        locateFile: getWASMLocator()
+      });
 
-    this.db = new this.SQL.Database();
-    this.initialized = true;
+      this.db = new this.SQL.Database();
+      this.initialized = true;
+
+      console.log('[AgentDB Browser] Initialized successfully');
+    } catch (error) {
+      console.error('[AgentDB Browser] Failed to initialize:', error.message);
+      throw new Error(`AgentDB initialization failed: ${error.message}`);
+    }
 
     // Create basic schema
     this.db.run(`

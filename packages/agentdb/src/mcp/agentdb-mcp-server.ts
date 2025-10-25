@@ -11,7 +11,9 @@ import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
 } from '@modelcontextprotocol/sdk/types.js';
-import Database from 'better-sqlite3';
+// Database type from db-fallback
+type Database = any;
+import { createDatabase } from '../db-fallback.js';
 import { CausalMemoryGraph } from '../controllers/CausalMemoryGraph.js';
 import { CausalRecall } from '../controllers/CausalRecall.js';
 import { ReflexionMemory } from '../controllers/ReflexionMemory.js';
@@ -21,37 +23,21 @@ import { LearningSystem } from '../controllers/LearningSystem.js';
 import { EmbeddingService } from '../controllers/EmbeddingService.js';
 import { BatchOperations } from '../optimizations/BatchOperations.js';
 import { ReasoningBank } from '../controllers/ReasoningBank.js';
+import {
+  validateId,
+  validateTimestamp,
+  validateSessionId,
+  ValidationError,
+  handleSecurityError,
+} from '../security/input-validation.js';
 import * as path from 'path';
 import * as fs from 'fs';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
 
-// ============================================================================
-// Initialize AgentDB Controllers
-// ============================================================================
-const dbPath = process.env.AGENTDB_PATH || './agentdb.db';
-const db = new Database(dbPath);
-
-// Configure for performance
-db.pragma('journal_mode = WAL');
-db.pragma('synchronous = NORMAL');
-db.pragma('cache_size = -64000');
-
-// Initialize embedding service
-const embeddingService = new EmbeddingService({
-  model: 'Xenova/all-MiniLM-L6-v2',
-  dimension: 384,
-  provider: 'transformers'
-});
-await embeddingService.initialize();
-
-// Initialize all controllers
-const causalGraph = new CausalMemoryGraph(db);
-const reflexion = new ReflexionMemory(db, embeddingService);
-const skills = new SkillLibrary(db, embeddingService);
-const causalRecall = new CausalRecall(db, embeddingService);
-const learner = new NightlyLearner(db, embeddingService);
-const learningSystem = new LearningSystem(db, embeddingService);
-const batchOps = new BatchOperations(db, embeddingService);
-const reasoningBank = new ReasoningBank(db, embeddingService);
+// ES module equivalent of __dirname
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 // ============================================================================
 // Helper Functions for Core Vector DB Operations
@@ -60,7 +46,8 @@ const reasoningBank = new ReasoningBank(db, embeddingService);
 /**
  * Initialize database schema
  */
-function initializeSchema(): void {
+function initializeSchema(database: any): void {
+  const db = database;
   // Episodes table (vector store)
   db.exec(`
     CREATE TABLE IF NOT EXISTS episodes (
@@ -136,7 +123,11 @@ function initializeSchema(): void {
       uplift REAL NOT NULL,
       confidence REAL DEFAULT 0.95,
       sample_size INTEGER DEFAULT 0,
-      evidence_ids TEXT
+      evidence_ids TEXT,
+      experiment_ids TEXT,
+      confounder_score REAL DEFAULT 0.0,
+      mechanism TEXT,
+      metadata TEXT
     );
 
     CREATE INDEX IF NOT EXISTS idx_causal_from ON causal_edges(from_memory_id, from_memory_type);
@@ -221,6 +212,59 @@ function cosineSimilarity(a: Float32Array, b: Float32Array): number {
 
   return dotProduct / (Math.sqrt(normA) * Math.sqrt(normB));
 }
+
+// ============================================================================
+// Initialize Database and Controllers
+// ============================================================================
+const dbPath = process.env.AGENTDB_PATH || './agentdb.db';
+const db = await createDatabase(dbPath);
+
+// Configure for performance
+db.pragma('journal_mode = WAL');
+db.pragma('synchronous = NORMAL');
+db.pragma('cache_size = -64000');
+
+// Initialize schema automatically on server start using SQL files
+const schemaPath = path.join(__dirname, '../schemas/schema.sql');
+const frontierSchemaPath = path.join(__dirname, '../schemas/frontier-schema.sql');
+
+try {
+  if (fs.existsSync(schemaPath)) {
+    const schemaSQL = fs.readFileSync(schemaPath, 'utf-8');
+    db.exec(schemaSQL);
+    console.error('✅ Main schema loaded');
+  }
+
+  if (fs.existsSync(frontierSchemaPath)) {
+    const frontierSQL = fs.readFileSync(frontierSchemaPath, 'utf-8');
+    db.exec(frontierSQL);
+    console.error('✅ Frontier schema loaded');
+  }
+
+  console.error('✅ Database schema initialized');
+} catch (error) {
+  console.error('⚠️  Schema initialization failed, using fallback:', (error as Error).message);
+  // Fallback to initializeSchema function if SQL files not found
+  initializeSchema(db);
+}
+
+// Initialize embedding service
+const embeddingService = new EmbeddingService({
+  model: 'Xenova/all-MiniLM-L6-v2',
+  dimension: 384,
+  provider: 'transformers'
+});
+await embeddingService.initialize();
+
+// Initialize all controllers
+const causalGraph = new CausalMemoryGraph(db);
+const reflexion = new ReflexionMemory(db, embeddingService);
+const skills = new SkillLibrary(db, embeddingService);
+const causalRecall = new CausalRecall(db, embeddingService);
+const learner = new NightlyLearner(db, embeddingService);
+const learningSystem = new LearningSystem(db, embeddingService);
+const batchOps = new BatchOperations(db, embeddingService);
+const reasoningBank = new ReasoningBank(db, embeddingService);
 
 // ============================================================================
 // MCP Server Setup
@@ -736,7 +780,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         }
 
         // Initialize schema
-        initializeSchema();
+        initializeSchema(db);
 
         const stats = db.prepare('SELECT COUNT(*) as count FROM sqlite_master WHERE type="table"').get() as any;
 
@@ -877,38 +921,62 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         const id = args?.id as number | undefined;
         const filters = args?.filters as any;
 
-        if (id !== undefined) {
-          // Delete single vector
-          const stmt = db.prepare('DELETE FROM episodes WHERE id = ?');
-          const result = stmt.run(id);
-          deleted = result.changes;
-        } else if (filters) {
-          // Bulk delete with filters
-          const conditions: Record<string, any> = {};
+        try {
+          if (id !== undefined) {
+            // Validate ID
+            const validatedId = validateId(id, 'id');
 
-          if (filters.session_id) {
-            conditions.session_id = filters.session_id;
-          }
-
-          if (filters.before_timestamp) {
-            const stmt = db.prepare('DELETE FROM episodes WHERE ts < ?');
-            const result = stmt.run(filters.before_timestamp);
+            // Delete single vector using parameterized query
+            const stmt = db.prepare('DELETE FROM episodes WHERE id = ?');
+            const result = stmt.run(validatedId);
             deleted = result.changes;
-          } else if (Object.keys(conditions).length > 0) {
-            deleted = batchOps.bulkDelete('episodes', conditions);
-          }
-        }
+          } else if (filters) {
+            // Bulk delete with validated filters
+            if (filters.session_id) {
+              // Validate session_id
+              const validatedSessionId = validateSessionId(filters.session_id);
 
-        return {
-          content: [
-            {
-              type: 'text',
-              text: `✅ Delete operation completed!\n` +
-                    `📊 Deleted: ${deleted} vector(s)\n` +
-                    `🗑️  ${id !== undefined ? `ID: ${id}` : 'Bulk deletion with filters'}`,
-            },
-          ],
-        };
+              // Use parameterized query
+              const stmt = db.prepare('DELETE FROM episodes WHERE session_id = ?');
+              const result = stmt.run(validatedSessionId);
+              deleted = result.changes;
+            } else if (filters.before_timestamp) {
+              // Validate timestamp
+              const validatedTimestamp = validateTimestamp(filters.before_timestamp, 'before_timestamp');
+
+              // Use parameterized query
+              const stmt = db.prepare('DELETE FROM episodes WHERE ts < ?');
+              const result = stmt.run(validatedTimestamp);
+              deleted = result.changes;
+            } else {
+              throw new ValidationError('Invalid or missing filter criteria', 'INVALID_FILTER');
+            }
+          } else {
+            throw new ValidationError('Either id or filters must be provided', 'MISSING_PARAMETER');
+          }
+
+          return {
+            content: [
+              {
+                type: 'text',
+                text: `✅ Delete operation completed!\n` +
+                      `📊 Deleted: ${deleted} vector(s)\n` +
+                      `🗑️  ${id !== undefined ? `ID: ${id}` : 'Bulk deletion with filters'}`,
+              },
+            ],
+          };
+        } catch (error: any) {
+          const safeMessage = handleSecurityError(error);
+          return {
+            content: [
+              {
+                type: 'text',
+                text: `❌ Delete operation failed: ${safeMessage}`,
+              },
+            ],
+            isError: true,
+          };
+        }
       }
 
       // ======================================================================
@@ -1134,17 +1202,26 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       case 'agentdb_stats': {
         const detailed = (args?.detailed as boolean) || false;
 
+        // Helper to safely query table count
+        const safeCount = (tableName: string): number => {
+          try {
+            return (db.prepare(`SELECT COUNT(*) as count FROM ${tableName}`).get() as any)?.count || 0;
+          } catch {
+            return 0; // Table doesn't exist
+          }
+        };
+
         const stats: Record<string, number> = {
-          causal_edges: (db.prepare('SELECT COUNT(*) as count FROM causal_edges').get() as any)?.count || 0,
-          causal_experiments: (db.prepare('SELECT COUNT(*) as count FROM causal_experiments').get() as any)?.count || 0,
-          causal_observations: (db.prepare('SELECT COUNT(*) as count FROM causal_observations').get() as any)?.count || 0,
-          episodes: (db.prepare('SELECT COUNT(*) as count FROM episodes').get() as any)?.count || 0,
-          episode_embeddings: (db.prepare('SELECT COUNT(*) as count FROM episode_embeddings').get() as any)?.count || 0,
-          skills: (db.prepare('SELECT COUNT(*) as count FROM skills').get() as any)?.count || 0,
-          skill_embeddings: (db.prepare('SELECT COUNT(*) as count FROM skill_embeddings').get() as any)?.count || 0,
-          reasoning_patterns: (db.prepare('SELECT COUNT(*) as count FROM reasoning_patterns').get() as any)?.count || 0,
-          pattern_embeddings: (db.prepare('SELECT COUNT(*) as count FROM pattern_embeddings').get() as any)?.count || 0,
-          learning_sessions: (db.prepare('SELECT COUNT(*) as count FROM rl_sessions').get() as any)?.count || 0,
+          causal_edges: safeCount('causal_edges'),
+          causal_experiments: safeCount('causal_experiments'),
+          causal_observations: safeCount('causal_observations'),
+          episodes: safeCount('episodes'),
+          episode_embeddings: safeCount('episode_embeddings'),
+          skills: safeCount('skills'),
+          skill_embeddings: safeCount('skill_embeddings'),
+          reasoning_patterns: safeCount('reasoning_patterns'),
+          pattern_embeddings: safeCount('pattern_embeddings'),
+          learning_sessions: safeCount('rl_sessions'),
         };
 
         let output = `📊 AgentDB Comprehensive Statistics\n\n` +
@@ -1699,12 +1776,37 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 async function main() {
   const transport = new StdioServerTransport();
   await server.connect(transport);
+
   console.error('🚀 AgentDB MCP Server v1.3.0 running on stdio');
   console.error('📦 29 tools available (5 core vector DB + 9 frontier + 10 learning + 5 AgentDB tools)');
   console.error('🧠 Embedding service initialized');
   console.error('🎓 Learning system ready (9 RL algorithms)');
   console.error('✨ New learning tools: metrics, transfer, explain, experience_record, reward_signal');
   console.error('🔬 Extended features: transfer learning, XAI explanations, reward shaping');
+
+  // Keep the process alive - the StdioServerTransport handles stdin/stdout
+  // but we need to ensure Node.js doesn't exit when main() completes
+
+  // Use setInterval to keep event loop alive (like many MCP servers do)
+  // This ensures the process doesn't exit even if stdin closes
+  const keepAlive = setInterval(() => {
+    // Empty interval just to keep event loop alive
+  }, 1000 * 60 * 60); // Every hour (basically forever)
+
+  // Handle graceful shutdown
+  const shutdown = () => {
+    clearInterval(keepAlive);
+    process.exit(0);
+  };
+
+  process.on('SIGINT', shutdown);
+  process.on('SIGTERM', shutdown);
+
+  // Return a never-resolving promise
+  return new Promise(() => {
+    // The setInterval above keeps the event loop alive
+    // StdioServerTransport handles all MCP communication
+  });
 }
 
 main().catch(console.error);

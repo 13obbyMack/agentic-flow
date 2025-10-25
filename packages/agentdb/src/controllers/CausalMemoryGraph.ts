@@ -10,7 +10,8 @@
  * - Instrumental variable methods
  */
 
-import { Database } from 'better-sqlite3';
+// Database type from db-fallback
+type Database = any;
 
 export interface CausalEdge {
   id?: number;
