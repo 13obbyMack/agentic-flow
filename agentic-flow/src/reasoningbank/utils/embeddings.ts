@@ -6,8 +6,10 @@
 import { pipeline, env } from '@xenova/transformers';
 import { loadConfig } from './config.js';
 
-// Configure transformers.js to use WebAssembly backend (Node.js compatible)
-env.backends.onnx.wasm.numThreads = 1; // Use single thread for stability
+// Configure transformers.js to use WASM backend only (avoid ONNX runtime issues)
+// The native ONNX runtime causes "DefaultLogger not registered" errors in Node.js
+env.backends.onnx.wasm.proxy = false; // Disable ONNX runtime proxy
+env.backends.onnx.wasm.numThreads = 1; // Single thread for stability
 
 let embeddingPipeline: any = null;
 let isInitializing = false;
