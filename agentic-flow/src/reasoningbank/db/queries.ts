@@ -3,9 +3,7 @@
  * Operates on Claude Flow's memory.db at .swarm/memory.db
  */
 
-// Use AgentDB's sql.js fallback instead of better-sqlite3
-type Database = any;
-const BetterSqlite3: any = null; // Not used
+import Database from 'better-sqlite3';
 import { existsSync, mkdirSync } from 'fs';
 import { join, dirname } from 'path';
 import type { ReasoningMemory, PatternEmbedding, TaskTrajectory, MattsRun } from './schema.js';
@@ -16,7 +14,7 @@ const logger = {
   error: (msg: string, data?: any) => console.error(`[ERROR] ${msg}`, data || '')
 };
 
-let dbInstance: Database | null = null;
+let dbInstance: Database.Database | null = null;
 
 /**
  * Run database migrations (create tables)
@@ -32,7 +30,7 @@ export async function runMigrations(): Promise<void> {
   }
 
   // Create database file
-  const db = new BetterSqlite3(dbPath);
+  const db = new Database(dbPath);
   db.pragma('journal_mode = WAL');
   db.pragma('foreign_keys = ON');
 
@@ -125,7 +123,7 @@ export async function runMigrations(): Promise<void> {
 /**
  * Get database connection (singleton)
  */
-export function getDb(): Database {
+export function getDb(): Database.Database {
   if (dbInstance) return dbInstance;
 
   const dbPath = process.env.CLAUDE_FLOW_DB_PATH || join(process.cwd(), '.swarm', 'memory.db');
@@ -134,7 +132,7 @@ export function getDb(): Database {
     throw new Error(`Database not found at ${dbPath}. Run migrations first.`);
   }
 
-  dbInstance = new BetterSqlite3(dbPath);
+  dbInstance = new Database(dbPath);
   dbInstance.pragma('journal_mode = WAL');
   dbInstance.pragma('foreign_keys = ON');
 
