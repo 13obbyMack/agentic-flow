@@ -23,8 +23,9 @@ export { ReasoningBank } from './controllers/ReasoningBank.js';
 export { EmbeddingService } from './controllers/EmbeddingService.js';
 export { EnhancedEmbeddingService } from './controllers/EnhancedEmbeddingService.js';
 
-// WASM acceleration
+// WASM acceleration and HNSW indexing
 export { WASMVectorSearch } from './controllers/WASMVectorSearch.js';
+export { HNSWIndex } from './controllers/HNSWIndex.js';
 
 // Database utilities
 export { createDatabase } from './db-fallback.js';

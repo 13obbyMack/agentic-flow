@@ -8,6 +8,7 @@ export { ReflexionMemory } from './ReflexionMemory.js';
 export { SkillLibrary } from './SkillLibrary.js';
 export { EmbeddingService } from './EmbeddingService.js';
 export { WASMVectorSearch } from './WASMVectorSearch.js';
+export { HNSWIndex } from './HNSWIndex.js';
 export { EnhancedEmbeddingService } from './EnhancedEmbeddingService.js';
 export { MMRDiversityRanker } from './MMRDiversityRanker.js';
 export { ContextSynthesizer } from './ContextSynthesizer.js';
@@ -20,6 +21,7 @@ export type { Episode, EpisodeWithEmbedding, ReflexionQuery } from './ReflexionM
 export type { Skill, SkillLink, SkillQuery } from './SkillLibrary.js';
 export type { EmbeddingConfig } from './EmbeddingService.js';
 export type { VectorSearchConfig, VectorSearchResult, VectorIndex } from './WASMVectorSearch.js';
+export type { HNSWConfig, HNSWSearchResult, HNSWStats } from './HNSWIndex.js';
 export type { EnhancedEmbeddingConfig } from './EnhancedEmbeddingService.js';
 export type { MMROptions, MMRCandidate } from './MMRDiversityRanker.js';
 export type { MemoryPattern, SynthesizedContext } from './ContextSynthesizer.js';

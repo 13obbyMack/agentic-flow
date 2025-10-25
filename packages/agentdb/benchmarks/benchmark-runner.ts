@@ -8,6 +8,7 @@
 
 import { performance } from 'perf_hooks';
 import { VectorSearchBenchmark } from './vector-search/vector-search-bench';
+import { HNSWBenchmark } from './hnsw/hnsw-benchmark';
 import { QuantizationBenchmark } from './quantization/quantization-bench';
 import { BatchOperationsBenchmark } from './batch-ops/batch-ops-bench';
 import { DatabaseBackendBenchmark } from './database/database-bench';
@@ -52,6 +53,11 @@ export class BenchmarkRunner {
     this.startTime = performance.now();
 
     const suites: BenchmarkSuite[] = [
+      {
+        name: 'HNSW Indexing Performance',
+        description: 'Test HNSW vs brute-force vector search (verify 150x speedup)',
+        benchmarks: this.getHNSWBenchmarks()
+      },
       {
         name: 'Vector Search Performance',
         description: 'Test vector similarity search with different dataset sizes',
@@ -164,16 +170,25 @@ export class BenchmarkRunner {
   }
 
   // Benchmark suite getters
+  private getHNSWBenchmarks(): Array<() => Promise<BenchmarkResult>> {
+    const bench = new HNSWBenchmark();
+    return [
+      () => bench.verify150xClaim(),
+      () => bench.testHNSW1K(),
+      () => bench.testHNSW10K(),
+      () => bench.testHNSW100K(),
+      () => bench.testBruteForce10K(),
+      () => bench.testEfSearchTradeoff()
+    ];
+  }
+
   private getVectorSearchBenchmarks(): Array<() => Promise<BenchmarkResult>> {
     const bench = new VectorSearchBenchmark();
     return [
       () => bench.testVectorSearch100(),
       () => bench.testVectorSearch1K(),
       () => bench.testVectorSearch10K(),
-      () => bench.testVectorSearch100K(),
-      () => bench.testHNSWIndexing(),
-      () => bench.testWithoutHNSW(),
-      () => bench.verify150xClaim()
+      () => bench.testVectorSearch100K()
     ];
   }
 

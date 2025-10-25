@@ -1,85 +1,120 @@
 /**
  * Embedding generation for semantic similarity
- * Supports multiple providers: OpenAI, Claude (placeholder), local hashing
+ * Uses local transformers.js - no API key required!
  */
 
+import { pipeline, env } from '@xenova/transformers';
 import { loadConfig } from './config.js';
 
+// Configure transformers.js to use WebAssembly backend (Node.js compatible)
+env.backends.onnx.wasm.numThreads = 1; // Use single thread for stability
+
+let embeddingPipeline: any = null;
+let isInitializing = false;
 const embeddingCache = new Map<string, Float32Array>();
 
 /**
- * Compute embedding for text
- * Uses configured provider (openai, claude, or local)
+ * Initialize the embedding pipeline (lazy load)
+ */
+async function initializeEmbeddings(): Promise<void> {
+  if (embeddingPipeline) return;
+  if (isInitializing) {
+    // Wait for initialization to complete
+    while (isInitializing) {
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
+    return;
+  }
+
+  isInitializing = true;
+  console.log('[Embeddings] Initializing local embedding model (Xenova/all-MiniLM-L6-v2)...');
+  console.log('[Embeddings] First run will download ~23MB model...');
+
+  try {
+    embeddingPipeline = await pipeline(
+      'feature-extraction',
+      'Xenova/all-MiniLM-L6-v2',
+      { quantized: true } // Smaller, faster
+    );
+    console.log('[Embeddings] Local model ready! (384 dimensions)');
+  } catch (error: any) {
+    console.error('[Embeddings] Failed to initialize:', error?.message || error);
+    console.warn('[Embeddings] Falling back to hash-based embeddings');
+  } finally {
+    isInitializing = false;
+  }
+}
+
+/**
+ * Compute embedding for text using local model
  */
 export async function computeEmbedding(text: string): Promise<Float32Array> {
   const config = loadConfig();
 
   // Check cache
-  const cacheKey = `${config.embeddings.provider}:${text}`;
+  const cacheKey = `local:${text}`;
   if (embeddingCache.has(cacheKey)) {
     return embeddingCache.get(cacheKey)!;
   }
 
   let embedding: Float32Array;
 
-  if (config.embeddings.provider === 'openai') {
-    embedding = await openaiEmbed(text, config.embeddings.model);
-  } else if (config.embeddings.provider === 'claude') {
-    // Claude doesn't have native embeddings yet, use deterministic hash
-    embedding = hashEmbed(text, config.embeddings.dimensions || 1024);
+  // Initialize if needed
+  await initializeEmbeddings();
+
+  if (embeddingPipeline) {
+    try {
+      // Use transformers.js for real embeddings
+      const output = await embeddingPipeline(text, {
+        pooling: 'mean',
+        normalize: true
+      });
+      embedding = new Float32Array(output.data);
+    } catch (error: any) {
+      console.error('[Embeddings] Generation failed:', error?.message || error);
+      embedding = hashEmbed(text, 384); // Fallback
+    }
   } else {
-    // Fallback to local hashing
-    embedding = hashEmbed(text, config.embeddings.dimensions || 1024);
+    // Fallback to hash-based embeddings
+    const dims = config?.embeddings?.dimensions || 384;
+    embedding = hashEmbed(text, dims);
   }
 
-  // Cache with TTL
+  // Cache with LRU (limit 1000 entries)
+  if (embeddingCache.size > 1000) {
+    const firstKey = embeddingCache.keys().next().value;
+    if (firstKey) {
+      embeddingCache.delete(firstKey);
+    }
+  }
   embeddingCache.set(cacheKey, embedding);
-  setTimeout(() => embeddingCache.delete(cacheKey), config.embeddings.cache_ttl_seconds * 1000);
+
+  // Set TTL for cache entry
+  const ttl = config?.embeddings?.cache_ttl_seconds || 3600;
+  setTimeout(
+    () => embeddingCache.delete(cacheKey),
+    ttl * 1000
+  );
 
   return embedding;
 }
 
 /**
- * OpenAI embeddings API
+ * Batch compute embeddings (more efficient)
  */
-async function openaiEmbed(text: string, model: string): Promise<Float32Array> {
-  const apiKey = process.env.OPENAI_API_KEY;
-  const config = loadConfig();
-  if (!apiKey) {
-    console.warn('[WARN] OPENAI_API_KEY not set, falling back to hash embeddings');
-    return hashEmbed(text, config.embeddings.dimensions); // Use config dimension
-  }
-
-  try {
-    const response = await fetch('https://api.openai.com/v1/embeddings', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        model: model || 'text-embedding-3-small',
-        input: text
-      })
-    });
-
-    if (!response.ok) {
-      throw new Error(`OpenAI API error: ${response.status} ${response.statusText}`);
-    }
-
-    const json = await response.json();
-    return new Float32Array(json.data[0].embedding);
-  } catch (error) {
-    console.error('[ERROR] OpenAI embedding failed:', error);
-    console.warn('[WARN] Falling back to hash embeddings');
-    const config = loadConfig();
-    return hashEmbed(text, config.embeddings.dimensions);
-  }
+export async function computeEmbeddingBatch(texts: string[]): Promise<Float32Array[]> {
+  return Promise.all(texts.map(text => computeEmbedding(text)));
 }
 
 /**
- * Deterministic hash-based embedding
- * For testing and when API keys are unavailable
+ * Get embedding dimensions
+ */
+export function getEmbeddingDimensions(): number {
+  return 384; // all-MiniLM-L6-v2 uses 384 dimensions
+}
+
+/**
+ * Deterministic hash-based embedding (fallback)
  */
 function hashEmbed(text: string, dims: number): Float32Array {
   const hash = simpleHash(text);
@@ -87,7 +122,7 @@ function hashEmbed(text: string, dims: number): Float32Array {
 
   // Generate deterministic pseudo-random vector from hash
   for (let i = 0; i < dims; i++) {
-    vec[i] = Math.sin(hash * (i + 1) * 0.01) * 0.1 + Math.cos(hash * i * 0.02) * 0.05;
+    vec[i] = Math.sin(hash * (i + 1) * 0.01) + Math.cos(hash * i * 0.02);
   }
 
   return normalize(vec);
@@ -100,7 +135,7 @@ function simpleHash(str: string): number {
   let hash = 0;
   for (let i = 0; i < str.length; i++) {
     hash = ((hash << 5) - hash) + str.charCodeAt(i);
-    hash |= 0; // Convert to 32-bit integer
+    hash |= 0;
   }
   return Math.abs(hash);
 }
@@ -124,7 +159,7 @@ function normalize(vec: Float32Array): Float32Array {
 }
 
 /**
- * Clear embedding cache (for testing)
+ * Clear embedding cache
  */
 export function clearEmbeddingCache(): void {
   embeddingCache.clear();
