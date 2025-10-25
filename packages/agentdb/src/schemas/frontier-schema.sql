@@ -339,3 +339,40 @@ WHERE e1.id != e2.id AND e2.id != e3.id AND e1.id != e3.id
 -- Features: Causal Memory Graph, Explainable Recall Certificates
 -- Compatible with: AgentDB 1.x
 -- ============================================================================
+
+-- ============================================================================
+-- FEATURE 3: Reinforcement Learning Experiences
+-- ============================================================================
+
+-- Learning experiences for RL training
+CREATE TABLE IF NOT EXISTS learning_experiences (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  session_id TEXT NOT NULL,
+  state TEXT NOT NULL,
+  action TEXT NOT NULL,
+  reward REAL NOT NULL,
+  next_state TEXT,
+  success INTEGER NOT NULL DEFAULT 0,
+  timestamp INTEGER NOT NULL DEFAULT (strftime('%s', 'now')),
+  metadata JSON
+);
+
+CREATE INDEX IF NOT EXISTS idx_learning_experiences_session ON learning_experiences(session_id);
+CREATE INDEX IF NOT EXISTS idx_learning_experiences_timestamp ON learning_experiences(timestamp DESC);
+CREATE INDEX IF NOT EXISTS idx_learning_experiences_reward ON learning_experiences(reward DESC);
+
+-- Learning sessions table for RL session management
+CREATE TABLE IF NOT EXISTS learning_sessions (
+  id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL,
+  session_type TEXT NOT NULL,
+  config JSON NOT NULL,
+  start_time INTEGER NOT NULL DEFAULT (strftime('%s', 'now')),
+  end_time INTEGER,
+  status TEXT NOT NULL DEFAULT 'active',
+  metadata JSON
+);
+
+CREATE INDEX IF NOT EXISTS idx_learning_sessions_user ON learning_sessions(user_id);
+CREATE INDEX IF NOT EXISTS idx_learning_sessions_status ON learning_sessions(status);
+CREATE INDEX IF NOT EXISTS idx_learning_sessions_start ON learning_sessions(start_time DESC);

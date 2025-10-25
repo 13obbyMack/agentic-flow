@@ -6,12 +6,23 @@
  * - Batch embedding generation
  * - Parallel processing
  * - Progress tracking
+ *
+ * SECURITY: Fixed SQL injection vulnerabilities:
+ * - Table names validated against whitelist
+ * - Column names validated against whitelist
+ * - All queries use parameterized values
  */
 
 // Database type from db-fallback
 type Database = any;
 import { EmbeddingService } from '../controllers/EmbeddingService';
 import { Episode } from '../controllers/ReflexionMemory';
+import {
+  validateTableName,
+  buildSafeWhereClause,
+  buildSafeSetClause,
+  ValidationError,
+} from '../security/input-validation.js';
 
 export interface BatchConfig {
   batchSize: number;
@@ -172,45 +183,65 @@ export class BatchOperations {
   }
 
   /**
-   * Bulk delete with conditions
+   * Bulk delete with conditions (SQL injection safe)
    */
   bulkDelete(table: string, conditions: Record<string, any>): number {
-    const whereClause = Object.keys(conditions)
-      .map(key => `${key} = ?`)
-      .join(' AND ');
+    try {
+      // SECURITY: Validate table name against whitelist
+      const validatedTable = validateTableName(table);
 
-    const values = Object.values(conditions);
+      // SECURITY: Build safe WHERE clause with validated column names
+      const { clause, values } = buildSafeWhereClause(validatedTable, conditions);
 
-    const stmt = this.db.prepare(`DELETE FROM ${table} WHERE ${whereClause}`);
-    const result = stmt.run(...values);
+      // Execute with parameterized query
+      const stmt = this.db.prepare(`DELETE FROM ${validatedTable} WHERE ${clause}`);
+      const result = stmt.run(...values);
 
-    return result.changes;
+      return result.changes;
+    } catch (error) {
+      if (error instanceof ValidationError) {
+        console.error(`❌ Bulk delete validation error: ${error.message}`);
+        throw error;
+      }
+      throw error;
+    }
   }
 
   /**
-   * Bulk update with conditions
+   * Bulk update with conditions (SQL injection safe)
    */
   bulkUpdate(
     table: string,
     updates: Record<string, any>,
     conditions: Record<string, any>
   ): number {
-    const setClause = Object.keys(updates)
-      .map(key => `${key} = ?`)
-      .join(', ');
+    try {
+      // SECURITY: Validate table name against whitelist
+      const validatedTable = validateTableName(table);
 
-    const whereClause = Object.keys(conditions)
-      .map(key => `${key} = ?`)
-      .join(' AND ');
+      // SECURITY: Build safe SET clause with validated column names
+      const setResult = buildSafeSetClause(validatedTable, updates);
 
-    const values = [...Object.values(updates), ...Object.values(conditions)];
+      // SECURITY: Build safe WHERE clause with validated column names
+      const whereResult = buildSafeWhereClause(validatedTable, conditions);
 
-    const stmt = this.db.prepare(
-      `UPDATE ${table} SET ${setClause} WHERE ${whereClause}`
-    );
-    const result = stmt.run(...values);
+      // Combine values from SET and WHERE clauses
+      const values = [...setResult.values, ...whereResult.values];
 
-    return result.changes;
+      // Execute with parameterized query
+      const stmt = this.db.prepare(
+        `UPDATE ${validatedTable} SET ${setResult.clause} WHERE ${whereResult.clause}`
+      );
+      const result = stmt.run(...values);
+
+      return result.changes;
+    } catch (error) {
+      if (error instanceof ValidationError) {
+        console.error(`❌ Bulk update validation error: ${error.message}`);
+        throw error;
+      }
+      throw error;
+    }
   }
 
   /**

@@ -5,15 +5,24 @@
 
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import initSqlJs from 'sql.js';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 describe('AgentDB Browser Bundle', () => {
   let SQL;
   let db;
 
   beforeAll(async () => {
-    // Initialize sql.js
+    // Initialize sql.js with local WASM file for Node.js testing
+    // In browser, this would use CDN URL
     SQL = await initSqlJs({
-      locateFile: file => `https://cdn.jsdelivr.net/npm/sql.js@1.13.0/dist/${file}`
+      locateFile: file => {
+        // Use local node_modules path for testing
+        return join(__dirname, '../node_modules/sql.js/dist', file);
+      }
     });
   });
 

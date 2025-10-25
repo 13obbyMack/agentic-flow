@@ -1,7 +1,15 @@
 /**
  * Database System using sql.js (WASM SQLite)
  * Pure JavaScript implementation with NO build dependencies
+ *
+ * SECURITY: Fixed SQL injection vulnerabilities:
+ * - PRAGMA commands validated against whitelist
+ * - Removed eval() usage (replaced with async import)
  */
+
+import { validatePragmaCommand, ValidationError } from './security/input-validation.js';
+import * as fs from 'fs';
+import * as path from 'path';
 
 // Type-only for compatibility
 type Database = any;
@@ -53,18 +61,16 @@ function createSqlJsWrapper(SQL: any) {
       if (filename === ':memory:') {
         this.db = new SQL.Database();
       } else {
-        // File-based database - use dynamic import workaround
+        // File-based database - use safe fs module (no eval)
         try {
-          // Try to read existing file
-          const fs = eval('require')('fs');
           if (fs.existsSync(filename)) {
             const buffer = fs.readFileSync(filename);
             this.db = new SQL.Database(buffer);
           } else {
             this.db = new SQL.Database();
           }
-        } catch {
-          // If require fails (shouldn't happen in Node), create empty DB
+        } catch (error) {
+          console.warn('⚠️  Could not read database file:', (error as Error).message);
           this.db = new SQL.Database();
         }
       }
@@ -136,24 +142,62 @@ function createSqlJsWrapper(SQL: any) {
       return this.db.exec(sql);
     }
 
-    close() {
+    save() {
       // Save to file if needed
       if (this.filename !== ':memory:') {
         try {
-          const fs = eval('require')('fs');
+          // Create parent directories if they don't exist
+          const dir = path.dirname(this.filename);
+          if (!fs.existsSync(dir)) {
+            fs.mkdirSync(dir, { recursive: true });
+          }
+
           const data = this.db.export();
           fs.writeFileSync(this.filename, Buffer.from(data));
         } catch (error) {
-          console.warn('⚠️  Could not save database to file:', (error as Error).message);
+          console.error('❌ Could not save database to file:', (error as Error).message);
+          throw error;
         }
       }
+    }
 
+    close() {
+      // Save to file before closing
+      this.save();
       this.db.close();
     }
 
     pragma(pragma: string, options?: any) {
-      const result = this.db.exec(`PRAGMA ${pragma}`);
-      return result[0]?.values[0]?.[0];
+      try {
+        // SECURITY: Validate PRAGMA command against whitelist to prevent SQL injection
+        const validatedPragma = validatePragmaCommand(pragma);
+
+        // Execute validated PRAGMA
+        const result = this.db.exec(`PRAGMA ${validatedPragma}`);
+        return result[0]?.values[0]?.[0];
+      } catch (error) {
+        if (error instanceof ValidationError) {
+          console.error(`❌ Invalid PRAGMA command: ${error.message}`);
+          throw error;
+        }
+        throw error;
+      }
+    }
+
+    transaction(fn: () => any) {
+      // Return a function that executes the transaction when called
+      // This matches better-sqlite3 API where transaction() returns a callable function
+      return () => {
+        try {
+          this.db.exec('BEGIN TRANSACTION');
+          const result = fn();
+          this.db.exec('COMMIT');
+          return result;
+        } catch (error) {
+          this.db.exec('ROLLBACK');
+          throw error;
+        }
+      };
     }
   };
 }

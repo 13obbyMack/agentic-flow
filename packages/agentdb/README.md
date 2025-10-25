@@ -16,10 +16,10 @@ When you're building agentic systems, every millisecond, every inference, and ev
 ### What AgentDB delivers
 
 **Core Infrastructure:**
-- ⚡ **Instant startup** – Memory ready in <10ms (disk) / ~100ms (browser)
-- 🪶 **Minimal footprint** – Only 0.7MB per 1K vectors with zero config
+- ⚡ **Instant startup** – Memory ready in milliseconds (optimized sql.js WASM)
+- 🪶 **Minimal footprint** – Lightweight embedded database with zero config
 - 🌍 **Universal runtime** – Node.js, browser, edge, MCP — runs anywhere
-- 🔄 **Live sync** – QUIC-based real-time coordination across agent swarms
+- 🔄 **Coordination ready** – Architecture designed for distributed agent synchronization
 
 **Frontier Memory (v1.1.0):**
 - 🔄 **Reflexion Memory** – Learn from experience with self-critique and episodic replay
@@ -42,9 +42,9 @@ Run anywhere: **Claude Code**, **Cursor**, **GitHub Copilot**, **Node.js**, **br
 
 ---
 
-## 🆕 What's New in v1.3.0
+## 🆕 What's New in v1.6.0
 
-AgentDB v1.3.0 adds **Learning System Tools** and **Core AgentDB Tools** — bringing full reinforcement learning and advanced database management to Claude Desktop and MCP-compatible editors. Now with **29 production-ready MCP tools** (up from 14).
+AgentDB v1.6.0 adds **Direct Vector Search**, **MMR Diversity Ranking**, **Context Synthesis**, and **Advanced Metadata Filtering** — expanding memory capabilities with production-tested features. Building on v1.3.0's 29 MCP tools with enhanced vector operations and intelligent context generation.
 
 ### 🎉 NEW: Learning System + Core AgentDB Tools (v1.3.0)
 
@@ -309,9 +309,9 @@ AgentDB lives where the agent lives — inside the runtime, not as an external s
 
 | Capability | AgentDB v1.1.0 | Typical Systems |
 |------------|----------------|-----------------|
-| **Startup Time** | ⚡ <10ms (disk) / ~100ms (browser) | 🐌 Seconds – minutes |
-| **Footprint** | 🪶 0.7MB per 1K vectors | 💾 10–100× larger |
-| **Search Speed** | 🚀 HNSW: 5ms @ 100K vectors (116x faster) | 🐢 580ms brute force |
+| **Startup Time** | ⚡ Milliseconds (sql.js WASM) | 🐌 Seconds – minutes |
+| **Footprint** | 🪶 Lightweight embedded database | 💾 10–100× larger servers |
+| **Search Speed** | 🚀 Optimized vector similarity | 🐢 Network latency overhead |
 | **Memory Model** | 🧠 6 frontier patterns + ReasoningBank | ❌ Vector search only |
 | **Episodic Memory** | ✅ Reflexion with self-critique | ❌ Not available |
 | **Skill Learning** | ✅ Auto-consolidation from episodes | ❌ Manual extraction |
@@ -321,7 +321,7 @@ AgentDB lives where the agent lives — inside the runtime, not as an external s
 | **Auto Discovery** | ✅ Nightly Learner (background) | ❌ Manual pattern finding |
 | **Learning Layer** | 🔧 10 RL algorithms + plugins | ❌ External ML stack |
 | **Runtime Scope** | 🌐 Node · Browser · Edge · MCP | ❌ Server-only |
-| **Coordination** | 🔄 QUIC sync + frontier memory | ❌ External services |
+| **Coordination** | 🔄 Frontier memory patterns | ❌ External services |
 | **Setup** | ⚙️ Zero config · `npm install agentdb` | 🐢 Complex deployment |
 | **CLI Tools** | ✅ 17 commands (reflexion, skill, learner) | ❌ Programmatic only |
 
@@ -507,10 +507,10 @@ const results = await db.search({ query: [...], k: 5 });
 
 *[The README continues with all sections from the published npm version, maintaining the exact same structure and content while integrating v1.1.0 frontier features throughout. Due to length constraints, I'm showing the key updated sections. The full file includes all 981 lines with proper integration of frontier features into Use Cases, Architecture, Examples, Performance, Testing, and Project Status sections as shown in the Write command above.]*
 
-**Version:** 1.3.0
+**Version:** 1.6.0
 **Status:** ✅ Production Ready
 **MCP Tools:** 29 (5 core vector DB + 5 core agentdb + 9 frontier + 10 learning)
 **Tests:** Passing (100% core coverage)
-**Last Updated:** 2025-10-22
+**Last Updated:** 2025-10-25
 
 [Get Started](#-quick-start-60-seconds) | [Documentation](./docs/) | [Examples](./examples/) | [GitHub](https://github.com/ruvnet/agentic-flow/tree/main/packages/agentdb)
