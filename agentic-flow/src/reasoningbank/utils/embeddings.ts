@@ -28,6 +28,18 @@ async function initializeEmbeddings(): Promise<void> {
     return;
   }
 
+  // Detect npx environment (known transformer initialization issues)
+  const isNpxEnv = process.env.npm_config_user_agent?.includes('npx') ||
+                   process.cwd().includes('/_npx/') ||
+                   process.cwd().includes('\\_npx\\');
+
+  if (isNpxEnv && !process.env.FORCE_TRANSFORMERS) {
+    console.log('[Embeddings] NPX environment detected - using hash-based embeddings');
+    console.log('[Embeddings] For semantic search, install globally: npm install -g claude-flow');
+    isInitializing = false;
+    return;
+  }
+
   isInitializing = true;
   console.log('[Embeddings] Initializing local embedding model (Xenova/all-MiniLM-L6-v2)...');
   console.log('[Embeddings] First run will download ~23MB model...');
