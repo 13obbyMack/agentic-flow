@@ -271,7 +271,12 @@ export async function claudeAgent(
       });
 
       let output = '';
+      let toolCallCount = 0;
+
       for await (const msg of result) {
+        const msgAny = msg as any; // Use any to handle different event types from SDK
+
+        // Handle assistant text messages
         if (msg.type === 'assistant') {
           const chunk = msg.message.content?.map((c: any) => c.type === 'text' ? c.text : '').join('') || '';
           output += chunk;
@@ -279,6 +284,43 @@ export async function claudeAgent(
           if (onStream && chunk) {
             onStream(chunk);
           }
+        }
+
+        // Handle stream events that contain tool information
+        if (msgAny.streamEvent) {
+          const event = msgAny.streamEvent;
+
+          // Tool use event (content_block_start with tool_use)
+          if (event.type === 'content_block_start' && event.content_block?.type === 'tool_use') {
+            toolCallCount++;
+            const toolName = event.content_block.name || 'unknown';
+            const timestamp = new Date().toISOString().split('T')[1].split('.')[0];
+            const progressMsg = `\n[${timestamp}] 🔍 Tool call #${toolCallCount}: ${toolName}\n`;
+            process.stderr.write(progressMsg);
+
+            if (onStream) {
+              onStream(progressMsg);
+            }
+          }
+
+          // Tool result event (content_block_stop)
+          if (event.type === 'content_block_stop') {
+            const timestamp = new Date().toISOString().split('T')[1].split('.')[0];
+            const resultMsg = `[${timestamp}] ✅ Tool completed\n`;
+            process.stderr.write(resultMsg);
+
+            if (onStream) {
+              onStream(resultMsg);
+            }
+          }
+        }
+
+        // Flush output to ensure immediate visibility
+        if (process.stderr.uncork) {
+          process.stderr.uncork();
+        }
+        if (process.stdout.uncork) {
+          process.stdout.uncork();
         }
       }
 

@@ -90,7 +90,24 @@ async function runAgentMode(agentName: string, task: string, stream: boolean, mo
   }
   console.log('⏳ Running...\n');
 
-  const streamHandler = stream ? (chunk: string) => process.stdout.write(chunk) : undefined;
+  // Enhanced stream handler that writes to stderr for progress and stdout for content
+  const streamHandler = stream ? (chunk: string) => {
+    // Write progress indicators (timestamps, tool calls) to stderr
+    if (chunk.startsWith('\n[') || chunk.startsWith('[') || chunk.includes('🔍') || chunk.includes('✅') || chunk.includes('❌')) {
+      process.stderr.write(chunk);
+    } else {
+      // Write text content to stdout
+      process.stdout.write(chunk);
+    }
+
+    // Force flush to ensure immediate visibility
+    if (process.stdout.uncork) {
+      process.stdout.uncork();
+    }
+    if (process.stderr.uncork) {
+      process.stderr.uncork();
+    }
+  } : undefined;
 
   // Use Claude Agent SDK with in-SDK MCP server and optional model override
   logger.info('Using Claude Agent SDK with in-SDK MCP server', { modelOverride });
