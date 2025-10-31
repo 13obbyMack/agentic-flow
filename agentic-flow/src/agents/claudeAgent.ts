@@ -276,6 +276,11 @@ export async function claudeAgent(
       for await (const msg of result) {
         const msgAny = msg as any; // Use any to handle different event types from SDK
 
+        // Debug: Log message structure to understand SDK events
+        if (process.env.DEBUG_STREAMING === 'true') {
+          console.error(`[DEBUG] Message type: ${msg.type}, keys: ${Object.keys(msg).join(', ')}`);
+        }
+
         // Handle assistant text messages
         if (msg.type === 'assistant') {
           const chunk = msg.message.content?.map((c: any) => c.type === 'text' ? c.text : '').join('') || '';
@@ -283,6 +288,20 @@ export async function claudeAgent(
 
           if (onStream && chunk) {
             onStream(chunk);
+          }
+
+          // Check for tool use in message content blocks
+          const toolBlocks = msg.message.content?.filter((c: any) => c.type === 'tool_use') || [];
+          for (const toolBlock of toolBlocks) {
+            toolCallCount++;
+            const toolName = (toolBlock as any).name || 'unknown';
+            const timestamp = new Date().toISOString().split('T')[1].split('.')[0];
+            const progressMsg = `\n[${timestamp}] 🔍 Tool call #${toolCallCount}: ${toolName}\n`;
+            process.stderr.write(progressMsg);
+
+            if (onStream) {
+              onStream(progressMsg);
+            }
           }
         }
 
