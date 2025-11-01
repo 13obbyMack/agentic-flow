@@ -35,10 +35,12 @@ import { logger } from "./utils/logger.js";
 import { parseArgs } from "./utils/cli.js";
 import { getAgent, listAgents } from "./utils/agentLoader.js";
 import { claudeAgent } from "./agents/claudeAgent.js";
+import { claudeAgentDirect } from "./agents/claudeAgentDirect.js";
 import { handleMCPCommand } from "./utils/mcpCommands.js";
 import { handleReasoningBankCommand } from "./utils/reasoningbankCommands.js";
 import { handleConfigCommand } from "./cli/config-wizard.js";
 import { handleAgentCommand } from "./cli/agent-manager.js";
+import { handleFederationCommand } from "./cli/federation-cli.js";
 import { ModelOptimizer } from "./utils/modelOptimizer.js";
 import { detectModelCapabilities } from "./utils/modelCapabilities.js";
 import { AgentBoosterPreprocessor } from "./utils/agentBoosterPreprocessor.js";
@@ -66,7 +68,7 @@ class AgenticFlowCLI {
     }
 
     // If no mode and no agent specified, show help
-    if (!options.agent && options.mode !== 'list' && !['config', 'agent-manager', 'mcp-manager', 'proxy', 'quic', 'claude-code', 'mcp', 'reasoningbank'].includes(options.mode)) {
+    if (!options.agent && options.mode !== 'list' && !['config', 'agent-manager', 'mcp-manager', 'proxy', 'quic', 'claude-code', 'mcp', 'reasoningbank', 'federation'].includes(options.mode)) {
       this.printHelp();
       process.exit(0);
     }
@@ -175,6 +177,13 @@ class AgenticFlowCLI {
       // Handle ReasoningBank commands
       const subcommand = process.argv[3] || 'help';
       await handleReasoningBankCommand(subcommand);
+      process.exit(0);
+    }
+
+    if (options.mode === 'federation') {
+      // Handle Federation commands
+      const federationArgs = process.argv.slice(3); // Skip 'node', 'cli-proxy.js', 'federation'
+      await handleFederationCommand(federationArgs);
       process.exit(0);
     }
 
@@ -987,8 +996,9 @@ PERFORMANCE:
 
     const streamHandler = options.stream ? (chunk: string) => process.stdout.write(chunk) : undefined;
 
-    // Use claudeAgent with Claude Agent SDK - handles multi-provider routing
-    const result = await claudeAgent(agent, task, streamHandler);
+    // FIXED: Use claudeAgentDirect (no Claude Code dependency) instead of claudeAgent
+    // This allows agentic-flow to work standalone in Docker/CI/CD without Claude Code
+    const result = await claudeAgentDirect(agent, task, streamHandler);
 
     if (!options.stream) {
       console.log('\n✅ Completed!\n');
@@ -1042,6 +1052,7 @@ COMMANDS:
   config [subcommand]     Manage environment configuration (interactive wizard)
   mcp <command> [server]  Manage MCP servers (start, stop, status, list)
   agent <command>         Agent management (list, create, info, conflicts)
+  federation <command>    Federation hub management (start, spawn, stats, test)
   proxy [options]         Run standalone proxy server for Claude Code/Cursor
   quic [options]          Run QUIC transport proxy for ultra-low latency (50-70% faster)
   claude-code [options]   Spawn Claude Code with auto-configured proxy
@@ -1069,6 +1080,17 @@ AGENT COMMANDS:
   npx agentic-flow agent create          Create new custom agent (interactive)
   npx agentic-flow agent info <name>     Show detailed agent information
   npx agentic-flow agent conflicts       Check for package/local conflicts
+
+FEDERATION COMMANDS:
+  npx agentic-flow federation start      Start federation hub server
+  npx agentic-flow federation spawn      Spawn ephemeral agent
+  npx agentic-flow federation stats      Show hub statistics
+  npx agentic-flow federation status     Show federation system status
+  npx agentic-flow federation test       Run multi-agent collaboration test
+  npx agentic-flow federation help       Show federation help
+
+  Federation enables ephemeral agents (5s-15min lifetime) with persistent memory.
+  Hub stores memories permanently; agents access past learnings from dead agents.
 
 OPTIONS:
   --task, -t <task>           Task description for agent mode
@@ -1117,6 +1139,14 @@ EXAMPLES:
   npx agentic-flow mcp start claude-flow  # Start specific server
   npx agentic-flow mcp list               # List all 203+ MCP tools
   npx agentic-flow mcp status             # Check server status
+
+  # Federation Hub Management
+  npx agentic-flow federation start       # Start hub server (WebSocket)
+  npx agentic-flow federation start --port 9443 --db-path ./data/hub.db
+  npx agentic-flow federation spawn       # Spawn ephemeral agent
+  npx agentic-flow federation spawn --tenant acme-corp --lifetime 600
+  npx agentic-flow federation stats       # Show hub statistics
+  npx agentic-flow federation test        # Run multi-agent test
 
   # Proxy Server for Claude Code/Cursor
   npx agentic-flow proxy --provider openrouter --port 3000
