@@ -998,7 +998,7 @@ PERFORMANCE:
 
     // FIXED: Use claudeAgentDirect (no Claude Code dependency) instead of claudeAgent
     // This allows agentic-flow to work standalone in Docker/CI/CD without Claude Code
-    const result = await claudeAgentDirect(agent, task, streamHandler);
+    const result = await claudeAgentDirect(agent, task, streamHandler, options.model);
 
     if (!options.stream) {
       console.log('\n✅ Completed!\n');

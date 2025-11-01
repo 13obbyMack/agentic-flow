@@ -5,6 +5,40 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.8.15] - 2025-11-01
+
+### 🐛 Bug Fix - Model Configuration
+
+Fixed model configuration issue where `DEFAULT_MODEL` environment variable was not being used, causing incorrect model selection.
+
+### Fixed
+
+- **Model Configuration:** `DEFAULT_MODEL` environment variable now properly respected
+  - Updated `claudeAgentDirect.ts` to check both `DEFAULT_MODEL` and `COMPLETION_MODEL`
+  - Fixed `--model` CLI flag not being passed through to agent execution
+  - Now supports both environment variable names for backward compatibility
+  - Ensures consistent model selection across all providers
+
+### Changed
+
+- **Model Priority Order:**
+  1. `--model` CLI flag (highest priority)
+  2. `DEFAULT_MODEL` environment variable
+  3. `COMPLETION_MODEL` environment variable (backward compatibility)
+  4. Provider-specific hardcoded default (fallback)
+
+### Technical Details
+
+**Files Modified:**
+- `src/agents/claudeAgentDirect.ts` - Added `DEFAULT_MODEL` support
+- `src/cli-proxy.ts` - Pass `options.model` to `claudeAgentDirect`
+
+**Validation:**
+- ✅ `DEFAULT_MODEL` from .env properly used
+- ✅ `--model` flag correctly overrides default
+- ✅ Backward compatible with `COMPLETION_MODEL`
+- ✅ Works across all providers (Anthropic, OpenRouter, Gemini)
+
 ## [1.8.14] - 2025-11-01
 
 ### 🐛 Critical Bug Fix - Claude Code Dependency Removed

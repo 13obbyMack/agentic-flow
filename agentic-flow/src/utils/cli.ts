@@ -1,7 +1,7 @@
 // CLI argument parsing and help utilities
 
 export interface CliOptions {
-  mode: 'agent' | 'parallel' | 'list' | 'mcp' | 'mcp-manager' | 'config' | 'agent-manager' | 'proxy' | 'quic' | 'claude-code' | 'reasoningbank';
+  mode: 'agent' | 'parallel' | 'list' | 'mcp' | 'mcp-manager' | 'config' | 'agent-manager' | 'proxy' | 'quic' | 'claude-code' | 'reasoningbank' | 'federation';
   agent?: string;
   task?: string;
 
@@ -97,6 +97,12 @@ export function parseArgs(): CliOptions {
   // Check for agent management command
   if (args[0] === 'agent') {
     options.mode = 'agent-manager';
+    return options;
+  }
+
+  // Check for federation command
+  if (args[0] === 'federation') {
+    options.mode = 'federation';
     return options;
   }
 

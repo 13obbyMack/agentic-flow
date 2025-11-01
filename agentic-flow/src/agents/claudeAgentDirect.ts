@@ -26,24 +26,27 @@ function getModelForProvider(provider: string): {
   apiKey: string;
   baseURL?: string;
 } {
+  // Use DEFAULT_MODEL or COMPLETION_MODEL from environment (both supported for backward compatibility)
+  const envModel = process.env.DEFAULT_MODEL || process.env.COMPLETION_MODEL;
+
   switch (provider) {
     case 'gemini':
       return {
-        model: process.env.COMPLETION_MODEL || 'gemini-2.0-flash-exp',
+        model: envModel || 'gemini-2.0-flash-exp',
         apiKey: process.env.GOOGLE_GEMINI_API_KEY || '',
         baseURL: process.env.GEMINI_PROXY_URL || 'http://localhost:3000'
       };
 
     case 'requesty':
       return {
-        model: process.env.COMPLETION_MODEL || 'deepseek/deepseek-chat',
+        model: envModel || 'deepseek/deepseek-chat',
         apiKey: process.env.REQUESTY_API_KEY || '',
         baseURL: process.env.REQUESTY_PROXY_URL || 'http://localhost:3000'
       };
 
     case 'openrouter':
       return {
-        model: process.env.COMPLETION_MODEL || 'deepseek/deepseek-chat',
+        model: envModel || 'deepseek/deepseek-chat',
         apiKey: process.env.OPENROUTER_API_KEY || '',
         baseURL: process.env.OPENROUTER_PROXY_URL || 'http://localhost:3000'
       };
@@ -62,7 +65,7 @@ function getModelForProvider(provider: string): {
         throw new Error('ANTHROPIC_API_KEY is required for Anthropic provider');
       }
       return {
-        model: process.env.COMPLETION_MODEL || 'claude-sonnet-4-5-20250929',
+        model: envModel || 'claude-sonnet-4-5-20250929',
         apiKey,
         // Direct Anthropic API - no baseURL needed
       };
