@@ -57,6 +57,8 @@ Most AI coding agents are **painfully slow** and **frustratingly forgetful**. Th
 | **ReasoningBank** | Persistent learning memory system with semantic search | 46% faster, 100% success | [Docs](https://github.com/ruvnet/agentic-flow/tree/main/agentic-flow/src/reasoningbank) |
 | **Multi-Model Router** | Intelligent cost optimization across 100+ LLMs | 85-99% cost savings | [Docs](https://github.com/ruvnet/agentic-flow/tree/main/agentic-flow/src/router) |
 | **QUIC Transport** | Ultra-low latency agent communication via Rust/WASM QUIC protocol | 50-70% faster than TCP, 0-RTT | [Docs](https://github.com/ruvnet/agentic-flow/tree/main/crates/agentic-flow-quic) |
+| **Federation Hub** 🆕 | Ephemeral agents (5s-15min lifetime) with persistent cross-agent memory | Infinite scale, 0 waste | [Docs](./agentic-flow/src/federation) |
+| **Swarm Optimization** 🆕 | Self-learning parallel execution with AI topology selection | 3-5x speedup, auto-optimizes | [Docs](./docs/swarm-optimization-report.md) |
 
 **CLI Usage**:
 - **AgentDB**: Full CLI with 17 commands (`npx agentdb <command>`)
@@ -64,6 +66,8 @@ Most AI coding agents are **painfully slow** and **frustratingly forgetful**. Th
 - **Agent Booster**: Automatic on code edits
 - **ReasoningBank**: API only
 - **QUIC Transport**: API only
+- **Federation Hub**: `npx agentic-flow federation start` 🆕
+- **Swarm Optimization**: Automatic with parallel execution 🆕
 
 **Programmatic**: All components importable: `agentic-flow/agentdb`, `agentic-flow/router`, `agentic-flow/reasoningbank`, `agentic-flow/agent-booster`, `agentic-flow/transport/quic`
 
@@ -78,12 +82,22 @@ npx agentdb learner run
 # CLI: Auto-optimization (Agent Booster runs automatically on code edits)
 npx agentic-flow --agent coder --task "Build a REST API" --optimize
 
+# CLI: Federation Hub (ephemeral agents with persistent memory)
+npx agentic-flow federation start       # Start hub server
+npx agentic-flow federation spawn       # Spawn ephemeral agent
+npx agentic-flow federation stats       # View statistics
+
+# CLI: Swarm Optimization (automatic parallel execution)
+# Self-learning system recommends optimal topology (mesh, hierarchical, ring)
+# Achieves 3-5x speedup with auto-optimization from learned patterns
+
 # Programmatic: Import any component
 import { ReflexionMemory, SkillLibrary, CausalMemoryGraph } from 'agentic-flow/agentdb';
 import { ModelRouter } from 'agentic-flow/router';
 import * as reasoningbank from 'agentic-flow/reasoningbank';
 import { AgentBooster } from 'agentic-flow/agent-booster';
 import { QuicTransport } from 'agentic-flow/transport/quic';
+import { SwarmLearningOptimizer, autoSelectSwarmConfig } from 'agentic-flow/hooks/swarm-learning-optimizer';
 ```
 
 Built on **[Claude Agent SDK](https://docs.claude.com/en/api/agent-sdk)** by Anthropic, powered by **[Claude Flow](https://github.com/ruvnet/claude-flow)** (101 MCP tools), **[Flow Nexus](https://github.com/ruvnet/flow-nexus)** (96 cloud tools), **[OpenRouter](https://openrouter.ai)** (100+ LLM models), **[Google Gemini](https://ai.google.dev)** (fast, cost-effective inference), **[Agentic Payments](https://github.com/ruvnet/agentic-flow/tree/main/agentic-payments)** (payment authorization), and **[ONNX Runtime](https://onnxruntime.ai)** (free local CPU or GPU inference).
