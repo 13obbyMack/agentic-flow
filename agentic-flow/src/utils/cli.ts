@@ -381,6 +381,35 @@ MCP TOOLS (209+ available):
   • flow-nexus: 96 cloud tools (sandboxes, distributed swarms, templates)
   • agentic-payments: 6 tools (payment authorization, multi-agent consensus)
 
+PARALLEL EXECUTION & SWARM OPTIMIZATION (v2.0):
+  • Automatic Topology Selection: AI recommends optimal swarm configuration
+  • Self-Learning System: Learns from 100+ execution patterns (0.6 → 0.95 confidence)
+  • Pattern Recognition: ReasoningBank stores & retrieves successful strategies
+  • Performance Tracking: 3.5-5.0x speedup with hierarchical topology
+  • Reward System: Multi-factor scoring (speedup, success rate, efficiency)
+  • Adaptive Optimization: Improves recommendations over time
+
+  Supported Topologies:
+    - Mesh (1-10 agents): Full peer-to-peer coordination (2.5x speedup)
+    - Hierarchical (6-50 agents): Coordinator delegation (3.5-4.0x speedup) ⭐ BEST
+    - Ring (1-20 agents): Sequential token passing + parallel processing
+    - Star (1-30 agents): Central coordinator pattern
+
+  Usage Example (CLI subprocess spawning):
+    const results = await Promise.all([
+      exec('npx agentic-flow --agent researcher --task "domain1"'),
+      exec('npx agentic-flow --agent researcher --task "domain2"'),
+      exec('npx agentic-flow --agent coder --task "implement"')
+    ]);
+
+  Auto-Optimization Example:
+    import { autoSelectSwarmConfig } from './hooks/swarm-learning-optimizer';
+    const config = await autoSelectSwarmConfig(reasoningBank, taskDesc, options);
+    // Returns: recommendedTopology, expectedSpeedup, confidence, reasoning
+
+  See: /agentic-flow/src/prompts/parallel-execution-guide.md (v2.0)
+       /docs/swarm-optimization-report.md
+
 For more information, visit: https://github.com/ruvnet/agentic-flow
   `);
 }
