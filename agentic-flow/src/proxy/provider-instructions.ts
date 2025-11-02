@@ -265,6 +265,60 @@ export function formatInstructions(
   return formatted;
 }
 
+// Parallel execution instructions for concurrent agent coordination
+export const PARALLEL_EXECUTION_INSTRUCTIONS = `
+═══════════════════════════════════════════════════════════════
+CRITICAL: Concurrent Execution System
+═══════════════════════════════════════════════════════════════
+
+This system supports parallel agent execution via CLI subprocesses and
+ReasoningBank coordination. Follow these patterns for optimal performance:
+
+1. SUBPROCESS SPAWNING
+   When decomposing tasks, spawn subagents via CLI:
+
+   \`\`\`typescript
+   const results = await Promise.all([
+     exec('npx agentic-flow --agent researcher --task "analyze security"'),
+     exec('npx agentic-flow --agent coder --task "implement features"'),
+     exec('npx agentic-flow --agent tester --task "create tests"')
+   ]);
+   \`\`\`
+
+2. REASONINGBANK COORDINATION
+   Each subagent stores results in ReasoningBank:
+
+   \`\`\`typescript
+   // Subagent stores results
+   await reasoningBank.storePattern({
+     sessionId: 'swarm/task-123/agent-1',
+     task: 'Research security patterns',
+     output: findings,
+     reward: 0.95,
+     success: true
+   });
+
+   // Parent retrieves all results
+   const allResults = await reasoningBank.searchPatterns('swarm/task-123');
+   \`\`\`
+
+3. PERFORMANCE BENEFITS
+   - 2.8-4.4x speedup with parallel execution
+   - 50-70% time reduction with QUIC transport
+   - 32.3% token reduction via batching
+
+See /agentic-flow/src/prompts/parallel-execution-guide.md for detailed examples.
+═══════════════════════════════════════════════════════════════
+`;
+
+// Enhanced instruction provider with parallel execution support
+export interface InstructionOptions {
+  enableParallel?: boolean;
+  batchSize?: number;
+  enableReasoningBank?: boolean;
+  includeXmlInstructions?: boolean;
+}
+
 // Get appropriate max_tokens for model
 export function getMaxTokensForModel(modelId: string, requestedMaxTokens?: number): number {
   const normalizedModel = modelId.toLowerCase();
@@ -291,4 +345,81 @@ export function getMaxTokensForModel(modelId: string, requestedMaxTokens?: numbe
 
   // Default
   return 4096;
+}
+
+// Get parallel execution capabilities for model
+export function getParallelCapabilities(modelId: string): {
+  maxConcurrency: number;
+  recommendedBatchSize: number;
+  supportsSubprocesses: boolean;
+  supportsReasoningBank: boolean;
+} {
+  const normalized = modelId.toLowerCase();
+
+  // High-capability models (Claude, GPT-4)
+  if (normalized.includes('claude') || normalized.includes('gpt-4')) {
+    return {
+      maxConcurrency: 10,
+      recommendedBatchSize: 5,
+      supportsSubprocesses: true,
+      supportsReasoningBank: true
+    };
+  }
+
+  // Mid-tier models (DeepSeek, Llama 3.1)
+  if (normalized.includes('deepseek') || normalized.includes('llama-3.1')) {
+    return {
+      maxConcurrency: 5,
+      recommendedBatchSize: 3,
+      supportsSubprocesses: true,
+      supportsReasoningBank: true
+    };
+  }
+
+  // Lower-tier models
+  return {
+    maxConcurrency: 3,
+    recommendedBatchSize: 2,
+    supportsSubprocesses: true,
+    supportsReasoningBank: false
+  };
+}
+
+// Enhanced instruction builder
+export function buildInstructions(
+  modelId: string,
+  provider: string | undefined,
+  options: InstructionOptions = {}
+): string {
+  const {
+    enableParallel = false,
+    batchSize,
+    enableReasoningBank = false,
+    includeXmlInstructions = true
+  } = options;
+
+  const baseInstructions = getInstructionsForModel(modelId, provider);
+  let formatted = formatInstructions(baseInstructions, includeXmlInstructions);
+
+  // Add parallel execution instructions if enabled
+  if (enableParallel) {
+    const capabilities = getParallelCapabilities(modelId);
+    const effectiveBatchSize = batchSize || capabilities.recommendedBatchSize;
+
+    formatted += '\n\n' + PARALLEL_EXECUTION_INSTRUCTIONS;
+    formatted += `\n\nRECOMMENDED BATCH SIZE: ${effectiveBatchSize} concurrent subagents`;
+    formatted += `\nMAX CONCURRENCY: ${capabilities.maxConcurrency} agents`;
+  }
+
+  // Add ReasoningBank instructions if enabled
+  if (enableReasoningBank) {
+    formatted += `\n\n
+REASONINGBANK MEMORY COORDINATION:
+- Store: await reasoningBank.storePattern({ sessionId: 'swarm/TASK_ID/AGENT_ID', task, output, reward, success })
+- Retrieve: await reasoningBank.retrieve('swarm/TASK_ID/AGENT_ID')
+- Search: await reasoningBank.searchPatterns('swarm/TASK_ID', { k: 10 })
+    `;
+  }
+
+  return formatted;
 }

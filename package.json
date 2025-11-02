@@ -6,8 +6,15 @@
   "scripts": {
     "build": "tsc",
     "test": "jest",
+    "test:parallel": "node tests/parallel/benchmark-suite.js",
+    "test:mesh": "node tests/parallel/mesh-swarm-test.js",
+    "test:hierarchical": "node tests/parallel/hierarchical-swarm-test.js",
+    "test:ring": "node tests/parallel/ring-swarm-test.js",
     "bench:quic": "node benchmarks/quic-transport.bench.js",
     "bench:report": "node scripts/generate-benchmark-report.js",
+    "bench:parallel": "BENCHMARK_MODE=true ITERATIONS=10 node tests/parallel/benchmark-suite.js",
+    "docker:test": "cd tests/docker && docker-compose -f docker-compose.parallel.yml up --build",
+    "docker:bench": "cd tests/docker && docker-compose -f docker-compose.parallel.yml up --build benchmark",
     "profile": "0x -- node benchmarks/quic-transport.bench.js",
     "lint": "eslint . --ext .ts,.js",
     "typecheck": "tsc --noEmit"
