@@ -1,6 +1,6 @@
 {
   "name": "agentic-flow",
-  "version": "1.9.0",
+  "version": "1.9.1",
   "description": "Multi-agent coordination framework with QUIC transport",
   "main": "dist/index.js",
   "scripts": {
@@ -28,7 +28,6 @@
   "author": "Performance Benchmarker Agent",
   "license": "MIT",
   "dependencies": {
-    "@fails-components/webtransport": "^0.3.0",
     "@types/react": "^19.2.2",
     "@types/react-dom": "^19.2.2",
     "@vitejs/plugin-react-swc": "^4.2.0",
