@@ -1,0 +1,64 @@
+# Build artifacts and caches
+node_modules/
+.git/
+.vscode/
+*.log
+*.tgz
+
+# Monorepo packages (they have their own npm packages)
+packages/
+agent-booster/
+reasoningbank/
+
+# Rust build artifacts (causing hard link issues)
+**/target/
+**/.cargo/
+target/
+.cargo/
+
+# ALL Rust-related that might have hard links
+*.rlib
+*.rmeta
+*.d
+build-script-build*
+build_script_build*
+
+# Test and development files
+tests/
+test-results/
+coverage/
+.nyc_output/
+*.test.ts
+*.test.js
+*.spec.ts
+*.spec.js
+
+# Docker and CI files
+docker/
+.dockerignore
+Dockerfile*
+docker-compose*.yml
+.github/
+
+# Documentation (keep only essential core docs)
+docs/archived/
+docs/development/
+docs/validation/
+agentdb.db-shm
+agentdb.db-wal
+open-lovable/
+
+# Environment and config
+.env
+.env.*
+*.local
+
+# Temporary files
+tmp/
+temp/
+.cache/
+
+# Large unnecessary directories
+examples/
+releases/
+scripts/
