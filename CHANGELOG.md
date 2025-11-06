@@ -5,6 +5,26 @@ All notable changes to agentic-flow will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.9.2] - 2025-11-06
+
+### Fixed
+- **Gemini Provider**: Identified and documented empty response bug in Gemini proxy (Issue #51)
+  - Proxy initialization works correctly
+  - Request routing to Gemini API successful
+  - Response conversion needs debugging (responses not reaching output)
+  - Added comprehensive logging for troubleshooting
+
+### Added
+- **Config Wizard Enhancement Request**: Created issue #50 for Gemini API key configuration
+  - Config wizard currently only prompts for ANTHROPIC_API_KEY
+  - Need to add GOOGLE_GEMINI_API_KEY and OPENROUTER_API_KEY prompts
+  - Improves multi-provider setup experience
+
+### Documentation
+- Added detailed Gemini provider testing documentation
+- Created GitHub issues with comprehensive debugging information
+- Documented proxy architecture and response flow
+
 ## [1.7.0] - 2025-01-24
 
 ### 🎉 Major Release: AgentDB Integration & Memory Optimization
