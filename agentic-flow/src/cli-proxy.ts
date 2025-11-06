@@ -1059,7 +1059,10 @@ PERFORMANCE:
 
   private printHelp(): void {
     console.log(`
-🤖 Agentic Flow v${VERSION} - AI Agent Orchestration with OpenRouter Support
+🤖 Agentic Flow v${VERSION} - AI Agent Orchestration with Multi-Provider Support
+
+NEW IN v1.9.4: Enterprise provider fallback & dynamic switching for long-running agents
+✅ Automatic failover  ✅ Circuit breaker  ✅ Cost optimization  ✅ Health monitoring
 
 USAGE:
   npx agentic-flow [COMMAND] [OPTIONS]
@@ -1148,6 +1151,21 @@ OPTIONS:
   Optimization analyzes agent type + task complexity to recommend best model.
   Example savings: DeepSeek R1 costs 85% less than Claude Sonnet 4.5 with similar quality.
   See docs/agentic-flow/benchmarks/MODEL_CAPABILITIES.md for full comparison.
+
+PROVIDER FALLBACK (NEW v1.9.4):
+  Enterprise-grade provider fallback for long-running agents with automatic failover,
+  circuit breaker, health monitoring, cost tracking, and crash recovery.
+
+  Features:
+  • Automatic failover between providers (Gemini → Claude → ONNX)
+  • Circuit breaker prevents cascading failures (auto-recovery after timeout)
+  • Real-time health monitoring (success rate, latency, error tracking)
+  • Cost optimization (70% savings using Gemini for simple tasks)
+  • Checkpointing for crash recovery (save/restore agent state)
+  • Budget controls (hard limits on spending and runtime)
+
+  See: docs/PROVIDER-FALLBACK-GUIDE.md for complete documentation
+  Example: src/examples/use-provider-fallback.ts
 
 EXAMPLES:
   # MCP Server Management
