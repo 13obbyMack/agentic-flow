@@ -5,6 +5,40 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.9.3] - 2025-11-06
+
+### Fixed - Gemini Provider Now Fully Functional 🎉
+
+**Three Critical Bugs Resolved:**
+
+1. **Model Selection Bug** (cli-proxy.ts:427-431, anthropic-to-gemini.ts)
+   - **Issue**: Proxy incorrectly used `COMPLETION_MODEL` environment variable containing `claude-sonnet-4-5-20250929` instead of Gemini model
+   - **Fix**: Ignore `COMPLETION_MODEL` for Gemini proxy, always default to `gemini-2.0-flash-exp`
+   - **Impact**: Gemini API now receives correct model name
+
+2. **Streaming Response Bug** (anthropic-to-gemini.ts:119-121)
+   - **Issue**: Missing `&alt=sse` parameter in streaming API URL caused empty response streams
+   - **Fix**: Added `&alt=sse` parameter to `streamGenerateContent` endpoint
+   - **Impact**: Streaming responses now work perfectly, returning complete LLM output
+
+3. **Provider Selection Logic Bug** (cli-proxy.ts:299-302)
+   - **Issue**: System auto-selected Gemini even when user explicitly specified `--provider anthropic`
+   - **Fix**: Check `options.provider` first and return false if user specified different provider
+   - **Impact**: Provider flag now correctly overrides auto-detection
+
+### Verified Working
+- ✅ Gemini provider with streaming responses
+- ✅ Anthropic provider (default and explicit)
+- ✅ OpenRouter provider
+- ✅ Non-streaming responses
+- ✅ All three providers tested end-to-end with agents
+
+### Technical Details
+- Direct Gemini API validation confirmed key is valid
+- Proxy correctly converts Anthropic Messages API format to Gemini format
+- Server-Sent Events (SSE) streaming properly parsed and converted
+- All fixes applied to both source (`src/`) and compiled (`dist/`) files
+
 ## [1.8.15] - 2025-11-01
 
 ### 🐛 Bug Fix - Model Configuration

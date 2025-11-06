@@ -246,6 +246,110 @@ npx agentic-flow --agent coder --task "Code cleanup" --optimize --max-cost 0.001
 
 ---
 
+## 🔌 Provider Support
+
+**agentic-flow supports multiple LLM providers** through intelligent proxy architecture that converts requests to provider-specific formats while maintaining Claude Agent SDK compatibility.
+
+### Supported Providers
+
+| Provider | Models | Cost | Speed | Setup |
+|----------|--------|------|-------|-------|
+| **Anthropic** | Claude 3.5 Sonnet, Opus, Haiku | $$$ | Fast | `ANTHROPIC_API_KEY` |
+| **Gemini** | Gemini 2.0 Flash, Pro | $ | Very Fast | `GOOGLE_GEMINI_API_KEY` |
+| **OpenRouter** | 100+ models (GPT, Llama, DeepSeek) | Varies | Varies | `OPENROUTER_API_KEY` |
+| **ONNX** | Phi-4 (local) | FREE | Medium | No key needed |
+
+### Quick Provider Examples
+
+```bash
+# Anthropic (default) - Highest quality
+npx agentic-flow --agent coder --task "Build API"
+
+# Gemini - Fastest, cost-effective (v1.9.3+)
+export GOOGLE_GEMINI_API_KEY=AIza...
+npx agentic-flow --agent coder --task "Build API" --provider gemini
+
+# OpenRouter - 99% cost savings with DeepSeek
+export OPENROUTER_API_KEY=sk-or-...
+npx agentic-flow --agent coder --task "Build API" \
+  --provider openrouter \
+  --model "deepseek/deepseek-chat"
+
+# ONNX - Free local inference (privacy-first)
+npx agentic-flow --agent coder --task "Build API" --provider onnx
+```
+
+### Provider Architecture
+
+**How it works:**
+1. All requests use Claude Agent SDK format (Messages API)
+2. Built-in proxies convert to provider-specific formats:
+   - **Gemini Proxy**: Converts to `generateContent` API with SSE streaming
+   - **OpenRouter Proxy**: Forwards to OpenRouter with model routing
+   - **ONNX Proxy**: Routes to local ONNX Runtime with Phi-4
+3. Responses converted back to Anthropic format
+4. Full streaming support across all providers
+
+**Key Features:**
+- ✅ Streaming responses (real-time output)
+- ✅ Tool calling support (where available)
+- ✅ Automatic format conversion
+- ✅ Error handling and retries
+- ✅ Cost tracking and usage metrics
+
+### Provider Configuration
+
+**Environment Variables:**
+```bash
+# Required for each provider
+ANTHROPIC_API_KEY=sk-ant-...        # Anthropic Claude
+GOOGLE_GEMINI_API_KEY=AIza...       # Google Gemini
+OPENROUTER_API_KEY=sk-or-v1-...     # OpenRouter
+# ONNX requires no key (local inference)
+
+# Optional overrides
+PROVIDER=gemini                      # Force specific provider
+USE_GEMINI=true                      # Enable Gemini by default
+DEFAULT_MODEL=gemini-2.0-flash-exp   # Override model
+```
+
+**CLI Flags:**
+```bash
+--provider <name>    # anthropic, gemini, openrouter, onnx
+--model <name>       # Provider-specific model name
+--stream             # Enable streaming (default: true)
+--optimize           # Auto-select optimal model
+--priority <type>    # quality, cost, speed, privacy
+```
+
+### Gemini Provider (v1.9.3+)
+
+**Fully functional** with streaming support! Three critical bugs fixed:
+
+```bash
+# Setup Gemini
+export GOOGLE_GEMINI_API_KEY=AIzaSy...
+
+# Use Gemini (fastest responses)
+npx agentic-flow --agent coder --task "Write function" --provider gemini
+
+# Gemini with streaming
+npx agentic-flow --agent coder --task "Build API" --provider gemini --stream
+
+# Gemini-specific model
+npx agentic-flow --agent coder --task "Task" \
+  --provider gemini \
+  --model "gemini-2.0-flash-exp"
+```
+
+**Gemini Benefits:**
+- ⚡ **2-5x faster** than Anthropic
+- 💰 **70% cheaper** than Claude
+- 🎯 **Excellent for** code generation, analysis, simple tasks
+- ✅ **Full streaming support** (SSE)
+
+---
+
 ## 📋 CLI Commands
 
 ```bash
