@@ -1,0 +1,77 @@
+[package]
+name = "agentic-jujutsu"
+version = "0.1.0"
+edition = "2021"
+authors = ["Agentic Flow Team"]
+description = "WASM-enabled Jujutsu VCS wrapper for AI agent collaboration and learning"
+license = "MIT"
+repository = "https://github.com/ruvnet/agentic-flow"
+keywords = ["vcs", "jujutsu", "wasm", "ai-agents", "collaboration"]
+categories = ["development-tools", "wasm"]
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+# Core dependencies
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+thiserror = "1.0"
+anyhow = "1.0"
+chrono = { version = "0.4", features = ["serde"] }
+uuid = { version = "1.0", features = ["v4", "serde"] }
+
+# WASM dependencies
+wasm-bindgen = "0.2"
+wasm-bindgen-futures = "0.4"
+js-sys = "0.3"
+web-sys = { version = "0.3", features = ["console"] }
+
+# Async runtime
+tokio = { version = "1.0", features = ["full"], optional = true }
+
+# Process execution for jj CLI
+async-process = { version = "2.0", optional = true }
+
+# CLI argument parsing
+clap = { version = "4.0", features = ["derive"], optional = true }
+
+# Logging
+log = { version = "0.4", optional = true }
+env_logger = { version = "0.11", optional = true }
+
+[dev-dependencies]
+tokio = { version = "1.0", features = ["full", "test-util"] }
+tokio-test = "0.4"
+proptest = "1.0"
+criterion = "0.5"
+tempfile = "3.0"
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+wasm-bindgen = "0.2"
+wasm-bindgen-futures = "0.4"
+console_error_panic_hook = "0.1"
+getrandom = { version = "0.2", features = ["js"] }
+
+[features]
+default = ["native"]
+native = ["tokio", "async-process"]
+wasm = []
+cli = ["clap", "log", "env_logger"]
+
+[[bin]]
+name = "jj-agent-hook"
+required-features = ["native", "cli"]
+
+[[bench]]
+name = "operations"
+harness = false
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+strip = true
+
+[profile.release.package.wasm-opt]
+opt-level = "z"

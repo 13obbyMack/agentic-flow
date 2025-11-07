@@ -1,0 +1,78 @@
+{
+  "name": "@agentic-flow/jujutsu",
+  "version": "0.1.0",
+  "description": "WASM-enabled Jujutsu VCS wrapper for AI agents",
+  "keywords": [
+    "jujutsu",
+    "vcs",
+    "wasm",
+    "ai-agents",
+    "version-control",
+    "collaboration",
+    "rust"
+  ],
+  "author": "Agentic Flow Team",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ruvnet/agentic-flow.git",
+    "directory": "packages/agentic-jujutsu"
+  },
+  "homepage": "https://github.com/ruvnet/agentic-flow/tree/main/packages/agentic-jujutsu",
+  "main": "pkg/node/index.js",
+  "module": "pkg/bundler/index.js",
+  "browser": "pkg/web/index.js",
+  "types": "typescript/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./typescript/index.d.ts",
+      "import": "./pkg/bundler/index.js",
+      "require": "./pkg/node/index.js",
+      "browser": "./pkg/web/index.js",
+      "deno": "./pkg/deno/index.js"
+    },
+    "./web": {
+      "types": "./typescript/index.d.ts",
+      "import": "./pkg/web/index.js"
+    },
+    "./node": {
+      "types": "./typescript/index.d.ts",
+      "require": "./pkg/node/index.js"
+    },
+    "./bundler": {
+      "types": "./typescript/index.d.ts",
+      "import": "./pkg/bundler/index.js"
+    },
+    "./deno": {
+      "types": "./typescript/index.d.ts",
+      "import": "./pkg/deno/index.js"
+    }
+  },
+  "files": [
+    "pkg/",
+    "typescript/",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "./scripts/wasm-pack-build.sh --release",
+    "build:dev": "./scripts/wasm-pack-build.sh",
+    "test": "npm run build:dev && npm run test:node && npm run test:wasm",
+    "test:node": "node tests/wasm/basic.test.js",
+    "test:wasm": "wasm-pack test --node",
+    "bench": "cargo bench",
+    "size": "./scripts/analyze-size.sh",
+    "verify": "./scripts/verify-build.sh",
+    "clean": "rm -rf pkg/ target/"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0"
+  },
+  "peerDependencies": {},
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}
