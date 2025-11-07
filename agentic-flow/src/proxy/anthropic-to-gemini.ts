@@ -304,11 +304,17 @@ The system will automatically execute these commands and provide results.
     if (anthropicReq.tools && anthropicReq.tools.length > 0) {
       geminiReq.tools = [{
         functionDeclarations: anthropicReq.tools.map(tool => {
-          // Clean schema: Remove $schema and additionalProperties fields that Gemini doesn't support
+          // Clean schema: Remove fields that Gemini doesn't support
           const cleanSchema = (schema: any): any => {
             if (!schema || typeof schema !== 'object') return schema;
 
-            const { $schema, additionalProperties, ...rest } = schema;
+            const {
+              $schema,
+              additionalProperties,
+              exclusiveMinimum,
+              exclusiveMaximum,
+              ...rest
+            } = schema;
             const cleaned: any = { ...rest };
 
             // Recursively clean nested objects
