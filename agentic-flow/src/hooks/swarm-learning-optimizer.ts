@@ -276,7 +276,7 @@ export class SwarmLearningOptimizer {
         {
           topology: topology === 'mesh' ? 'hierarchical' : 'mesh',
           confidence: 0.5,
-          reasoning: 'Alternative topology if default doesn't perform well'
+          reasoning: 'Alternative topology if default does not perform well'
         }
       ]
     };

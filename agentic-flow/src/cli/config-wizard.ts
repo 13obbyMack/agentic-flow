@@ -32,6 +32,12 @@ const CONFIG_DEFINITIONS: ConfigValue[] = [
     validation: (val) => val.startsWith('sk-or-') || 'Must start with sk-or-'
   },
   {
+    key: 'GOOGLE_GEMINI_API_KEY',
+    value: '',
+    description: 'Google Gemini API key for Gemini models',
+    required: false
+  },
+  {
     key: 'COMPLETION_MODEL',
     value: 'claude-sonnet-4-5-20250929',
     description: 'Default model for completions',
@@ -40,9 +46,9 @@ const CONFIG_DEFINITIONS: ConfigValue[] = [
   {
     key: 'PROVIDER',
     value: 'anthropic',
-    description: 'Default provider (anthropic, openrouter, onnx)',
+    description: 'Default provider (anthropic, openrouter, gemini, onnx)',
     required: false,
-    validation: (val) => ['anthropic', 'openrouter', 'onnx'].includes(val) || 'Must be anthropic, openrouter, or onnx'
+    validation: (val) => ['anthropic', 'openrouter', 'gemini', 'onnx'].includes(val) || 'Must be anthropic, openrouter, gemini, or onnx'
   },
   {
     key: 'AGENTS_DIR',
@@ -265,17 +271,19 @@ export class ConfigWizard {
 
     const hasAnthropic = this.currentConfig.has('ANTHROPIC_API_KEY');
     const hasOpenRouter = this.currentConfig.has('OPENROUTER_API_KEY');
+    const hasGemini = this.currentConfig.has('GOOGLE_GEMINI_API_KEY');
     const provider = this.currentConfig.get('PROVIDER') || 'anthropic';
 
     console.log('Providers configured:');
     console.log(`  ${hasAnthropic ? '✅' : '❌'} Anthropic (Claude)`);
     console.log(`  ${hasOpenRouter ? '✅' : '❌'} OpenRouter (Alternative models)`);
+    console.log(`  ${hasGemini ? '✅' : '❌'} Gemini (Google AI)`);
     console.log(`  ⚙️  ONNX (Local inference) - always available`);
     console.log('');
     console.log(`Default provider: ${provider}`);
     console.log('');
 
-    if (!hasAnthropic && !hasOpenRouter) {
+    if (!hasAnthropic && !hasOpenRouter && !hasGemini) {
       console.log('⚠️  Warning: No API keys configured!');
       console.log('   You can use ONNX local inference, but quality may be limited.');
       console.log('   Run with --provider onnx to use local inference.\n');
@@ -387,8 +395,9 @@ EXAMPLES:
 AVAILABLE CONFIGURATION KEYS:
   ANTHROPIC_API_KEY     - Anthropic API key (sk-ant-...)
   OPENROUTER_API_KEY    - OpenRouter API key (sk-or-v1-...)
+  GOOGLE_GEMINI_API_KEY - Google Gemini API key
   COMPLETION_MODEL      - Default model name
-  PROVIDER              - Default provider (anthropic, openrouter, onnx)
+  PROVIDER              - Default provider (anthropic, openrouter, gemini, onnx)
   AGENTS_DIR            - Custom agents directory
   PROXY_PORT            - Proxy server port (default: 3000)
   USE_OPENROUTER        - Force OpenRouter (true/false)

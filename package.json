@@ -28,6 +28,7 @@
   "author": "Performance Benchmarker Agent",
   "license": "MIT",
   "dependencies": {
+    "@anthropic-ai/claude-code": "^2.0.35",
     "@types/react": "^19.2.2",
     "@types/react-dom": "^19.2.2",
     "@vitejs/plugin-react-swc": "^4.2.0",
