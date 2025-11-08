@@ -34,38 +34,92 @@ async function initializeAgentDB() {
   await db.connect();
 
   // Create collections for different data aspects
+  console.log('📦 Creating maternal_health collection...');
   await db.createCollection('maternal_health', {
     schema: {
       motherID: 'string',
       birthYear: 'number',
       offspringCount: 'number',
       longevity: 'number',
+      reproductiveCessationAge: 'number',
+      interbirthIntervals: 'array',
       environmentalStress: 'number',
       physiologicalMarkers: 'object',
-      dataset: 'string'
+      dataset: 'string',
+      location: 'string',
+      embedding: 'vector'
     },
-    indexes: ['motherID', 'birthYear', 'dataset']
+    indexes: ['motherID', 'birthYear', 'dataset', 'location']
   });
 
+  console.log('📦 Creating environmental_stress collection...');
+  await db.createCollection('environmental_stress', {
+    schema: {
+      eventID: 'string',
+      eventName: 'string',
+      location: 'string',
+      startYear: 'number',
+      endYear: 'number',
+      severity: 'number',
+      mortalityRate: 'number',
+      affectedPopulation: 'number',
+      duration: 'number',
+      description: 'string',
+      embedding: 'vector'
+    },
+    indexes: ['eventID', 'location', 'startYear', 'endYear']
+  });
+
+  console.log('📦 Creating physiological_markers collection...');
+  await db.createCollection('physiological_markers', {
+    schema: {
+      markerID: 'string',
+      motherID: 'string',
+      telomereLength: 'number',
+      immuneMarkers: 'object',
+      epigeneticMarkers: 'object',
+      hormonalProfiles: 'object',
+      metabolicMarkers: 'object',
+      measurementDate: 'number',
+      dataset: 'string',
+      embedding: 'vector'
+    },
+    indexes: ['markerID', 'motherID', 'dataset', 'measurementDate']
+  });
+
+  console.log('📦 Creating causal_relationships collection...');
   await db.createCollection('causal_relationships', {
     schema: {
+      relationshipID: 'string',
       factor1: 'string',
       factor2: 'string',
       correlationStrength: 'number',
       causalDirection: 'string',
       confidence: 'number',
-      evidence: 'array'
-    }
+      pValue: 'number',
+      sampleSize: 'number',
+      evidence: 'array',
+      methodology: 'string',
+      embedding: 'vector'
+    },
+    indexes: ['relationshipID', 'factor1', 'factor2']
   });
 
+  console.log('📦 Creating novel_patterns collection...');
   await db.createCollection('novel_patterns', {
     schema: {
+      patternID: 'string',
       patternType: 'string',
       description: 'string',
       evidence: 'array',
       statisticalSignificance: 'number',
-      discoveryMethod: 'string'
-    }
+      effectSize: 'number',
+      discoveryMethod: 'string',
+      discoveryDate: 'number',
+      validatedAcrossDatasets: 'boolean',
+      embedding: 'vector'
+    },
+    indexes: ['patternID', 'patternType', 'discoveryMethod']
   });
 
   // Initialize learning plugins
