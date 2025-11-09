@@ -27,39 +27,39 @@
   "bugs": {
     "url": "https://github.com/ruvnet/agentic-flow/issues"
   },
-  "main": "pkg/node/index.js",
-  "module": "pkg/bundler/index.js",
-  "browser": "pkg/web/index.js",
-  "types": "typescript/index.d.ts",
+  "main": "pkg/node/agentic_jujutsu.js",
+  "module": "pkg/bundler/agentic_jujutsu.js",
+  "browser": "pkg/web/agentic_jujutsu.js",
+  "types": "pkg/web/agentic_jujutsu.d.ts",
   "exports": {
     ".": {
-      "types": "./typescript/index.d.ts",
-      "import": "./pkg/bundler/index.js",
-      "require": "./pkg/node/index.js",
-      "browser": "./pkg/web/index.js",
-      "deno": "./pkg/deno/index.js"
+      "types": "./pkg/web/agentic_jujutsu.d.ts",
+      "import": "./pkg/bundler/agentic_jujutsu.js",
+      "require": "./pkg/node/agentic_jujutsu.js",
+      "browser": "./pkg/web/agentic_jujutsu.js",
+      "deno": "./pkg/deno/agentic_jujutsu.ts"
     },
     "./web": {
-      "types": "./typescript/index.d.ts",
-      "import": "./pkg/web/index.js"
+      "types": "./pkg/web/agentic_jujutsu.d.ts",
+      "import": "./pkg/web/agentic_jujutsu.js"
     },
     "./node": {
-      "types": "./typescript/index.d.ts",
-      "require": "./pkg/node/index.js"
+      "types": "./pkg/node/agentic_jujutsu.d.ts",
+      "require": "./pkg/node/agentic_jujutsu.js"
     },
     "./bundler": {
-      "types": "./typescript/index.d.ts",
-      "import": "./pkg/bundler/index.js"
+      "types": "./pkg/bundler/agentic_jujutsu.d.ts",
+      "import": "./pkg/bundler/agentic_jujutsu.js"
     },
     "./deno": {
-      "types": "./typescript/index.d.ts",
-      "import": "./pkg/deno/index.js"
+      "types": "./pkg/deno/agentic_jujutsu.d.ts",
+      "import": "./pkg/deno/agentic_jujutsu.ts"
     }
   },
   "files": [
     "pkg/",
-    "typescript/",
     "README.md",
+    "CRATE_README.md",
     "LICENSE"
   ],
   "scripts": {

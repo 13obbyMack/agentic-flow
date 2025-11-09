@@ -17,14 +17,19 @@ pub mod agentdb_sync;
 pub mod config;
 pub mod error;
 pub mod hooks;
-pub mod mcp;
 pub mod operations;
 pub mod types;
 pub mod wrapper;
 
-#[cfg(feature = "native")]
+// MCP module only available on native (uses reqwest)
+#[cfg(not(target_arch = "wasm32"))]
+pub mod mcp;
+
+// Native module only available on native targets
+#[cfg(not(target_arch = "wasm32"))]
 pub mod native;
 
+// WASM module only available for WASM targets
 #[cfg(target_arch = "wasm32")]
 pub mod wasm;
 

@@ -1,11 +1,19 @@
 //! WASM implementation with simulated command execution
+//! This module is only compiled for WASM targets
+
+#![cfg(target_arch = "wasm32")]
 
 use crate::error::{JJError, Result};
+use std::time::Duration;
 use wasm_bindgen::prelude::*;
 
 /// Execute a jj command in WASM environment (simulated)
-#[cfg(target_arch = "wasm32")]
-pub async fn execute_jj_command(args: &[&str]) -> Result<String> {
+/// Note: jj_path and timeout are ignored in WASM as we simulate commands
+pub async fn execute_jj_command(
+    _jj_path: &str,
+    args: &[&str],
+    _command_timeout: Duration,
+) -> Result<String> {
     // Log to browser console
     web_sys::console::log_1(&format!("WASM: Executing jj {}", args.join(" ")).into());
 
@@ -81,23 +89,16 @@ pub async fn execute_jj_command(args: &[&str]) -> Result<String> {
     Ok(response)
 }
 
-/// Stub for non-WASM builds
-#[cfg(not(target_arch = "wasm32"))]
-pub async fn execute_jj_command(_args: &[&str]) -> Result<String> {
-    Err(JJError::CommandFailed(
-        "WASM execution not available in this build".to_string(),
-    ))
-}
+// No stub needed - this module is only compiled for WASM targets
 
 /// Initialize WASM module
-#[cfg(target_arch = "wasm32")]
 #[wasm_bindgen(start)]
 pub fn wasm_init() {
     console_error_panic_hook::set_once();
     web_sys::console::log_1(&"agentic-jujutsu WASM module initialized".into());
 }
 
-#[cfg(all(test, target_arch = "wasm32"))]
+#[cfg(test)]
 mod tests {
     use super::*;
     use wasm_bindgen_test::*;

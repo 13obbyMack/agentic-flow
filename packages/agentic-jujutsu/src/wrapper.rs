@@ -30,7 +30,8 @@ fn validate_command_args(args: &[&str]) -> Result<()> {
     Ok(())
 }
 
-#[cfg(feature = "native")]
+// Import the appropriate execute_jj_command based on target architecture
+#[cfg(not(target_arch = "wasm32"))]
 use crate::native::execute_jj_command;
 
 #[cfg(target_arch = "wasm32")]
@@ -83,7 +84,7 @@ impl JJWrapper {
         let start = Instant::now();
         let command = format!("jj {}", args.join(" "));
 
-        #[cfg(feature = "native")]
+        #[cfg(not(target_arch = "wasm32"))]
         let result = {
             let timeout = std::time::Duration::from_millis(self.config.timeout_ms);
             match execute_jj_command(&self.config.jj_path(), args, timeout).await {
@@ -98,7 +99,8 @@ impl JJWrapper {
 
         #[cfg(target_arch = "wasm32")]
         let result = {
-            match execute_jj_command(args).await {
+            let timeout = std::time::Duration::from_millis(self.config.timeout_ms);
+            match execute_jj_command(&self.config.jj_path(), args, timeout).await {
                 Ok(output) => {
                     JJResult::new(output, String::new(), 0, start.elapsed().as_millis() as u64)
                 }
