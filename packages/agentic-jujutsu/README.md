@@ -3,8 +3,12 @@
 > AI-powered version control for multi-agent collaboration — **10-100x faster** than Git for concurrent operations
 
 [![npm version](https://badge.fury.io/js/%40agentic-flow%2Fjujutsu.svg)](https://www.npmjs.com/package/@agentic-flow/jujutsu)
+[![crates.io](https://img.shields.io/crates/v/agentic-jujutsu.svg)](https://crates.io/crates/agentic-jujutsu)
 [![Build Status](https://img.shields.io/badge/build-passing-brightgreen)](https://github.com/ruvnet/agentic-flow)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Documentation](https://docs.rs/agentic-jujutsu/badge.svg)](https://docs.rs/agentic-jujutsu)
+
+**Keywords:** AI agents • version control • VCS • Jujutsu • WASM • multi-agent systems • collaborative AI • MCP protocol • AgentDB • lock-free concurrency • ruv.io
 
 **agentic-jujutsu** makes [Jujutsu VCS](https://github.com/martinvonz/jj) work seamlessly with AI agents. It provides a Rust/WASM library with zero-overhead operations, structured conflict resolution, and automatic pattern learning.
 
@@ -277,10 +281,35 @@ We welcome contributions! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
 MIT License — see [LICENSE](LICENSE) for details.
 
+## 🔌 MCP Integration (NEW!)
+
+**Model Context Protocol support with dual transports:**
+
+- ✅ **Stdio Transport** - Local process communication for CLI tools
+- ✅ **SSE Transport** - HTTP-based for web/remote clients
+- ✅ **AgentDB Sync** - Real-time pattern learning and retrieval
+- ✅ **JSON-RPC 2.0** - Standard protocol compliance
+
+```rust
+use agentic_jujutsu::{AgentDBSync, mcp::MCPClientConfig};
+
+// Connect to agentic-flow MCP server
+let mcp_config = MCPClientConfig::stdio();
+let agentdb = AgentDBSync::with_mcp(true, mcp_config).await?;
+
+// Store and query patterns via MCP
+agentdb.store_episode(&episode).await?;
+let similar = agentdb.query_similar_operations("task", 5).await?;
+```
+
+[MCP Implementation Guide →](docs/MCP_IMPLEMENTATION_COMPLETE.md)
+
 ## Links
 
 - **GitHub:** [ruvnet/agentic-flow](https://github.com/ruvnet/agentic-flow)
+- **Website:** [ruv.io](https://ruv.io) - AI Agent Infrastructure
 - **npm:** [@agentic-flow/jujutsu](https://www.npmjs.com/package/@agentic-flow/jujutsu)
+- **crates.io:** [agentic-jujutsu](https://crates.io/crates/agentic-jujutsu)
 - **Jujutsu VCS:** [martinvonz/jj](https://github.com/martinvonz/jj)
 - **Documentation:** [Complete Index](docs/INDEX.md)
 

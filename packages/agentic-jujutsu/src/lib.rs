@@ -17,6 +17,7 @@ pub mod agentdb_sync;
 pub mod config;
 pub mod error;
 pub mod hooks;
+pub mod mcp;
 pub mod operations;
 pub mod types;
 pub mod wrapper;

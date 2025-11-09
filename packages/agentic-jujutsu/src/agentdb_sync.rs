@@ -4,6 +4,7 @@
 //! jj operation history, enabling AI agents to learn from past operations.
 
 use crate::{JJError, JJOperation, Result};
+use crate::mcp::{MCPClient, MCPClientConfig};
 use serde::{Deserialize, Serialize};
 
 /// Episode data structure for AgentDB storage
@@ -93,6 +94,8 @@ pub struct AgentDBSync {
     enabled: bool,
     /// Base URL for AgentDB API (if using remote)
     api_url: Option<String>,
+    /// MCP client for AgentDB communication
+    mcp_client: Option<MCPClient>,
 }
 
 impl AgentDBSync {
@@ -101,7 +104,23 @@ impl AgentDBSync {
         Self {
             enabled,
             api_url: None,
+            mcp_client: None,
         }
+    }
+
+    /// Create with MCP client for real AgentDB communication
+    pub async fn with_mcp(enabled: bool, mcp_config: MCPClientConfig) -> Result<Self> {
+        let mcp_client = if enabled {
+            Some(MCPClient::new(mcp_config).await?)
+        } else {
+            None
+        };
+
+        Ok(Self {
+            enabled,
+            api_url: None,
+            mcp_client,
+        })
     }
 
     /// Create with custom API URL
@@ -132,12 +151,23 @@ impl AgentDBSync {
             return Ok(());
         }
 
-        // Prepare episode JSON
+        // If MCP client is available, use it for real AgentDB communication
+        if let Some(client) = &self.mcp_client {
+            let episode_value = serde_json::to_value(episode)
+                .map_err(|e| JJError::SerializationError(e.to_string()))?;
+
+            client.store_pattern(episode_value).await?;
+
+            #[cfg(feature = "native")]
+            println!("[agentdb-sync] ✅ Stored episode via MCP: {}", episode.session_id);
+
+            return Ok(());
+        }
+
+        // Fallback: Log to console/file
         let episode_json = serde_json::to_string_pretty(episode)
             .map_err(|e| JJError::SerializationError(e.to_string()))?;
 
-        // TODO: Implement actual AgentDB storage via MCP or HTTP API
-        // For now, log to console/file
         #[cfg(feature = "native")]
         {
             println!("[agentdb-sync] Would store episode:");
@@ -174,9 +204,21 @@ impl AgentDBSync {
             return Ok(vec![]);
         }
 
-        // TODO: Implement actual AgentDB query via MCP
-        // This would use vector similarity search to find similar past operations
+        // If MCP client is available, use it for real AgentDB queries
+        if let Some(client) = &self.mcp_client {
+            let result = client.search_patterns(task.to_string(), limit).await?;
 
+            // Parse response into episodes
+            let episodes: Vec<AgentDBEpisode> = serde_json::from_value(result)
+                .map_err(|e| JJError::SerializationError(format!("Failed to parse episodes: {}", e)))?;
+
+            #[cfg(feature = "native")]
+            println!("[agentdb-sync] ✅ Found {} similar episodes via MCP", episodes.len());
+
+            return Ok(episodes);
+        }
+
+        // Fallback: Log and return empty
         #[cfg(feature = "native")]
         {
             println!(
@@ -193,7 +235,6 @@ impl AgentDBSync {
             );
         }
 
-        // Return empty for now
         Ok(vec![])
     }
 
@@ -203,8 +244,21 @@ impl AgentDBSync {
             return Ok(TaskStatistics::default());
         }
 
-        // TODO: Implement actual statistics query
+        // If MCP client is available, use it for real AgentDB statistics
+        if let Some(client) = &self.mcp_client {
+            let result = client.get_pattern_stats(task_pattern.to_string(), 10).await?;
 
+            // Parse response into statistics
+            let stats: TaskStatistics = serde_json::from_value(result)
+                .map_err(|e| JJError::SerializationError(format!("Failed to parse stats: {}", e)))?;
+
+            #[cfg(feature = "native")]
+            println!("[agentdb-sync] ✅ Retrieved statistics via MCP for: {}", task_pattern);
+
+            return Ok(stats);
+        }
+
+        // Fallback: Log and return default
         #[cfg(feature = "native")]
         {
             println!(

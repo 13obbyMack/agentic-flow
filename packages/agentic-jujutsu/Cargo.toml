@@ -40,6 +40,9 @@ clap = { version = "4.0", features = ["derive"], optional = true }
 log = { version = "0.4", optional = true }
 env_logger = { version = "0.11", optional = true }
 
+# HTTP client for SSE transport (optional)
+reqwest = { version = "0.11", features = ["json"], optional = true }
+
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 errno = "0.3"
 
@@ -61,6 +64,8 @@ default = ["native"]
 native = ["tokio", "async-process"]
 wasm = []
 cli = ["clap", "log", "env_logger"]
+mcp = ["reqwest"]
+mcp-full = ["mcp", "native"]
 
 [[bin]]
 name = "jj-agent-hook"
