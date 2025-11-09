@@ -1,6 +1,7 @@
 //! Tests for AgentDB synchronization
 
 use agentic_jujutsu::{AgentDBEpisode, AgentDBSync, JJOperation, OperationType, Result};
+use std::collections::HashMap;
 
 #[tokio::test]
 async fn test_episode_creation() -> Result<()> {
@@ -105,7 +106,7 @@ async fn test_batch_sync() -> Result<()> {
                 timestamp: 1234567890,
                 user: Some("agent".to_string()),
                 args: vec![],
-                metadata: None,
+                metadata: HashMap::new(),
             },
             "session-001".to_string(),
             "agent-001".to_string(),
@@ -118,7 +119,7 @@ async fn test_batch_sync() -> Result<()> {
                 timestamp: 1234567891,
                 user: Some("agent".to_string()),
                 args: vec![],
-                metadata: None,
+                metadata: HashMap::new(),
             },
             "session-001".to_string(),
             "agent-001".to_string(),

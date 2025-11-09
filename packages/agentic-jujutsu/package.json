@@ -1,7 +1,7 @@
 {
   "name": "@agentic-flow/jujutsu",
   "version": "0.1.0",
-  "description": "WASM-enabled Jujutsu VCS wrapper for AI agents",
+  "description": "AI-powered Jujutsu VCS wrapper - 10-100x faster than Git with MCP protocol support and WASM",
   "keywords": [
     "jujutsu",
     "vcs",
@@ -9,16 +9,24 @@
     "ai-agents",
     "version-control",
     "collaboration",
-    "rust"
+    "rust",
+    "mcp",
+    "agentdb",
+    "multi-agent",
+    "lock-free",
+    "concurrent"
   ],
-  "author": "Agentic Flow Team",
+  "author": "Agentic Flow Team <team@ruv.io>",
   "license": "MIT",
   "repository": {
     "type": "git",
     "url": "https://github.com/ruvnet/agentic-flow.git",
     "directory": "packages/agentic-jujutsu"
   },
-  "homepage": "https://github.com/ruvnet/agentic-flow/tree/main/packages/agentic-jujutsu",
+  "homepage": "https://ruv.io",
+  "bugs": {
+    "url": "https://github.com/ruvnet/agentic-flow/issues"
+  },
   "main": "pkg/node/index.js",
   "module": "pkg/bundler/index.js",
   "browser": "pkg/web/index.js",
