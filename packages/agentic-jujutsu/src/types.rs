@@ -72,6 +72,7 @@ impl JJResult {
     }
 
     /// Check if the command was successful
+    #[inline]
     pub fn success(&self) -> bool {
         self.exit_code == 0
     }
@@ -201,11 +202,13 @@ impl JJCommit {
     }
 
     /// Short commit ID (first 12 characters)
+    #[inline]
     pub fn short_id(&self) -> String {
         self.id.chars().take(12).collect()
     }
 
     /// Short change ID (first 12 characters)
+    #[inline]
     pub fn short_change_id(&self) -> String {
         self.change_id.chars().take(12).collect()
     }
@@ -664,11 +667,13 @@ impl JJDiff {
     }
 
     /// Total number of files changed
+    #[inline]
     pub fn total_files_changed(&self) -> usize {
         self.added.len() + self.modified.len() + self.deleted.len() + self.renamed.len()
     }
 
     /// Check if diff is empty
+    #[inline]
     pub fn is_empty(&self) -> bool {
         self.total_files_changed() == 0
     }
@@ -810,7 +815,7 @@ mod tests {
 
     #[test]
     fn test_change_creation() {
-        let change = JJChange::new("test.rs".to_string(), ChangeStatus::Modified);
+        let change = JJChange::new("test.rs".to_string());
         assert_eq!(change.file_path, "test.rs");
         assert!(matches!(change.status, ChangeStatus::Modified));
         assert!(!change.is_staged);

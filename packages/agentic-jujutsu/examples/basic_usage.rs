@@ -17,7 +17,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .with_verbose(true)
         .with_timeout(60000)
         .with_max_log_entries(500);
-    
+
     let custom_wrapper = JJWrapper::with_config(config)?;
     println!("   ✓ Custom wrapper created successfully\n");
 
@@ -51,7 +51,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         for (i, op) in operations.iter().enumerate().take(5) {
             println!("   {}. {} - {}", i + 1, op.operation_type_str(), op.command);
             println!("      User: {} @ {}", op.user, op.hostname);
-            println!("      Duration: {}ms, Success: {}", op.duration_ms, op.success);
+            println!(
+                "      Duration: {}ms, Success: {}",
+                op.duration_ms, op.success
+            );
         }
     } else {
         println!("7. No operations found in log (this is expected for a new wrapper)");

@@ -9,7 +9,6 @@ use crate::{
 use chrono::Utc;
 use std::sync::{Arc, Mutex};
 use std::time::Instant;
-use wasm_bindgen::prelude::*;
 
 #[cfg(feature = "native")]
 use crate::native::execute_jj_command;
@@ -65,12 +64,9 @@ impl JJWrapper {
         let result = {
             let timeout = std::time::Duration::from_millis(self.config.timeout_ms);
             match execute_jj_command(&self.config.jj_path, args, timeout).await {
-                Ok(output) => JJResult::new(
-                    output,
-                    String::new(),
-                    0,
-                    start.elapsed().as_millis() as u64,
-                ),
+                Ok(output) => {
+                    JJResult::new(output, String::new(), 0, start.elapsed().as_millis() as u64)
+                }
                 Err(e) => {
                     return Err(JJError::CommandFailed(e.to_string()));
                 }
@@ -80,12 +76,9 @@ impl JJWrapper {
         #[cfg(target_arch = "wasm32")]
         let result = {
             match execute_jj_command(args).await {
-                Ok(output) => JJResult::new(
-                    output,
-                    String::new(),
-                    0,
-                    start.elapsed().as_millis() as u64,
-                ),
+                Ok(output) => {
+                    JJResult::new(output, String::new(), 0, start.elapsed().as_millis() as u64)
+                }
                 Err(e) => {
                     return Err(JJError::CommandFailed(e.to_string()));
                 }
@@ -143,7 +136,11 @@ impl JJWrapper {
 
     /// Get user-initiated operations (exclude snapshots)
     pub fn get_user_operations(&self, limit: usize) -> Result<Vec<JJOperation>> {
-        Ok(self.operation_log.lock().unwrap().get_user_operations(limit))
+        Ok(self
+            .operation_log
+            .lock()
+            .unwrap()
+            .get_user_operations(limit))
     }
 
     /// Get conflicts in the current commit or specified commit
@@ -258,7 +255,7 @@ impl JJWrapper {
     }
 
     /// Create a new commit
-    pub async fn new(&self, message: Option<&str>) -> Result<JJResult> {
+    pub async fn new_commit(&self, message: Option<&str>) -> Result<JJResult> {
         let mut args = vec!["new"];
         if let Some(msg) = message {
             args.extend(&["-m", msg]);
@@ -290,7 +287,8 @@ impl JJWrapper {
 
     /// Rebase commits
     pub async fn rebase(&self, source: &str, destination: &str) -> Result<JJResult> {
-        self.execute(&["rebase", "-s", source, "-d", destination]).await
+        self.execute(&["rebase", "-s", source, "-d", destination])
+            .await
     }
 
     /// Resolve conflicts
@@ -336,7 +334,12 @@ impl JJWrapper {
             let parts: Vec<&str> = line.split(':').collect();
             if parts.len() >= 2 {
                 let name = parts[0].trim().to_string();
-                let target = parts[1].trim().split_whitespace().next().unwrap_or("").to_string();
+                let target = parts[1]
+                    .trim()
+                    .split_whitespace()
+                    .next()
+                    .unwrap_or("")
+                    .to_string();
 
                 let is_remote = name.contains('/');
                 let mut branch = JJBranch::new(name.clone(), target, is_remote);

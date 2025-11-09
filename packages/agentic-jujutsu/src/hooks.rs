@@ -4,7 +4,8 @@
 //! agentic-flow hooks system, enabling automatic operation tracking, memory sync,
 //! and multi-agent coordination.
 
-use crate::{JJWrapper, JJOperation, OperationType, Result, JJError};
+use crate::{JJOperation, JJWrapper, OperationType, Result};
+use chrono::Utc;
 use serde::{Deserialize, Serialize};
 
 /// Context information for hook execution
@@ -30,7 +31,7 @@ impl HookContext {
             agent_id,
             session_id,
             task_description,
-            timestamp: chrono::Utc::now().timestamp(),
+            timestamp: Utc::now().timestamp(),
             metadata: serde_json::Value::Null,
         }
     }
@@ -131,11 +132,12 @@ impl JJHooksIntegration {
         );
 
         // Log the session start
-        let event = JJHookEvent::new(HookEventType::PreTask, None, ctx.clone())
-            .with_metadata(serde_json::json!({
+        let event = JJHookEvent::new(HookEventType::PreTask, None, ctx.clone()).with_metadata(
+            serde_json::json!({
                 "action": "session_init",
                 "description": description,
-            }));
+            }),
+        );
 
         // Sync to AgentDB if enabled
         if self.agentdb_enabled {
@@ -157,20 +159,17 @@ impl JJHooksIntegration {
         );
 
         // Create a jj operation for this edit
-        let operation = JJOperation {
-            id: uuid::Uuid::new_v4().to_string(),
-            operation_type: OperationType::Describe,
-            description: description.clone(),
-            timestamp: ctx.timestamp,
-            user: Some(ctx.agent_id.clone()),
-            args: vec![],
-            metadata: Some(serde_json::json!({
-                "file": file,
-                "session_id": ctx.session_id,
-                "agent_id": ctx.agent_id,
-                "hook": "post-edit",
-            })),
-        };
+        let operation = JJOperation::builder()
+            .operation_id(uuid::Uuid::new_v4().to_string())
+            .operation_type(OperationType::Describe)
+            .command(description.clone())
+            .user(ctx.agent_id.clone())
+            .hostname("hook-agent".to_string())
+            .add_metadata("file", file)
+            .add_metadata("session_id", &ctx.session_id)
+            .add_metadata("agent_id", &ctx.agent_id)
+            .add_metadata("hook", "post-edit")
+            .build();
 
         // Create hook event
         let event = JJHookEvent::new(
@@ -209,8 +208,8 @@ impl JJHooksIntegration {
         });
 
         // Create hook event
-        let event = JJHookEvent::new(HookEventType::PostTask, None, ctx.clone())
-            .with_metadata(summary);
+        let event =
+            JJHookEvent::new(HookEventType::PostTask, None, ctx.clone()).with_metadata(summary);
 
         // Sync to AgentDB if enabled
         if self.agentdb_enabled {
@@ -232,11 +231,12 @@ impl JJHooksIntegration {
         conflict_files: Vec<String>,
         ctx: HookContext,
     ) -> Result<JJHookEvent> {
-        let event = JJHookEvent::new(HookEventType::ConflictDetected, None, ctx)
-            .with_metadata(serde_json::json!({
+        let event = JJHookEvent::new(HookEventType::ConflictDetected, None, ctx).with_metadata(
+            serde_json::json!({
                 "conflicts": conflict_files,
                 "requires_resolution": true,
-            }));
+            }),
+        );
 
         // Sync to AgentDB for learning
         if self.agentdb_enabled {
@@ -247,7 +247,7 @@ impl JJHooksIntegration {
     }
 
     /// Get operations for a specific session
-    async fn get_session_operations(&self, session_id: &str) -> Result<Vec<JJOperation>> {
+    async fn get_session_operations(&self, _session_id: &str) -> Result<Vec<JJOperation>> {
         // This would query the operation log for operations matching the session ID
         // For now, return empty vec as placeholder
         Ok(vec![])
@@ -374,7 +374,10 @@ mod tests {
         let event = integration.on_pre_task(ctx.clone()).await.unwrap();
 
         assert_eq!(event.event_type, HookEventType::PreTask);
-        assert_eq!(integration.current_session().unwrap().agent_id, "test-agent");
+        assert_eq!(
+            integration.current_session().unwrap().agent_id,
+            "test-agent"
+        );
     }
 
     #[tokio::test]

@@ -18,7 +18,7 @@ serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 thiserror = "1.0"
 anyhow = "1.0"
-chrono = { version = "0.4", features = ["serde"] }
+chrono = { version = "0.4", features = ["serde"], default-features = false }
 uuid = { version = "1.0", features = ["v4", "serde"] }
 
 # WASM dependencies
@@ -27,8 +27,8 @@ wasm-bindgen-futures = "0.4"
 js-sys = "0.3"
 web-sys = { version = "0.3", features = ["console"] }
 
-# Async runtime
-tokio = { version = "1.0", features = ["full"], optional = true }
+# Async runtime - only include necessary features to reduce binary size
+tokio = { version = "1.0", features = ["rt", "process", "io-util", "time"], optional = true }
 
 # Process execution for jj CLI
 async-process = { version = "2.0", optional = true }
@@ -69,9 +69,21 @@ harness = false
 
 [profile.release]
 opt-level = 3
-lto = true
+lto = "fat"              # Fat LTO for better optimization
 codegen-units = 1
 strip = true
+panic = 'abort'          # Smaller binaries, no unwinding
+incremental = false      # Better optimization, disable for release
 
-[profile.release.package.wasm-opt]
-opt-level = "z"
+# Optimize all dependencies
+[profile.release.package."*"]
+opt-level = 3
+
+# Size-optimized profile for WASM builds
+[profile.release-size]
+inherits = "release"
+opt-level = "z"          # Optimize for size
+lto = "fat"
+codegen-units = 1
+panic = 'abort'
+strip = true

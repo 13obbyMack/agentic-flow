@@ -15,9 +15,7 @@
 //! jj-agent-hook post-task --agent-id coder-1 --session-id swarm-001
 //! ```
 
-use agentic_jujutsu::{
-    JJConfig, JJWrapper, HookContext, JJHooksIntegration, Result,
-};
+use agentic_jujutsu::{HookContext, JJConfig, JJHooksIntegration, JJWrapper, Result};
 use clap::{Parser, Subcommand};
 use std::process::exit;
 
@@ -252,9 +250,7 @@ async fn run_command(cli: Cli) -> Result<()> {
                     println!("  - {}", conflict);
                 }
 
-                let event = integration
-                    .on_conflict_detected(conflicts, ctx)
-                    .await?;
+                let event = integration.on_conflict_detected(conflicts, ctx).await?;
 
                 if cli.verbose {
                     println!("\n🔍 Event details:");

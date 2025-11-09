@@ -6,7 +6,7 @@ use agentic_jujutsu::{JJConfig, JJWrapper};
 async fn test_wrapper_creation() {
     let wrapper = JJWrapper::new().expect("Failed to create wrapper");
     let config = wrapper.get_config();
-    
+
     assert_eq!(config.jj_path, "jj");
     assert_eq!(config.timeout_ms, 30000);
 }
@@ -17,10 +17,10 @@ async fn test_wrapper_with_custom_config() {
         .with_verbose(true)
         .with_timeout(60000)
         .with_max_log_entries(500);
-    
+
     let wrapper = JJWrapper::with_config(config).expect("Failed to create wrapper");
     let retrieved_config = wrapper.get_config();
-    
+
     assert!(retrieved_config.verbose);
     assert_eq!(retrieved_config.timeout_ms, 60000);
     assert_eq!(retrieved_config.max_log_entries, 500);
@@ -30,11 +30,11 @@ async fn test_wrapper_with_custom_config() {
 async fn test_wrapper_stats() {
     let wrapper = JJWrapper::new().expect("Failed to create wrapper");
     let stats = wrapper.get_stats();
-    
+
     // Should be valid JSON
-    let parsed: serde_json::Value = serde_json::from_str(&stats)
-        .expect("Failed to parse stats JSON");
-    
+    let parsed: serde_json::Value =
+        serde_json::from_str(&stats).expect("Failed to parse stats JSON");
+
     assert!(parsed.get("total_operations").is_some());
     assert!(parsed.get("avg_duration_ms").is_some());
     assert!(parsed.get("success_rate").is_some());
@@ -43,12 +43,14 @@ async fn test_wrapper_stats() {
 #[tokio::test]
 async fn test_operation_logging() {
     let wrapper = JJWrapper::new().expect("Failed to create wrapper");
-    
+
     // Clear any previous operations
     wrapper.clear_log();
-    
+
     // Initially should have no operations
-    let ops = wrapper.get_operations(10).expect("Failed to get operations");
+    let ops = wrapper
+        .get_operations(10)
+        .expect("Failed to get operations");
     assert_eq!(ops.len(), 0);
 }
 
@@ -56,8 +58,10 @@ async fn test_operation_logging() {
 async fn test_get_user_operations() {
     let wrapper = JJWrapper::new().expect("Failed to create wrapper");
     wrapper.clear_log();
-    
-    let user_ops = wrapper.get_user_operations(10).expect("Failed to get user operations");
+
+    let user_ops = wrapper
+        .get_user_operations(10)
+        .expect("Failed to get user operations");
     assert_eq!(user_ops.len(), 0);
 }
 
@@ -75,33 +79,23 @@ mod native_tests {
             Duration::from_secs(5),
         )
         .await;
-        
+
         assert!(result.is_err());
     }
 
     #[tokio::test]
     async fn test_command_timeout() {
         // Test timeout with sleep command (if available)
-        let result = execute_jj_command(
-            "sleep",
-            &["10"],
-            Duration::from_millis(100),
-        )
-        .await;
-        
+        let result = execute_jj_command("sleep", &["10"], Duration::from_millis(100)).await;
+
         assert!(result.is_err());
     }
 
     #[tokio::test]
     async fn test_successful_command() {
         // Test with echo command
-        let result = execute_jj_command(
-            "echo",
-            &["test"],
-            Duration::from_secs(5),
-        )
-        .await;
-        
+        let result = execute_jj_command("echo", &["test"], Duration::from_secs(5)).await;
+
         assert!(result.is_ok());
         assert_eq!(result.unwrap().trim(), "test");
     }

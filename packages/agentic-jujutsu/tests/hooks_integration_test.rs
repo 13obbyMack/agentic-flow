@@ -1,7 +1,7 @@
 //! Integration tests for hooks system
 
 use agentic_jujutsu::{
-    JJConfig, JJWrapper, JJHooksIntegration, HookContext, HookEventType, Result,
+    HookContext, HookEventType, JJConfig, JJHooksIntegration, JJWrapper, Result,
 };
 
 #[tokio::test]
@@ -84,7 +84,9 @@ async fn test_conflict_detection() -> Result<()> {
     );
 
     let conflicts = vec!["file1.rs".to_string(), "file2.rs".to_string()];
-    let event = integration.on_conflict_detected(conflicts.clone(), ctx).await?;
+    let event = integration
+        .on_conflict_detected(conflicts.clone(), ctx)
+        .await?;
 
     assert_eq!(event.event_type, HookEventType::ConflictDetected);
     assert!(event.metadata.get("conflicts").is_some());

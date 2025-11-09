@@ -3,7 +3,7 @@
 //! This module provides integration with AgentDB for storing and querying
 //! jj operation history, enabling AI agents to learn from past operations.
 
-use crate::{JJOperation, Result, JJError};
+use crate::{JJError, JJOperation, Result};
 use serde::{Deserialize, Serialize};
 
 /// Episode data structure for AgentDB storage
@@ -40,7 +40,7 @@ impl AgentDBEpisode {
     pub fn from_operation(op: &JJOperation, session_id: String, agent_id: String) -> Self {
         Self {
             session_id,
-            task: op.description.clone(),
+            task: op.command.clone(),
             agent_id,
             input: None,
             output: None,
@@ -50,7 +50,7 @@ impl AgentDBEpisode {
             latency_ms: None,
             tokens_used: None,
             operation: Some(op.clone()),
-            timestamp: op.timestamp,
+            timestamp: op.timestamp.timestamp(),
         }
     }
 
@@ -121,7 +121,8 @@ impl AgentDBSync {
             return Ok(());
         }
 
-        let episode = AgentDBEpisode::from_operation(op, session_id.to_string(), agent_id.to_string());
+        let episode =
+            AgentDBEpisode::from_operation(op, session_id.to_string(), agent_id.to_string());
         self.store_episode(&episode).await
     }
 
@@ -178,7 +179,10 @@ impl AgentDBSync {
 
         #[cfg(feature = "native")]
         {
-            println!("[agentdb-sync] Would query similar operations for: {}", task);
+            println!(
+                "[agentdb-sync] Would query similar operations for: {}",
+                task
+            );
             println!("[agentdb-sync] Limit: {}", limit);
         }
 
@@ -285,7 +289,8 @@ mod tests {
             metadata: None,
         };
 
-        let episode = AgentDBEpisode::from_operation(&op, "session-001".to_string(), "agent-001".to_string());
+        let episode =
+            AgentDBEpisode::from_operation(&op, "session-001".to_string(), "agent-001".to_string());
 
         assert_eq!(episode.session_id, "session-001");
         assert_eq!(episode.agent_id, "agent-001");
@@ -306,12 +311,13 @@ mod tests {
             metadata: None,
         };
 
-        let episode = AgentDBEpisode::from_operation(&op, "session-001".to_string(), "agent-001".to_string())
-            .with_input("input context".to_string())
-            .with_output("output result".to_string())
-            .with_critique("good work".to_string())
-            .with_success(true, 0.95)
-            .with_metrics(1500, 250);
+        let episode =
+            AgentDBEpisode::from_operation(&op, "session-001".to_string(), "agent-001".to_string())
+                .with_input("input context".to_string())
+                .with_output("output result".to_string())
+                .with_critique("good work".to_string())
+                .with_success(true, 0.95)
+                .with_metrics(1500, 250);
 
         assert_eq!(episode.input.unwrap(), "input context");
         assert_eq!(episode.output.unwrap(), "output result");

@@ -104,7 +104,8 @@ mod tests {
     #[tokio::test]
     async fn test_failed_command() {
         // Test with a command that will fail
-        let result = execute_jj_command("ls", &["nonexistent_dir_xyz"], Duration::from_secs(5)).await;
+        let result =
+            execute_jj_command("ls", &["nonexistent_dir_xyz"], Duration::from_secs(5)).await;
 
         assert!(result.is_err());
     }

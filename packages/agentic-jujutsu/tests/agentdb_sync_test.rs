@@ -1,8 +1,6 @@
 //! Tests for AgentDB synchronization
 
-use agentic_jujutsu::{
-    AgentDBSync, AgentDBEpisode, JJOperation, OperationType, Result,
-};
+use agentic_jujutsu::{AgentDBEpisode, AgentDBSync, JJOperation, OperationType, Result};
 
 #[tokio::test]
 async fn test_episode_creation() -> Result<()> {
@@ -16,11 +14,8 @@ async fn test_episode_creation() -> Result<()> {
         metadata: None,
     };
 
-    let episode = AgentDBEpisode::from_operation(
-        &op,
-        "session-001".to_string(),
-        "agent-001".to_string(),
-    );
+    let episode =
+        AgentDBEpisode::from_operation(&op, "session-001".to_string(), "agent-001".to_string());
 
     assert_eq!(episode.session_id, "session-001");
     assert_eq!(episode.agent_id, "agent-001");
@@ -43,16 +38,13 @@ async fn test_episode_builder() -> Result<()> {
         metadata: None,
     };
 
-    let episode = AgentDBEpisode::from_operation(
-        &op,
-        "session-001".to_string(),
-        "agent-001".to_string(),
-    )
-    .with_input("input context".to_string())
-    .with_output("output result".to_string())
-    .with_critique("good work".to_string())
-    .with_success(true, 0.95)
-    .with_metrics(1500, 250);
+    let episode =
+        AgentDBEpisode::from_operation(&op, "session-001".to_string(), "agent-001".to_string())
+            .with_input("input context".to_string())
+            .with_output("output result".to_string())
+            .with_critique("good work".to_string())
+            .with_success(true, 0.95)
+            .with_metrics(1500, 250);
 
     assert_eq!(episode.input.unwrap(), "input context");
     assert_eq!(episode.output.unwrap(), "output result");
@@ -186,11 +178,8 @@ async fn test_episode_serialization() -> Result<()> {
         metadata: None,
     };
 
-    let episode = AgentDBEpisode::from_operation(
-        &op,
-        "session-001".to_string(),
-        "agent-001".to_string(),
-    );
+    let episode =
+        AgentDBEpisode::from_operation(&op, "session-001".to_string(), "agent-001".to_string());
 
     // Test serialization
     let json = serde_json::to_string(&episode)?;

@@ -8,10 +8,10 @@ use wasm_bindgen::prelude::*;
 #[wasm_bindgen]
 pub struct JJConfig {
     /// Path to jj executable (default: "jj")
-    pub jj_path: String,
+    jj_path: String,
 
     /// Repository path (default: current directory)
-    pub repo_path: String,
+    repo_path: String,
 
     /// Timeout for operations in milliseconds
     pub timeout_ms: u64,
@@ -39,13 +39,37 @@ impl JJConfig {
         Self::default()
     }
 
+    /// Get jj executable path
+    #[wasm_bindgen(getter)]
+    pub fn jj_path(&self) -> String {
+        self.jj_path.clone()
+    }
+
     /// Set jj executable path
+    #[wasm_bindgen(setter)]
+    pub fn set_jj_path(&mut self, path: String) {
+        self.jj_path = path;
+    }
+
+    /// Get repository path
+    #[wasm_bindgen(getter)]
+    pub fn repo_path(&self) -> String {
+        self.repo_path.clone()
+    }
+
+    /// Set repository path
+    #[wasm_bindgen(setter)]
+    pub fn set_repo_path(&mut self, path: String) {
+        self.repo_path = path;
+    }
+
+    /// Set jj executable path (builder pattern)
     pub fn with_jj_path(mut self, path: String) -> Self {
         self.jj_path = path;
         self
     }
 
-    /// Set repository path
+    /// Set repository path (builder pattern)
     pub fn with_repo_path(mut self, path: String) -> Self {
         self.repo_path = path;
         self

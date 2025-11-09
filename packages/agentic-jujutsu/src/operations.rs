@@ -102,12 +102,51 @@ pub enum OperationType {
 #[wasm_bindgen]
 impl OperationType {
     /// Convert to string representation
+    #[inline]
     pub fn as_string(&self) -> String {
-        format!("{:?}", self)
+        self.as_str().to_string()
+    }
+
+    /// Get string slice representation (more efficient than as_string)
+    #[inline(always)]
+    pub const fn as_str(&self) -> &'static str {
+        match self {
+            OperationType::Commit => "Commit",
+            OperationType::Snapshot => "Snapshot",
+            OperationType::Describe => "Describe",
+            OperationType::New => "New",
+            OperationType::Edit => "Edit",
+            OperationType::Abandon => "Abandon",
+            OperationType::Rebase => "Rebase",
+            OperationType::Squash => "Squash",
+            OperationType::Resolve => "Resolve",
+            OperationType::Branch => "Branch",
+            OperationType::BranchDelete => "BranchDelete",
+            OperationType::Bookmark => "Bookmark",
+            OperationType::Tag => "Tag",
+            OperationType::Checkout => "Checkout",
+            OperationType::Restore => "Restore",
+            OperationType::Split => "Split",
+            OperationType::Duplicate => "Duplicate",
+            OperationType::Undo => "Undo",
+            OperationType::Fetch => "Fetch",
+            OperationType::GitFetch => "GitFetch",
+            OperationType::Push => "Push",
+            OperationType::GitPush => "GitPush",
+            OperationType::Clone => "Clone",
+            OperationType::Init => "Init",
+            OperationType::GitImport => "GitImport",
+            OperationType::GitExport => "GitExport",
+            OperationType::Move => "Move",
+            OperationType::Diffedit => "Diffedit",
+            OperationType::Merge => "Merge",
+            OperationType::Unknown => "Unknown",
+        }
     }
 
     /// Check if operation modifies history
-    pub fn modifies_history(&self) -> bool {
+    #[inline]
+    pub const fn modifies_history(&self) -> bool {
         matches!(
             self,
             OperationType::Commit
@@ -123,7 +162,8 @@ impl OperationType {
     }
 
     /// Check if operation interacts with remotes
-    pub fn is_remote_operation(&self) -> bool {
+    #[inline]
+    pub const fn is_remote_operation(&self) -> bool {
         matches!(
             self,
             OperationType::Fetch
@@ -137,7 +177,8 @@ impl OperationType {
     }
 
     /// Check if operation is automatic (not user-initiated)
-    pub fn is_automatic(&self) -> bool {
+    #[inline]
+    pub const fn is_automatic(&self) -> bool {
         matches!(self, OperationType::Snapshot)
     }
 }
@@ -246,12 +287,7 @@ pub struct JJOperation {
 impl JJOperation {
     /// Create a new operation
     #[wasm_bindgen(constructor)]
-    pub fn new(
-        operation_id: String,
-        command: String,
-        user: String,
-        hostname: String,
-    ) -> Self {
+    pub fn new(operation_id: String, command: String, user: String, hostname: String) -> Self {
         Self {
             id: Uuid::new_v4().to_string(),
             operation_id,
@@ -286,26 +322,31 @@ impl JJOperation {
     }
 
     /// Short operation ID (first 12 characters)
+    #[inline]
     pub fn short_id(&self) -> String {
         self.operation_id.chars().take(12).collect()
     }
 
     /// Check if operation is a snapshot
+    #[inline]
     pub fn is_snapshot(&self) -> bool {
         self.operation_type == OperationType::Snapshot
     }
 
     /// Check if operation is user-initiated (not automatic snapshot)
+    #[inline]
     pub fn is_user_initiated(&self) -> bool {
         !self.is_snapshot()
     }
 
     /// Check if operation modifies history (for WASM)
+    #[inline]
     pub fn modifies_history(&self) -> bool {
         self.operation_type.modifies_history()
     }
 
     /// Check if operation is remote (for WASM)
+    #[inline]
     pub fn is_remote_operation(&self) -> bool {
         self.operation_type.is_remote_operation()
     }
@@ -458,7 +499,9 @@ impl JJOperationBuilder {
     pub fn build(self) -> JJOperation {
         JJOperation {
             id: Uuid::new_v4().to_string(),
-            operation_id: self.operation_id.unwrap_or_else(|| Uuid::new_v4().to_string()),
+            operation_id: self
+                .operation_id
+                .unwrap_or_else(|| Uuid::new_v4().to_string()),
             operation_type: self.operation_type.unwrap_or(OperationType::Unknown),
             command: self.command.unwrap_or_default(),
             user: self.user.unwrap_or_default(),
@@ -528,11 +571,7 @@ impl JJOperationLog {
     /// Get recent operations (most recent first)
     pub fn get_recent(&self, limit: usize) -> Vec<JJOperation> {
         let ops = self.operations.lock().unwrap();
-        ops.iter()
-            .rev()
-            .take(limit)
-            .cloned()
-            .collect()
+        ops.iter().rev().take(limit).cloned().collect()
     }
 
     /// Get all operations
@@ -584,10 +623,7 @@ impl JJOperationLog {
     /// Filter operations by user
     pub fn filter_by_user(&self, user: &str) -> Vec<JJOperation> {
         let ops = self.operations.lock().unwrap();
-        ops.iter()
-            .filter(|op| op.user == user)
-            .cloned()
-            .collect()
+        ops.iter().filter(|op| op.user == user).cloned().collect()
     }
 
     /// Get operations in the last N hours
@@ -613,10 +649,7 @@ impl JJOperationLog {
     /// Get failed operations
     pub fn failed_operations(&self) -> Vec<JJOperation> {
         let ops = self.operations.lock().unwrap();
-        ops.iter()
-            .filter(|op| !op.success)
-            .cloned()
-            .collect()
+        ops.iter().filter(|op| !op.success).cloned().collect()
     }
 
     /// Get operations that modified history
@@ -649,16 +682,19 @@ impl JJOperationLog {
     }
 
     /// Get total operation count
+    #[inline]
     pub fn count(&self) -> usize {
         self.operations.lock().unwrap().len()
     }
 
     /// Check if log is empty
+    #[inline]
     pub fn is_empty(&self) -> bool {
         self.operations.lock().unwrap().is_empty()
     }
 
     /// Get length
+    #[inline]
     pub fn len(&self) -> usize {
         self.count()
     }
@@ -777,9 +813,18 @@ mod tests {
 
     #[test]
     fn test_operation_type_conversion() {
-        assert_eq!(OperationType::from_string("describe"), OperationType::Describe);
-        assert_eq!(OperationType::from_string("SNAPSHOT"), OperationType::Snapshot);
-        assert_eq!(OperationType::from_string("unknown_op"), OperationType::Unknown);
+        assert_eq!(
+            OperationType::from_string("describe"),
+            OperationType::Describe
+        );
+        assert_eq!(
+            OperationType::from_string("SNAPSHOT"),
+            OperationType::Snapshot
+        );
+        assert_eq!(
+            OperationType::from_string("unknown_op"),
+            OperationType::Unknown
+        );
     }
 
     #[test]
