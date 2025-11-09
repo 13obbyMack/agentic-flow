@@ -4,15 +4,13 @@ use agentic_jujutsu::{AgentDBEpisode, AgentDBSync, JJOperation, OperationType, R
 
 #[tokio::test]
 async fn test_episode_creation() -> Result<()> {
-    let op = JJOperation {
-        id: "test-op".to_string(),
-        operation_type: OperationType::Describe,
-        description: "Test operation".to_string(),
-        timestamp: 1234567890,
-        user: Some("test-user".to_string()),
-        args: vec![],
-        metadata: None,
-    };
+    let op = JJOperation::builder()
+        .operation_id("test-op".to_string())
+        .operation_type(OperationType::Describe)
+        .command("Test operation".to_string())
+        .user("test-user".to_string())
+        .hostname("localhost".to_string())
+        .build();
 
     let episode =
         AgentDBEpisode::from_operation(&op, "session-001".to_string(), "agent-001".to_string());
@@ -28,15 +26,13 @@ async fn test_episode_creation() -> Result<()> {
 
 #[tokio::test]
 async fn test_episode_builder() -> Result<()> {
-    let op = JJOperation {
-        id: "test-op".to_string(),
-        operation_type: OperationType::Describe,
-        description: "Test operation".to_string(),
-        timestamp: 1234567890,
-        user: Some("test-user".to_string()),
-        args: vec![],
-        metadata: None,
-    };
+    let op = JJOperation::builder()
+        .operation_id("test-op".to_string())
+        .operation_type(OperationType::Describe)
+        .command("Test operation".to_string())
+        .user("test-user".to_string())
+        .hostname("localhost".to_string())
+        .build();
 
     let episode =
         AgentDBEpisode::from_operation(&op, "session-001".to_string(), "agent-001".to_string())
@@ -61,15 +57,13 @@ async fn test_sync_disabled() -> Result<()> {
     let sync = AgentDBSync::new(false);
     assert!(!sync.is_enabled());
 
-    let op = JJOperation {
-        id: "test-op".to_string(),
-        operation_type: OperationType::Describe,
-        description: "Test operation".to_string(),
-        timestamp: 1234567890,
-        user: Some("test-user".to_string()),
-        args: vec![],
-        metadata: None,
-    };
+    let op = JJOperation::builder()
+        .operation_id("test-op".to_string())
+        .operation_type(OperationType::Describe)
+        .command("Test operation".to_string())
+        .user("test-user".to_string())
+        .hostname("localhost".to_string())
+        .build();
 
     // Should succeed but do nothing
     let result = sync.sync_operation(&op, "session-001", "agent-001").await;
@@ -83,15 +77,13 @@ async fn test_sync_enabled() -> Result<()> {
     let sync = AgentDBSync::new(true);
     assert!(sync.is_enabled());
 
-    let op = JJOperation {
-        id: "test-op".to_string(),
-        operation_type: OperationType::Describe,
-        description: "Test operation".to_string(),
-        timestamp: 1234567890,
-        user: Some("test-user".to_string()),
-        args: vec![],
-        metadata: None,
-    };
+    let op = JJOperation::builder()
+        .operation_id("test-op".to_string())
+        .operation_type(OperationType::Describe)
+        .command("Test operation".to_string())
+        .user("test-user".to_string())
+        .hostname("localhost".to_string())
+        .build();
 
     // Should log but not fail
     let result = sync.sync_operation(&op, "session-001", "agent-001").await;
@@ -168,15 +160,13 @@ async fn test_task_statistics() -> Result<()> {
 
 #[tokio::test]
 async fn test_episode_serialization() -> Result<()> {
-    let op = JJOperation {
-        id: "test-op".to_string(),
-        operation_type: OperationType::Describe,
-        description: "Test operation".to_string(),
-        timestamp: 1234567890,
-        user: Some("test-user".to_string()),
-        args: vec![],
-        metadata: None,
-    };
+    let op = JJOperation::builder()
+        .operation_id("test-op".to_string())
+        .operation_type(OperationType::Describe)
+        .command("Test operation".to_string())
+        .user("test-user".to_string())
+        .hostname("localhost".to_string())
+        .build();
 
     let episode =
         AgentDBEpisode::from_operation(&op, "session-001".to_string(), "agent-001".to_string());

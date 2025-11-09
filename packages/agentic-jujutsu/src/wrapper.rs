@@ -10,6 +10,26 @@ use chrono::Utc;
 use std::sync::{Arc, Mutex};
 use std::time::Instant;
 
+/// Validate command arguments to prevent command injection
+fn validate_command_args(args: &[&str]) -> Result<()> {
+    for arg in args {
+        // Block shell metacharacters that could enable command injection
+        if arg.contains(&['$', '`', '&', '|', ';', '\n', '>', '<'][..]) {
+            return Err(JJError::InvalidConfig(format!(
+                "Invalid character in argument: {}. Shell metacharacters are not allowed.",
+                arg
+            )));
+        }
+        // Block null bytes
+        if arg.contains('\0') {
+            return Err(JJError::InvalidConfig(
+                "Null bytes are not allowed in arguments".to_string(),
+            ));
+        }
+    }
+    Ok(())
+}
+
 #[cfg(feature = "native")]
 use crate::native::execute_jj_command;
 
@@ -57,13 +77,16 @@ impl JJWrapper {
 
     /// Execute a jj command and return the result
     pub async fn execute(&self, args: &[&str]) -> Result<JJResult> {
+        // Validate arguments for security
+        validate_command_args(args)?;
+
         let start = Instant::now();
         let command = format!("jj {}", args.join(" "));
 
         #[cfg(feature = "native")]
         let result = {
             let timeout = std::time::Duration::from_millis(self.config.timeout_ms);
-            match execute_jj_command(&self.config.jj_path, args, timeout).await {
+            match execute_jj_command(&self.config.jj_path(), args, timeout).await {
                 Ok(output) => {
                     JJResult::new(output, String::new(), 0, start.elapsed().as_millis() as u64)
                 }
@@ -254,7 +277,7 @@ impl JJWrapper {
         Ok(diff)
     }
 
-    /// Create a new commit
+    /// Create a new commit (renamed from 'new' to avoid confusion with constructor)
     pub async fn new_commit(&self, message: Option<&str>) -> Result<JJResult> {
         let mut args = vec!["new"];
         if let Some(msg) = message {

@@ -46,9 +46,11 @@ use crate::error::{JJError, Result};
 #[wasm_bindgen]
 pub struct JJResult {
     /// Standard output from the command
+    #[wasm_bindgen(skip)]
     pub stdout: String,
 
     /// Standard error from the command
+    #[wasm_bindgen(skip)]
     pub stderr: String,
 
     /// Exit code
@@ -69,6 +71,18 @@ impl JJResult {
             exit_code,
             execution_time_ms,
         }
+    }
+
+    /// Get stdout (for WASM)
+    #[wasm_bindgen(getter)]
+    pub fn stdout(&self) -> String {
+        self.stdout.clone()
+    }
+
+    /// Get stderr (for WASM)
+    #[wasm_bindgen(getter)]
+    pub fn stderr(&self) -> String {
+        self.stderr.clone()
     }
 
     /// Check if the command was successful
@@ -119,18 +133,23 @@ impl JJResult {
 #[wasm_bindgen]
 pub struct JJCommit {
     /// Commit ID (revision hash)
+    #[wasm_bindgen(skip)]
     pub id: String,
 
     /// Change ID (unique identifier for the change)
+    #[wasm_bindgen(skip)]
     pub change_id: String,
 
     /// Commit message
+    #[wasm_bindgen(skip)]
     pub message: String,
 
     /// Author name
+    #[wasm_bindgen(skip)]
     pub author: String,
 
     /// Author email
+    #[wasm_bindgen(skip)]
     pub author_email: String,
 
     /// Timestamp
@@ -189,6 +208,36 @@ impl JJCommit {
             has_conflicts: false,
             is_empty: false,
         }
+    }
+
+    /// Get ID (for WASM)
+    #[wasm_bindgen(getter)]
+    pub fn id(&self) -> String {
+        self.id.clone()
+    }
+
+    /// Get change ID (for WASM)
+    #[wasm_bindgen(getter)]
+    pub fn change_id(&self) -> String {
+        self.change_id.clone()
+    }
+
+    /// Get message (for WASM)
+    #[wasm_bindgen(getter)]
+    pub fn message(&self) -> String {
+        self.message.clone()
+    }
+
+    /// Get author (for WASM)
+    #[wasm_bindgen(getter)]
+    pub fn author(&self) -> String {
+        self.author.clone()
+    }
+
+    /// Get author email (for WASM)
+    #[wasm_bindgen(getter)]
+    pub fn author_email(&self) -> String {
+        self.author_email.clone()
     }
 
     /// Get timestamp as ISO 8601 string (for WASM)
@@ -408,15 +457,18 @@ impl JJCommitBuilder {
 #[wasm_bindgen]
 pub struct JJBranch {
     /// Branch name
+    #[wasm_bindgen(skip)]
     pub name: String,
 
     /// Commit ID this branch points to
+    #[wasm_bindgen(skip)]
     pub target: String,
 
     /// Whether this is a remote branch
     pub is_remote: bool,
 
     /// Remote name (if remote branch)
+    #[wasm_bindgen(skip)]
     pub remote: Option<String>,
 
     /// Whether this branch is tracking a remote
@@ -444,6 +496,24 @@ impl JJBranch {
             is_current: false,
             created_at: Utc::now(),
         }
+    }
+
+    /// Get name (for WASM)
+    #[wasm_bindgen(getter)]
+    pub fn name(&self) -> String {
+        self.name.clone()
+    }
+
+    /// Get target (for WASM)
+    #[wasm_bindgen(getter)]
+    pub fn target(&self) -> String {
+        self.target.clone()
+    }
+
+    /// Get remote (for WASM)
+    #[wasm_bindgen(getter)]
+    pub fn remote(&self) -> Option<String> {
+        self.remote.clone()
     }
 
     /// Set remote name
@@ -491,9 +561,11 @@ impl JJBranch {
 #[wasm_bindgen]
 pub struct JJConflict {
     /// Unique conflict identifier
+    #[wasm_bindgen(skip)]
     pub id: String,
 
     /// Path to the conflicted file
+    #[wasm_bindgen(skip)]
     pub path: String,
 
     /// Number of conflict markers
@@ -504,6 +576,7 @@ pub struct JJConflict {
     pub sides: Vec<String>,
 
     /// Conflict type (e.g., "content", "modify/delete")
+    #[wasm_bindgen(skip)]
     pub conflict_type: String,
 
     /// Whether conflict is binary (non-text)
@@ -513,6 +586,7 @@ pub struct JJConflict {
     pub is_resolved: bool,
 
     /// Resolution strategy used (if resolved)
+    #[wasm_bindgen(skip)]
     pub resolution_strategy: Option<String>,
 }
 
@@ -531,6 +605,30 @@ impl JJConflict {
             is_resolved: false,
             resolution_strategy: None,
         }
+    }
+
+    /// Get ID (for WASM)
+    #[wasm_bindgen(getter)]
+    pub fn id(&self) -> String {
+        self.id.clone()
+    }
+
+    /// Get path (for WASM)
+    #[wasm_bindgen(getter)]
+    pub fn path(&self) -> String {
+        self.path.clone()
+    }
+
+    /// Get conflict type (for WASM)
+    #[wasm_bindgen(getter)]
+    pub fn conflict_type(&self) -> String {
+        self.conflict_type.clone()
+    }
+
+    /// Get resolution strategy (for WASM)
+    #[wasm_bindgen(getter)]
+    pub fn resolution_strategy(&self) -> Option<String> {
+        self.resolution_strategy.clone()
     }
 
     /// Add a side to the conflict

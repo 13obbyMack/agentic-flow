@@ -279,15 +279,13 @@ mod tests {
 
     #[test]
     fn test_episode_creation() {
-        let op = JJOperation {
-            id: "test-op".to_string(),
-            operation_type: OperationType::Describe,
-            description: "Test operation".to_string(),
-            timestamp: 1234567890,
-            user: Some("test-user".to_string()),
-            args: vec![],
-            metadata: None,
-        };
+        let op = JJOperation::builder()
+            .operation_id("test-op".to_string())
+            .operation_type(OperationType::Describe)
+            .command("Test operation".to_string())
+            .user("test-user".to_string())
+            .hostname("localhost".to_string())
+            .build();
 
         let episode =
             AgentDBEpisode::from_operation(&op, "session-001".to_string(), "agent-001".to_string());
@@ -301,15 +299,13 @@ mod tests {
 
     #[test]
     fn test_episode_builder() {
-        let op = JJOperation {
-            id: "test-op".to_string(),
-            operation_type: OperationType::Describe,
-            description: "Test operation".to_string(),
-            timestamp: 1234567890,
-            user: Some("test-user".to_string()),
-            args: vec![],
-            metadata: None,
-        };
+        let op = JJOperation::builder()
+            .operation_id("test-op".to_string())
+            .operation_type(OperationType::Describe)
+            .command("Test operation".to_string())
+            .user("test-user".to_string())
+            .hostname("localhost".to_string())
+            .build();
 
         let episode =
             AgentDBEpisode::from_operation(&op, "session-001".to_string(), "agent-001".to_string())
@@ -339,8 +335,8 @@ mod tests {
             common_critiques: vec!["needs optimization".to_string()],
         };
 
-        assert_eq!(stats.success_rate(), 0.85);
-        assert_eq!(stats.failure_rate(), 0.15);
+        assert!((stats.success_rate() - 0.85).abs() < 0.001);
+        assert!((stats.failure_rate() - 0.15).abs() < 0.001);
     }
 
     #[tokio::test]
@@ -355,15 +351,13 @@ mod tests {
     #[tokio::test]
     async fn test_sync_disabled() {
         let sync = AgentDBSync::new(false);
-        let op = JJOperation {
-            id: "test-op".to_string(),
-            operation_type: OperationType::Describe,
-            description: "Test operation".to_string(),
-            timestamp: 1234567890,
-            user: Some("test-user".to_string()),
-            args: vec![],
-            metadata: None,
-        };
+        let op = JJOperation::builder()
+            .operation_id("test-op".to_string())
+            .operation_type(OperationType::Describe)
+            .command("Test operation".to_string())
+            .user("test-user".to_string())
+            .hostname("localhost".to_string())
+            .build();
 
         let result = sync.sync_operation(&op, "session-001", "agent-001").await;
         assert!(result.is_ok());

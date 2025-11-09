@@ -3,6 +3,24 @@
 use serde::{Deserialize, Serialize};
 use wasm_bindgen::prelude::*;
 
+/// Validate repository path to prevent directory traversal attacks
+fn validate_repo_path(path: &str) -> Result<String, String> {
+    // Block obvious path traversal attempts
+    if path.contains("..") {
+        return Err("Path cannot contain '..' (directory traversal not allowed)".to_string());
+    }
+
+    // Block absolute paths outside of allowed areas (optional, can be configured)
+    // This is a conservative check - adjust based on your security requirements
+
+    // Block null bytes
+    if path.contains('\0') {
+        return Err("Path cannot contain null bytes".to_string());
+    }
+
+    Ok(path.to_string())
+}
+
 /// Configuration for JJWrapper
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[wasm_bindgen]
@@ -60,7 +78,13 @@ impl JJConfig {
     /// Set repository path
     #[wasm_bindgen(setter)]
     pub fn set_repo_path(&mut self, path: String) {
-        self.repo_path = path;
+        // Validate path for security
+        if let Ok(validated) = validate_repo_path(&path) {
+            self.repo_path = validated;
+        } else {
+            // Fall back to current directory if validation fails
+            self.repo_path = ".".to_string();
+        }
     }
 
     /// Set jj executable path (builder pattern)
@@ -71,7 +95,11 @@ impl JJConfig {
 
     /// Set repository path (builder pattern)
     pub fn with_repo_path(mut self, path: String) -> Self {
-        self.repo_path = path;
+        // Validate path for security
+        if let Ok(validated) = validate_repo_path(&path) {
+            self.repo_path = validated;
+        }
+        // If validation fails, keep existing repo_path
         self
     }
 

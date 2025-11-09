@@ -352,7 +352,7 @@ mod tests {
     #[tokio::test]
     async fn test_hooks_integration_creation() {
         let config = JJConfig::default();
-        let wrapper = JJWrapper::new(config).unwrap();
+        let wrapper = JJWrapper::with_config(config).unwrap();
         let integration = JJHooksIntegration::new(wrapper, true);
 
         assert!(integration.is_agentdb_enabled());
@@ -362,7 +362,7 @@ mod tests {
     #[tokio::test]
     async fn test_pre_task_hook() {
         let config = JJConfig::default();
-        let wrapper = JJWrapper::new(config).unwrap();
+        let wrapper = JJWrapper::with_config(config).unwrap();
         let mut integration = JJHooksIntegration::new(wrapper, false);
 
         let ctx = HookContext::new(
@@ -383,7 +383,7 @@ mod tests {
     #[tokio::test]
     async fn test_post_edit_hook() {
         let config = JJConfig::default();
-        let wrapper = JJWrapper::new(config).unwrap();
+        let wrapper = JJWrapper::with_config(config).unwrap();
         let mut integration = JJHooksIntegration::new(wrapper, false);
 
         let ctx = HookContext::new(
@@ -399,6 +399,6 @@ mod tests {
         let operation = integration.on_post_edit("test.rs", ctx).await.unwrap();
 
         assert_eq!(operation.operation_type, OperationType::Describe);
-        assert!(operation.description.contains("test.rs"));
+        assert!(operation.command.contains("test.rs"));
     }
 }
