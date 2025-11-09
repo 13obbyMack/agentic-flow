@@ -2,12 +2,16 @@
 name = "agentic-jujutsu"
 version = "0.1.0"
 edition = "2021"
-authors = ["Agentic Flow Team"]
-description = "WASM-enabled Jujutsu VCS wrapper for AI agent collaboration and learning"
+authors = ["Agentic Flow Team <team@ruv.io>"]
+description = "AI-powered Jujutsu VCS wrapper for multi-agent collaboration - 10-100x faster than Git with MCP protocol support"
 license = "MIT"
 repository = "https://github.com/ruvnet/agentic-flow"
-keywords = ["vcs", "jujutsu", "wasm", "ai-agents", "collaboration"]
-categories = ["development-tools", "wasm"]
+homepage = "https://ruv.io"
+documentation = "https://docs.rs/agentic-jujutsu"
+readme = "CRATE_README.md"
+keywords = ["jujutsu", "vcs", "ai-agents", "wasm", "mcp"]
+categories = ["development-tools", "wasm", "concurrency"]
+exclude = ["docs/", "examples/", "benches/", ".github/", "*.sh"]
 
 [lib]
 crate-type = ["cdylib", "rlib"]
