@@ -1,6 +1,6 @@
 [package]
 name = "agentic-jujutsu"
-version = "0.1.1"
+version = "1.0.0"
 edition = "2021"
 authors = ["Agentic Flow Team <team@ruv.io>"]
 description = "AI-powered Jujutsu VCS wrapper for multi-agent collaboration - 10-100x faster than Git with MCP protocol support"

@@ -1,47 +1,116 @@
 # agentic-jujutsu
 
-> **Version control designed for AI agents**
+> **Version control for AI agents - Run anywhere with npx, zero installation required**
 
 [![npm version](https://img.shields.io/npm/v/agentic-jujutsu.svg)](https://www.npmjs.com/package/agentic-jujutsu)
 [![Downloads](https://img.shields.io/npm/dt/agentic-jujutsu.svg)](https://www.npmjs.com/package/agentic-jujutsu)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
-## What is agentic-jujutsu?
+## 📑 Quick Navigation
 
-Think of it as **Git, but built for AI coding agents**. When multiple AI agents work on the same codebase, Git's locking mechanisms slow them down. agentic-jujutsu solves this by letting agents work simultaneously without conflicts.
-
-**Simple Example:**
-- **Git**: 3 agents waiting for each other = slow 🐌
-- **agentic-jujutsu**: 3 agents working together = 23x faster ⚡
-
-### Why You Need This
-
-If you're building:
-- 🤖 **AI coding agents** that modify code
-- 🔄 **Multi-agent systems** that collaborate
-- 🧠 **Autonomous workflows** that need version control
-- 🚀 **High-performance AI pipelines**
-
-Then you need agentic-jujutsu. It's the only version control system designed specifically for AI agents.
+- [⚡ Quick Start](#-quick-start---try-it-now) - Get started in 30 seconds
+- [🚀 CLI Commands](#-npx-cli-commands---complete-reference) - All npx commands
+- [🤖 MCP Tools](#-mcp-tools-for-ai-agents---quick-reference) - AI agent integration
+- [🎯 Use Cases](#-ai-coding-agent-use-cases) - Real-world examples
+- [🔗 Rust/Cargo](#-rustcargo-advanced-use) - Advanced Rust usage
+- [📖 Full Documentation](#-links--resources) - More resources
 
 ---
 
-## ⚡ Quick Start (30 seconds)
+## What is this?
 
-```bash
-# No installation needed - just run it
-npx agentic-jujutsu help
+A **npm/npx CLI tool** that lets AI agents use version control without the slowdowns of Git. Built on [Jujutsu VCS](https://github.com/martinvonz/jj) with WASM, it's 23x faster for multi-agent workflows and works everywhere Node.js runs.
 
-# Try it with your AI agents
-npx agentic-jujutsu analyze
-
-# See how much faster it is than Git
-npx agentic-jujutsu compare-git
+**The Problem:**
+```javascript
+// With Git: Agents wait for locks ⏳
+Agent 1: modifying code... (waiting for lock)
+Agent 2: waiting... ⏳
+Agent 3: waiting... ⏳
+Result: 50 minutes/day wasted
 ```
 
-**Install if you want:**
+**The Solution:**
+```javascript
+// With agentic-jujutsu: All agents work together ⚡
+Agent 1: modifying code... ✅
+Agent 2: modifying code... ✅ (no conflicts!)
+Agent 3: modifying code... ✅ (no conflicts!)
+Result: 23x faster, zero waiting
+```
+
+### Perfect For
+
+- 🤖 **AI Coding Tools** - Claude Code, Cursor, Copilot Workspace
+- 🔄 **Multi-Agent Systems** - Swarms of AI agents collaborating
+- 🧠 **Autonomous Workflows** - CI/CD with AI agents
+- 🚀 **AI Development Platforms** - Building the next generation of dev tools
+
+### Why It's Better
+
+| Feature | Git | agentic-jujutsu |
+|---------|-----|-----------------|
+| **Multiple agents editing** | ❌ Conflicts & locks | ✅ Lock-free |
+| **Speed (concurrent)** | 15 ops/s | 350 ops/s (23x) |
+| **Agent integration** | ❌ No API | ✅ MCP protocol |
+| **AI-readable format** | ❌ Manual parsing | ✅ AST transform |
+| **Installation** | Complex setup | `npx` - instant |
+
+---
+
+## ⚡ Quick Start - Try It Now!
+
+### Option 1: npx (Zero Installation) 🎯
+
 ```bash
+# Show all commands
+npx agentic-jujutsu help
+
+# Analyze your repo for AI agents
+npx agentic-jujutsu analyze
+
+# See performance vs Git
+npx agentic-jujutsu compare-git
+
+# Get repo status
+npx agentic-jujutsu status
+
+# Convert operations to AI-readable format
+npx agentic-jujutsu ast "jj new -m 'Add feature'"
+
+# Start MCP server for AI agents
+npx agentic-jujutsu mcp-server
+```
+
+**No installation, no setup - just works!** ⚡
+
+### Option 2: Global Install (For Frequent Use)
+
+```bash
+# Install once
 npm install -g agentic-jujutsu
+
+# Use shorter commands
+agentic-jujutsu status
+agentic-jujutsu analyze
+jj-ai help  # Alternative command name
+```
+
+### Option 3: Project Install (For Programmatic Use)
+
+```bash
+# Add to your project
+npm install agentic-jujutsu
+```
+
+Then use in your AI agent code:
+```javascript
+const mcp = require('agentic-jujutsu/scripts/mcp-server');
+const ast = require('agentic-jujutsu/scripts/agentic-flow-integration');
+
+// Your agent can now use MCP tools
+const status = mcp.callTool('jj_status', {});
+console.log('Repository:', status);
 ```
 
 ---
@@ -207,50 +276,239 @@ const ast = require('agentic-jujutsu/scripts/agentic-flow-integration');
 
 ---
 
-## 🚀 CLI Commands
+## 🚀 npx CLI Commands - Complete Reference
 
-### Basic Operations
-
-```bash
-agentic-jujutsu status              # Show working copy status
-agentic-jujutsu log [--limit N]     # Show commit history
-agentic-jujutsu diff [revision]     # Show changes
-agentic-jujutsu new <message>       # Create new commit
-agentic-jujutsu describe <msg>      # Update commit description
-```
-
-### AI Agent Commands
+### Getting Started Commands
 
 ```bash
-agentic-jujutsu ast <operation>     # Convert to AST
-agentic-jujutsu mcp-server          # Start MCP server
-agentic-jujutsu agent-hook <event>  # Run agent hook
-agentic-jujutsu analyze             # Analyze repo for AI
+# Show all available commands
+npx agentic-jujutsu help
+
+# Show version and system info
+npx agentic-jujutsu version
+
+# Show package information and features
+npx agentic-jujutsu info
+
+# Show usage examples
+npx agentic-jujutsu examples
 ```
 
-### Benchmarks & Comparison
+### For AI Agents (Most Important)
 
 ```bash
-agentic-jujutsu bench               # Run performance benchmarks
-agentic-jujutsu compare-git         # Compare with Git
+# Analyze repository for AI agent compatibility
+npx agentic-jujutsu analyze
+
+# Convert operations to AST (AI-readable format)
+npx agentic-jujutsu ast "jj new -m 'Feature'"
+
+# Start MCP server (Model Context Protocol)
+npx agentic-jujutsu mcp-server
+
+# List available MCP tools for agents
+npx agentic-jujutsu mcp-tools
+
+# List available MCP resources
+npx agentic-jujutsu mcp-resources
+
+# Call an MCP tool directly
+npx agentic-jujutsu mcp-call jj_status
 ```
 
-### MCP Integration
+### Repository Operations
 
 ```bash
-agentic-jujutsu mcp-tools           # List MCP tools
-agentic-jujutsu mcp-resources       # List MCP resources
-agentic-jujutsu mcp-call <tool>     # Call MCP tool
+# Show working copy status
+npx agentic-jujutsu status
+
+# Show commit history (last 10 by default)
+npx agentic-jujutsu log --limit 10
+
+# Show changes in working copy
+npx agentic-jujutsu diff
+
+# Create new commit
+npx agentic-jujutsu new "Add feature"
+
+# Update commit description
+npx agentic-jujutsu describe "Better description"
 ```
 
-### Utilities
+### Performance & Benchmarking
 
 ```bash
-agentic-jujutsu version             # Show version
-agentic-jujutsu info                # Package information
-agentic-jujutsu examples            # Usage examples
-agentic-jujutsu help                # Show help
+# Run performance benchmarks
+npx agentic-jujutsu bench
+
+# Compare performance with Git
+npx agentic-jujutsu compare-git
 ```
+
+### Quick Reference Card
+
+| Command | What It Does | Use When |
+|---------|-------------|----------|
+| `help` | Show all commands | Getting started |
+| `analyze` | Analyze repo for AI | Setting up agents |
+| `ast` | Convert to AI format | Agent needs structured data |
+| `mcp-server` | Start MCP server | Agent needs protocol access |
+| `mcp-tools` | List MCP tools | Discovering capabilities |
+| `status` | Show repo status | Checking for changes |
+| `log` | Show history | Understanding commits |
+| `compare-git` | Performance test | Proving it's faster |
+
+---
+
+## 🤖 MCP Tools for AI Agents - Quick Reference
+
+**MCP (Model Context Protocol)** lets AI agents call version control operations as tools. Think of it as an API that AI agents can understand.
+
+### Quick Setup (3 Steps)
+
+```bash
+# Step 1: Start the MCP server
+npx agentic-jujutsu mcp-server
+
+# Step 2: List available tools
+npx agentic-jujutsu mcp-tools
+
+# Step 3: Call a tool from your agent
+npx agentic-jujutsu mcp-call jj_status
+```
+
+### Available MCP Tools (3 Total)
+
+#### 🔍 1. `jj_status` - Check Repository Status
+
+**What it does**: Tells your agent if there are uncommitted changes
+
+**Example CLI:**
+```bash
+npx agentic-jujutsu mcp-call jj_status
+```
+
+**Example in Agent Code:**
+```javascript
+const mcp = require('agentic-jujutsu/scripts/mcp-server');
+
+const status = mcp.callTool('jj_status', {});
+// Returns: { status: 'clean', output: '...' }
+
+if (status.status === 'clean') {
+  console.log('✅ Safe to deploy');
+}
+```
+
+**Use when:** Agent needs to check before committing or deploying
+
+---
+
+#### 📜 2. `jj_log` - View Commit History
+
+**What it does**: Gets recent commits for your agent to analyze
+
+**Example CLI:**
+```bash
+# Get last 5 commits
+npx agentic-jujutsu mcp-call jj_log '{"limit": 5}'
+```
+
+**Example in Agent Code:**
+```javascript
+const log = mcp.callTool('jj_log', { limit: 10 });
+// Returns: { commits: [...], count: 10 }
+
+// Agent analyzes patterns
+for (const commit of log.commits) {
+  console.log(`${commit.id}: ${commit.message}`);
+}
+```
+
+**Use when:** Agent needs to learn from past commits or find patterns
+
+---
+
+#### 🔀 3. `jj_diff` - View Changes
+
+**What it does**: Shows what changed in the working copy
+
+**Example CLI:**
+```bash
+npx agentic-jujutsu mcp-call jj_diff
+```
+
+**Example in Agent Code:**
+```javascript
+const diff = mcp.callTool('jj_diff', {});
+// Returns: { changes: [...], fileCount: N }
+
+// Agent reviews changes
+if (diff.changes.length > 0) {
+  console.log(`⚠️ Found ${diff.fileCount} changed files`);
+  await reviewCode(diff.changes);
+}
+```
+
+**Use when:** Agent needs to review changes before committing
+
+---
+
+### MCP Resources (2 Total)
+
+#### ⚙️ 1. `jujutsu://config` - Repository Configuration
+
+```javascript
+const config = mcp.readResource('jujutsu://config');
+// Returns: { config: {...}, timestamp: '...' }
+```
+
+#### 📋 2. `jujutsu://operations` - Operations Log
+
+```javascript
+const ops = mcp.readResource('jujutsu://operations');
+// Returns: { operations: [...], count: N }
+```
+
+---
+
+### Complete Agent Example with MCP
+
+```javascript
+const mcp = require('agentic-jujutsu/scripts/mcp-server');
+
+class AICodeReviewer {
+  async review() {
+    // Check status first
+    const status = mcp.callTool('jj_status', {});
+    console.log('Status:', status.status);
+
+    // Get changes
+    const diff = mcp.callTool('jj_diff', {});
+
+    if (diff.changes.length > 0) {
+      console.log(`Reviewing ${diff.fileCount} files...`);
+
+      // AI reviews each change
+      for (const change of diff.changes) {
+        const issues = await this.analyzeCode(change.diff);
+        if (issues.length > 0) {
+          console.log(`⚠️ Issues in ${change.file}:`, issues);
+        }
+      }
+    }
+
+    // Check history for patterns
+    const log = mcp.callTool('jj_log', { limit: 5 });
+    console.log(`Last ${log.count} commits reviewed`);
+  }
+}
+
+// Run the reviewer
+new AICodeReviewer().review();
+```
+
+**Result:** Your AI agent can now monitor, review, and understand your repository! 🚀
 
 ---
 
@@ -1033,14 +1291,86 @@ MCP integration enables:
 
 ---
 
+## 🔗 Rust/Cargo (Advanced Use)
+
+### For Rust Developers
+
+If you're building Rust applications or need native performance, you can use the Rust crate directly instead of the npm package.
+
+**Install from Cargo:**
+```bash
+cargo add agentic-jujutsu
+```
+
+**Or add to Cargo.toml:**
+```toml
+[dependencies]
+agentic-jujutsu = "0.1"
+```
+
+**Basic Rust Usage:**
+```rust
+use agentic_jujutsu::{JJWrapper, JJConfig};
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let config = JJConfig::default();
+    let jj = JJWrapper::with_config(config)?;
+
+    // Check status
+    let status = jj.status().await?;
+    println!("{}", status.stdout);
+
+    Ok(())
+}
+```
+
+**WASM Compilation:**
+
+The npm package uses WASM compiled from this Rust crate. If you want to build custom WASM bindings:
+
+```bash
+# Install wasm-pack
+cargo install wasm-pack
+
+# Build for different targets
+wasm-pack build --target web       # Browser
+wasm-pack build --target nodejs    # Node.js
+wasm-pack build --target bundler   # Webpack/Vite
+wasm-pack build --target deno      # Deno
+```
+
+**Why Use Rust Instead of npm?**
+
+| Feature | npm/npx (WASM) | Rust (Native) |
+|---------|---------------|---------------|
+| **Setup** | `npx` instant | Cargo install |
+| **Performance** | Fast (WASM) | Fastest (native) |
+| **Use Case** | AI agents, scripts | Rust apps, native tools |
+| **Dependencies** | Node.js required | Rust only |
+| **Best For** | Quick prototyping | Production systems |
+
+**Cargo Resources:**
+- **📦 crates.io**: https://crates.io/crates/agentic-jujutsu
+- **📖 Rust Docs**: https://docs.rs/agentic-jujutsu
+- **🔧 Examples**: See `examples/` directory in repo
+
+**Most users should use npm/npx** - it's easier and works great! Only use Cargo if you're already building Rust applications.
+
+---
+
 ## 🔗 Links & Resources
 
-- **📖 Documentation**: https://docs.rs/agentic-jujutsu
+### npm/npx (Primary)
+- **📦 npm Package**: https://npmjs.com/package/agentic-jujutsu
 - **💻 GitHub**: https://github.com/ruvnet/agentic-flow
-- **📦 npm**: https://npmjs.com/package/agentic-jujutsu
-- **🦀 crates.io**: https://crates.io/crates/agentic-jujutsu
 - **🏠 Homepage**: https://ruv.io
 - **🐛 Issues**: https://github.com/ruvnet/agentic-flow/issues
+
+### Rust/Cargo (Advanced)
+- **🦀 crates.io**: https://crates.io/crates/agentic-jujutsu
+- **📖 Documentation**: https://docs.rs/agentic-jujutsu
+- **📝 CRATE README**: See `CRATE_README.md` in package
 
 ---
 
