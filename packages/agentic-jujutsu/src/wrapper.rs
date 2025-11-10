@@ -9,6 +9,7 @@ use crate::{
 use chrono::Utc;
 use std::sync::{Arc, Mutex};
 use std::time::Instant;
+use wasm_bindgen::prelude::*;
 
 /// Validate command arguments to prevent command injection
 fn validate_command_args(args: &[&str]) -> Result<()> {
@@ -38,16 +39,26 @@ use crate::native::execute_jj_command;
 use crate::wasm::execute_jj_command;
 
 /// Main wrapper for Jujutsu operations
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen)]
 #[derive(Clone)]
 pub struct JJWrapper {
     config: JJConfig,
+    #[cfg_attr(target_arch = "wasm32", wasm_bindgen(skip))]
     operation_log: Arc<Mutex<JJOperationLog>>,
 }
 
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen)]
 impl JJWrapper {
     /// Create a new JJWrapper with default configuration
-    pub fn new() -> Result<JJWrapper> {
-        Self::with_config(JJConfig::default())
+    #[cfg_attr(target_arch = "wasm32", wasm_bindgen(constructor))]
+    pub fn new() -> JJWrapper {
+        Self::with_config(JJConfig::default()).unwrap_or_else(|_| {
+            // Fallback to a basic wrapper if default config fails
+            JJWrapper {
+                config: JJConfig::default(),
+                operation_log: Arc::new(Mutex::new(JJOperationLog::new(1000))),
+            }
+        })
     }
 
     /// Create a new JJWrapper with custom configuration
@@ -61,11 +72,13 @@ impl JJWrapper {
     }
 
     /// Get the current configuration
+    #[cfg_attr(target_arch = "wasm32", wasm_bindgen(js_name = getConfig))]
     pub fn get_config(&self) -> JJConfig {
         self.config.clone()
     }
 
     /// Get operation log statistics as JSON string
+    #[cfg_attr(target_arch = "wasm32", wasm_bindgen(js_name = getStats))]
     pub fn get_stats(&self) -> String {
         let log = self.operation_log.lock().unwrap();
         serde_json::json!({
@@ -238,6 +251,7 @@ impl JJWrapper {
     pub async fn status(&self) -> Result<JJResult> {
         self.execute(&["status"]).await
     }
+
 
     /// Get diff between two commits
     pub async fn diff(&self, from: &str, to: &str) -> Result<JJDiff> {
@@ -451,9 +465,17 @@ impl JJWrapper {
     }
 }
 
+// Non-WASM impl block for Rust-only methods
+impl JJWrapper {
+    /// Create wrapper with config (Rust-only)
+    pub fn with_config_checked(config: JJConfig) -> Result<JJWrapper> {
+        Self::with_config(config)
+    }
+}
+
 impl Default for JJWrapper {
     fn default() -> Self {
-        Self::new().unwrap()
+        Self::new()
     }
 }
 
