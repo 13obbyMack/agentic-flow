@@ -1,7 +1,7 @@
 //! Performance benchmarks for operations
 
-use criterion::{black_box, criterion_group, criterion_main, Criterion, BenchmarkId};
 use agentic_jujutsu::{JJOperation, JJOperationLog, OperationType};
+use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion};
 
 fn benchmark_operation_creation(c: &mut Criterion) {
     c.bench_function("create_operation", |b| {
@@ -23,9 +23,7 @@ fn benchmark_operation_serialization(c: &mut Criterion) {
     );
 
     c.bench_function("serialize_operation", |b| {
-        b.iter(|| {
-            serde_json::to_string(black_box(&op)).unwrap()
-        });
+        b.iter(|| serde_json::to_string(black_box(&op)).unwrap());
     });
 }
 
@@ -40,9 +38,7 @@ fn benchmark_operation_deserialization(c: &mut Criterion) {
     }"#;
 
     c.bench_function("deserialize_operation", |b| {
-        b.iter(|| {
-            serde_json::from_str::<JJOperation>(black_box(json)).unwrap()
-        });
+        b.iter(|| serde_json::from_str::<JJOperation>(black_box(json)).unwrap());
     });
 }
 
@@ -82,9 +78,7 @@ fn benchmark_operation_log_search(c: &mut Criterion) {
     }
 
     c.bench_function("operation_log_get_by_id", |b| {
-        b.iter(|| {
-            log.get_by_id(black_box("op_00000500"))
-        });
+        b.iter(|| log.get_by_id(black_box("op_00000500")));
     });
 }
 
@@ -111,9 +105,7 @@ fn benchmark_operation_log_filter(c: &mut Criterion) {
     }
 
     c.bench_function("operation_log_filter_by_type", |b| {
-        b.iter(|| {
-            log.filter_by_type(black_box(OperationType::Commit))
-        });
+        b.iter(|| log.filter_by_type(black_box(OperationType::Commit)));
     });
 }
 
@@ -133,9 +125,7 @@ fn benchmark_operation_log_recent(c: &mut Criterion) {
 
     for count in [1, 10, 50, 100].iter() {
         group.bench_with_input(BenchmarkId::from_parameter(count), count, |b, &count| {
-            b.iter(|| {
-                log.recent(black_box(count))
-            });
+            b.iter(|| log.recent(black_box(count)));
         });
     }
 
@@ -166,9 +156,7 @@ fn benchmark_operation_timestamp_iso(c: &mut Criterion) {
     );
 
     c.bench_function("operation_timestamp_iso", |b| {
-        b.iter(|| {
-            black_box(&op).timestamp_iso()
-        });
+        b.iter(|| black_box(&op).timestamp_iso());
     });
 }
 

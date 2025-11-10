@@ -15,9 +15,7 @@
 //! jj-agent-hook post-task --agent-id coder-1 --session-id swarm-001
 //! ```
 
-use agentic_jujutsu::{
-    JJConfig, JJWrapper, HookContext, JJHooksIntegration, Result,
-};
+use agentic_jujutsu::{HookContext, JJConfig, JJHooksIntegration, JJWrapper, Result};
 use clap::{Parser, Subcommand};
 use std::process::exit;
 
@@ -160,7 +158,7 @@ async fn run_command(cli: Cli) -> Result<()> {
         .with_agentdb_sync(cli.enable_agentdb);
 
     // Create wrapper and integration
-    let wrapper = JJWrapper::new(config)?;
+    let wrapper = JJWrapper::with_config(config)?;
     let mut integration = JJHooksIntegration::new(wrapper, cli.enable_agentdb);
 
     match cli.command {
@@ -206,7 +204,7 @@ async fn run_command(cli: Cli) -> Result<()> {
             println!("✅ Post-edit hook executed successfully");
             println!("📄 File: {}", file);
             println!("🆔 Operation ID: {}", operation.id);
-            println!("📝 Description: {}", operation.description);
+            println!("📝 Command: {}", operation.command);
 
             if cli.verbose {
                 println!("\n🔍 Operation details:");
@@ -230,7 +228,7 @@ async fn run_command(cli: Cli) -> Result<()> {
             if !operations.is_empty() && cli.verbose {
                 println!("\n🔍 Operations:");
                 for op in &operations {
-                    println!("  - {} | {}", op.id, op.description);
+                    println!("  - {} | {}", op.id, op.command);
                 }
             }
         }
@@ -252,9 +250,7 @@ async fn run_command(cli: Cli) -> Result<()> {
                     println!("  - {}", conflict);
                 }
 
-                let event = integration
-                    .on_conflict_detected(conflicts, ctx)
-                    .await?;
+                let event = integration.on_conflict_detected(conflicts, ctx).await?;
 
                 if cli.verbose {
                     println!("\n🔍 Event details:");

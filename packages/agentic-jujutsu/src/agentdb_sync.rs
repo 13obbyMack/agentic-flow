@@ -3,7 +3,9 @@
 //! This module provides integration with AgentDB for storing and querying
 //! jj operation history, enabling AI agents to learn from past operations.
 
-use crate::{JJOperation, Result, JJError};
+use crate::{JJError, JJOperation, Result};
+#[cfg(not(target_arch = "wasm32"))]
+use crate::mcp::{MCPClient, MCPClientConfig};
 use serde::{Deserialize, Serialize};
 
 /// Episode data structure for AgentDB storage
@@ -40,7 +42,7 @@ impl AgentDBEpisode {
     pub fn from_operation(op: &JJOperation, session_id: String, agent_id: String) -> Self {
         Self {
             session_id,
-            task: op.description.clone(),
+            task: op.command.clone(),
             agent_id,
             input: None,
             output: None,
@@ -50,7 +52,10 @@ impl AgentDBEpisode {
             latency_ms: None,
             tokens_used: None,
             operation: Some(op.clone()),
-            timestamp: op.timestamp,
+            timestamp: chrono::DateTime::parse_from_rfc3339(&op.timestamp)
+                .ok()
+                .map(|dt| dt.timestamp())
+                .unwrap_or_else(|| chrono::Utc::now().timestamp()),
         }
     }
 
@@ -93,6 +98,9 @@ pub struct AgentDBSync {
     enabled: bool,
     /// Base URL for AgentDB API (if using remote)
     api_url: Option<String>,
+    /// MCP client for AgentDB communication (native only)
+    #[cfg(not(target_arch = "wasm32"))]
+    mcp_client: Option<MCPClient>,
 }
 
 impl AgentDBSync {
@@ -101,7 +109,25 @@ impl AgentDBSync {
         Self {
             enabled,
             api_url: None,
+            #[cfg(not(target_arch = "wasm32"))]
+            mcp_client: None,
         }
+    }
+
+    /// Create with MCP client for real AgentDB communication (native only)
+    #[cfg(not(target_arch = "wasm32"))]
+    pub async fn with_mcp(enabled: bool, mcp_config: MCPClientConfig) -> Result<Self> {
+        let mcp_client = if enabled {
+            Some(MCPClient::new(mcp_config).await?)
+        } else {
+            None
+        };
+
+        Ok(Self {
+            enabled,
+            api_url: None,
+            mcp_client,
+        })
     }
 
     /// Create with custom API URL
@@ -121,7 +147,8 @@ impl AgentDBSync {
             return Ok(());
         }
 
-        let episode = AgentDBEpisode::from_operation(op, session_id.to_string(), agent_id.to_string());
+        let episode =
+            AgentDBEpisode::from_operation(op, session_id.to_string(), agent_id.to_string());
         self.store_episode(&episode).await
     }
 
@@ -131,12 +158,26 @@ impl AgentDBSync {
             return Ok(());
         }
 
-        // Prepare episode JSON
+        // If MCP client is available, use it for real AgentDB communication (native only)
+        #[cfg(not(target_arch = "wasm32"))]
+        {
+            if let Some(client) = &self.mcp_client {
+                let episode_value = serde_json::to_value(episode)
+                    .map_err(|e| JJError::SerializationError(e.to_string()))?;
+
+                client.store_pattern(episode_value).await?;
+
+                #[cfg(feature = "native")]
+                println!("[agentdb-sync] ✅ Stored episode via MCP: {}", episode.session_id);
+
+                return Ok(());
+            }
+        }
+
+        // Fallback: Log to console/file
         let episode_json = serde_json::to_string_pretty(episode)
             .map_err(|e| JJError::SerializationError(e.to_string()))?;
 
-        // TODO: Implement actual AgentDB storage via MCP or HTTP API
-        // For now, log to console/file
         #[cfg(feature = "native")]
         {
             println!("[agentdb-sync] Would store episode:");
@@ -173,12 +214,30 @@ impl AgentDBSync {
             return Ok(vec![]);
         }
 
-        // TODO: Implement actual AgentDB query via MCP
-        // This would use vector similarity search to find similar past operations
+        // If MCP client is available, use it for real AgentDB queries (native only)
+        #[cfg(not(target_arch = "wasm32"))]
+        {
+            if let Some(client) = &self.mcp_client {
+                let result = client.search_patterns(task.to_string(), limit).await?;
 
+                // Parse response into episodes
+                let episodes: Vec<AgentDBEpisode> = serde_json::from_value(result)
+                    .map_err(|e| JJError::SerializationError(format!("Failed to parse episodes: {}", e)))?;
+
+                #[cfg(feature = "native")]
+                println!("[agentdb-sync] ✅ Found {} similar episodes via MCP", episodes.len());
+
+                return Ok(episodes);
+            }
+        }
+
+        // Fallback: Log and return empty
         #[cfg(feature = "native")]
         {
-            println!("[agentdb-sync] Would query similar operations for: {}", task);
+            println!(
+                "[agentdb-sync] Would query similar operations for: {}",
+                task
+            );
             println!("[agentdb-sync] Limit: {}", limit);
         }
 
@@ -189,7 +248,6 @@ impl AgentDBSync {
             );
         }
 
-        // Return empty for now
         Ok(vec![])
     }
 
@@ -199,8 +257,24 @@ impl AgentDBSync {
             return Ok(TaskStatistics::default());
         }
 
-        // TODO: Implement actual statistics query
+        // If MCP client is available, use it for real AgentDB statistics (native only)
+        #[cfg(not(target_arch = "wasm32"))]
+        {
+            if let Some(client) = &self.mcp_client {
+                let result = client.get_pattern_stats(task_pattern.to_string(), 10).await?;
 
+                // Parse response into statistics
+                let stats: TaskStatistics = serde_json::from_value(result)
+                    .map_err(|e| JJError::SerializationError(format!("Failed to parse stats: {}", e)))?;
+
+                #[cfg(feature = "native")]
+                println!("[agentdb-sync] ✅ Retrieved statistics via MCP for: {}", task_pattern);
+
+                return Ok(stats);
+            }
+        }
+
+        // Fallback: Log and return default
         #[cfg(feature = "native")]
         {
             println!(
@@ -275,17 +349,16 @@ mod tests {
 
     #[test]
     fn test_episode_creation() {
-        let op = JJOperation {
-            id: "test-op".to_string(),
-            operation_type: OperationType::Describe,
-            description: "Test operation".to_string(),
-            timestamp: 1234567890,
-            user: Some("test-user".to_string()),
-            args: vec![],
-            metadata: None,
-        };
+        let op = JJOperation::builder()
+            .operation_id("test-op".to_string())
+            .operation_type(OperationType::Describe)
+            .command("Test operation".to_string())
+            .user("test-user".to_string())
+            .hostname("localhost".to_string())
+            .build();
 
-        let episode = AgentDBEpisode::from_operation(&op, "session-001".to_string(), "agent-001".to_string());
+        let episode =
+            AgentDBEpisode::from_operation(&op, "session-001".to_string(), "agent-001".to_string());
 
         assert_eq!(episode.session_id, "session-001");
         assert_eq!(episode.agent_id, "agent-001");
@@ -296,22 +369,21 @@ mod tests {
 
     #[test]
     fn test_episode_builder() {
-        let op = JJOperation {
-            id: "test-op".to_string(),
-            operation_type: OperationType::Describe,
-            description: "Test operation".to_string(),
-            timestamp: 1234567890,
-            user: Some("test-user".to_string()),
-            args: vec![],
-            metadata: None,
-        };
+        let op = JJOperation::builder()
+            .operation_id("test-op".to_string())
+            .operation_type(OperationType::Describe)
+            .command("Test operation".to_string())
+            .user("test-user".to_string())
+            .hostname("localhost".to_string())
+            .build();
 
-        let episode = AgentDBEpisode::from_operation(&op, "session-001".to_string(), "agent-001".to_string())
-            .with_input("input context".to_string())
-            .with_output("output result".to_string())
-            .with_critique("good work".to_string())
-            .with_success(true, 0.95)
-            .with_metrics(1500, 250);
+        let episode =
+            AgentDBEpisode::from_operation(&op, "session-001".to_string(), "agent-001".to_string())
+                .with_input("input context".to_string())
+                .with_output("output result".to_string())
+                .with_critique("good work".to_string())
+                .with_success(true, 0.95)
+                .with_metrics(1500, 250);
 
         assert_eq!(episode.input.unwrap(), "input context");
         assert_eq!(episode.output.unwrap(), "output result");
@@ -333,8 +405,8 @@ mod tests {
             common_critiques: vec!["needs optimization".to_string()],
         };
 
-        assert_eq!(stats.success_rate(), 0.85);
-        assert_eq!(stats.failure_rate(), 0.15);
+        assert!((stats.success_rate() - 0.85).abs() < 0.001);
+        assert!((stats.failure_rate() - 0.15).abs() < 0.001);
     }
 
     #[tokio::test]
@@ -349,15 +421,13 @@ mod tests {
     #[tokio::test]
     async fn test_sync_disabled() {
         let sync = AgentDBSync::new(false);
-        let op = JJOperation {
-            id: "test-op".to_string(),
-            operation_type: OperationType::Describe,
-            description: "Test operation".to_string(),
-            timestamp: 1234567890,
-            user: Some("test-user".to_string()),
-            args: vec![],
-            metadata: None,
-        };
+        let op = JJOperation::builder()
+            .operation_id("test-op".to_string())
+            .operation_type(OperationType::Describe)
+            .command("Test operation".to_string())
+            .user("test-user".to_string())
+            .hostname("localhost".to_string())
+            .build();
 
         let result = sync.sync_operation(&op, "session-001", "agent-001").await;
         assert!(result.is_ok());

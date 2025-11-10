@@ -43,6 +43,14 @@ pub enum JJError {
     /// Unknown error
     #[error("Unknown error: {0}")]
     Unknown(String),
+
+    /// MCP protocol error
+    #[error("MCP error: {0}")]
+    MCPError(String),
+
+    /// Cryptographic operation error
+    #[error("Crypto error: {0}")]
+    CryptoError(String),
 }
 
 impl JJError {

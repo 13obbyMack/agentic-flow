@@ -29,23 +29,47 @@ function getModelForProvider(provider: string): {
 } {
   switch (provider) {
     case 'gemini':
+      const geminiKey = process.env.GOOGLE_GEMINI_API_KEY;
+      if (!geminiKey) {
+        throw new Error(
+          'GOOGLE_GEMINI_API_KEY is required for Gemini provider.\n' +
+          'Set it via environment variable or use --provider anthropic for Claude models.\n' +
+          'Get your API key at: https://makersuite.google.com/app/apikey'
+        );
+      }
       return {
         model: process.env.COMPLETION_MODEL || 'gemini-2.0-flash-exp',
-        apiKey: process.env.GOOGLE_GEMINI_API_KEY || process.env.ANTHROPIC_API_KEY || '',
+        apiKey: geminiKey,
         baseURL: process.env.PROXY_URL || undefined
       };
 
     case 'requesty':
+      const requestyKey = process.env.REQUESTY_API_KEY;
+      if (!requestyKey) {
+        throw new Error(
+          'REQUESTY_API_KEY is required for Requesty provider.\n' +
+          'Set it via environment variable or use --provider anthropic for Claude models.\n' +
+          'Get your API key at: https://requesty.ai'
+        );
+      }
       return {
         model: process.env.COMPLETION_MODEL || 'deepseek/deepseek-chat',
-        apiKey: process.env.REQUESTY_API_KEY || process.env.ANTHROPIC_API_KEY || '',
+        apiKey: requestyKey,
         baseURL: process.env.PROXY_URL || undefined
       };
 
     case 'openrouter':
+      const openrouterKey = process.env.OPENROUTER_API_KEY;
+      if (!openrouterKey) {
+        throw new Error(
+          'OPENROUTER_API_KEY is required for OpenRouter provider.\n' +
+          'Set it via environment variable or use --provider anthropic for Claude models.\n' +
+          'Get your API key at: https://openrouter.ai/keys'
+        );
+      }
       return {
         model: process.env.COMPLETION_MODEL || 'deepseek/deepseek-chat',
-        apiKey: process.env.OPENROUTER_API_KEY || process.env.ANTHROPIC_API_KEY || '',
+        apiKey: openrouterKey,
         baseURL: process.env.PROXY_URL || undefined
       };
 

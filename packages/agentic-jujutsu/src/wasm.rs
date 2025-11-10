@@ -1,15 +1,42 @@
 //! WASM implementation with simulated command execution
+//!
+//! ## Architecture Note
+//!
+//! This module provides **simulated** jj command execution for WASM/browser environments
+//! where direct CLI execution is not possible. For real jj operations, use:
+//!
+//! - **Node.js/CLI**: The `bin/cli.js` executes the real `jj` binary if installed
+//! - **Native Rust**: The `native.rs` module uses async-process for real command execution
+//! - **Browser/WASM**: This module returns realistic mock data for demos and testing
+//!
+//! To use real jujutsu operations, install the jj CLI:
+//! - Cargo: `cargo install --git https://github.com/martinvonz/jj jj-cli`
+//! - Homebrew: `brew install jj`
+//! - From source: https://github.com/martinvonz/jj#installation
+
+#![cfg(target_arch = "wasm32")]
 
 use crate::error::{JJError, Result};
+use std::time::Duration;
 use wasm_bindgen::prelude::*;
 
-/// Execute a jj command in WASM environment (simulated)
-#[cfg(target_arch = "wasm32")]
-pub async fn execute_jj_command(args: &[&str]) -> Result<String> {
-    // Log to browser console
-    web_sys::console::log_1(&format!("WASM: Executing jj {}", args.join(" ")).into());
+/// Execute a jj command in WASM environment (simulated for browser contexts)
+///
+/// **Important**: This returns simulated data for browser/WASM environments.
+/// For real jj operations, use Node.js CLI or native Rust implementation.
+///
+/// Note: jj_path and timeout are ignored in WASM as we simulate commands
+pub async fn execute_jj_command(
+    _jj_path: &str,
+    args: &[&str],
+    _command_timeout: Duration,
+) -> Result<String> {
+    // Log to browser console with clear indication this is simulated
+    web_sys::console::warn_1(
+        &format!("WASM Simulation: jj {} (Browser environment - not real jj execution)", args.join(" ")).into()
+    );
 
-    // For now, return simulated responses based on command
+    // Return simulated responses for browser/WASM demonstrations
     let response = match args.first() {
         Some(&"version") | Some(&"--version") => {
             "jj 0.12.0 (WASM simulation)".to_string()
@@ -81,23 +108,18 @@ pub async fn execute_jj_command(args: &[&str]) -> Result<String> {
     Ok(response)
 }
 
-/// Stub for non-WASM builds
-#[cfg(not(target_arch = "wasm32"))]
-pub async fn execute_jj_command(_args: &[&str]) -> Result<String> {
-    Err(JJError::CommandFailed(
-        "WASM execution not available in this build".to_string(),
-    ))
-}
+// No stub needed - this module is only compiled for WASM targets
 
 /// Initialize WASM module
-#[cfg(target_arch = "wasm32")]
 #[wasm_bindgen(start)]
 pub fn wasm_init() {
     console_error_panic_hook::set_once();
     web_sys::console::log_1(&"agentic-jujutsu WASM module initialized".into());
+    web_sys::console::log_1(&"Note: Browser WASM environment uses simulated jj commands".into());
+    web_sys::console::log_1(&"For real jj operations, use Node.js CLI or install jj binary".into());
 }
 
-#[cfg(all(test, target_arch = "wasm32"))]
+#[cfg(test)]
 mod tests {
     use super::*;
     use wasm_bindgen_test::*;

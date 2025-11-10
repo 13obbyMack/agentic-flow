@@ -1,16 +1,14 @@
 //! Native implementation using async-process for command execution
+//! This module is only compiled for native targets (not WASM)
+
+#![cfg(not(target_arch = "wasm32"))]
 
 use crate::error::{JJError, Result};
 use std::time::Duration;
-
-#[cfg(feature = "native")]
 use async_process::{Command, Stdio};
-
-#[cfg(feature = "native")]
 use tokio::time::timeout;
 
 /// Execute a jj command natively with timeout support
-#[cfg(feature = "native")]
 pub async fn execute_jj_command(
     jj_path: &str,
     args: &[&str],
@@ -46,19 +44,7 @@ pub async fn execute_jj_command(
     Ok(stdout)
 }
 
-/// Stub for non-native builds
-#[cfg(not(feature = "native"))]
-pub async fn execute_jj_command(
-    _jj_path: &str,
-    _args: &[&str],
-    _command_timeout: Duration,
-) -> Result<String> {
-    Err(JJError::CommandFailed(
-        "Native execution not available in this build".to_string(),
-    ))
-}
-
-#[cfg(all(test, feature = "native"))]
+#[cfg(test)]
 mod tests {
     use super::*;
 
@@ -104,7 +90,8 @@ mod tests {
     #[tokio::test]
     async fn test_failed_command() {
         // Test with a command that will fail
-        let result = execute_jj_command("ls", &["nonexistent_dir_xyz"], Duration::from_secs(5)).await;
+        let result =
+            execute_jj_command("ls", &["nonexistent_dir_xyz"], Duration::from_secs(5)).await;
 
         assert!(result.is_err());
     }

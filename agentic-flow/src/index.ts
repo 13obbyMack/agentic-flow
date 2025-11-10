@@ -195,6 +195,21 @@ async function main() {
 
   logger.info('Starting Claude Agent SDK', { mode: options.mode });
 
+  // Propagate CLI options to environment variables for agent execution
+  if (options.provider) {
+    process.env.PROVIDER = options.provider;
+    logger.info('Provider set from CLI', { provider: options.provider });
+  }
+  if (options.anthropicApiKey) {
+    process.env.ANTHROPIC_API_KEY = options.anthropicApiKey;
+  }
+  if (options.openrouterApiKey) {
+    process.env.OPENROUTER_API_KEY = options.openrouterApiKey;
+  }
+  if (options.model) {
+    process.env.COMPLETION_MODEL = options.model;
+  }
+
   // Start health check server
   const healthPort = parseInt(process.env.HEALTH_PORT || '8080');
   const healthServer = startHealthServer(healthPort);
