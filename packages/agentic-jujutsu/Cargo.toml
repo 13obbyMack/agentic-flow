@@ -1,6 +1,6 @@
 [package]
 name = "agentic-jujutsu"
-version = "1.0.1"
+version = "2.0.0"
 edition = "2021"
 authors = ["Agentic Flow Team <team@ruv.io>"]
 description = "AI-powered Jujutsu VCS wrapper for multi-agent collaboration - 10-100x faster than Git with MCP protocol support"
@@ -12,9 +12,6 @@ readme = "CRATE_README.md"
 keywords = ["jujutsu", "vcs", "ai-agents", "wasm", "mcp"]
 categories = ["development-tools", "wasm", "concurrency"]
 exclude = ["docs/", "examples/", "benches/", ".github/", "*.sh"]
-
-[package.metadata.wasm-pack.profile.release]
-wasm-opt = ["-O", "--enable-bulk-memory"]
 
 [lib]
 crate-type = ["cdylib", "rlib"]
@@ -28,25 +25,30 @@ anyhow = "1.0"
 chrono = { version = "0.4", features = ["serde", "clock"], default-features = false }
 uuid = { version = "1.0", features = ["v4", "serde", "js"] }
 
-# WASM dependencies (always available)
+# WASM dependencies
 wasm-bindgen = "0.2"
 wasm-bindgen-futures = "0.4"
 js-sys = "0.3"
 web-sys = { version = "0.3", features = ["console"] }
 
-# CLI argument parsing (native only)
+# Async runtime - only include necessary features to reduce binary size
+tokio = { version = "1.0", features = ["rt", "rt-multi-thread", "process", "io-util", "time", "macros", "sync"], optional = true }
+
+# Process execution for jj CLI
+async-process = { version = "2.0", optional = true }
+
+# CLI argument parsing
 clap = { version = "4.0", features = ["derive"], optional = true }
 
-# Logging (native only)
+# Logging
 log = { version = "0.4", optional = true }
 env_logger = { version = "0.11", optional = true }
 
-# Native-only dependencies (excluded from WASM builds)
+# HTTP client for SSE transport (optional)
+reqwest = { version = "0.11", features = ["json"], optional = true }
+
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 errno = "0.3"
-tokio = { version = "1.0", features = ["rt", "rt-multi-thread", "process", "io-util", "time", "macros", "sync"], optional = true }
-async-process = { version = "2.0", optional = true }
-reqwest = { version = "0.11", features = ["json"], optional = true }
 
 [dev-dependencies]
 tokio = { version = "1.0", features = ["full", "test-util"] }
