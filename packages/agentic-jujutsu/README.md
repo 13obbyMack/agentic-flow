@@ -9,6 +9,8 @@
 ## 📑 Quick Navigation
 
 - [⚡ Quick Start](#-quick-start---try-it-now) - Get started in 30 seconds
+- [🔧 Installation](#-installation) - Complete installation guide
+- [🏗️ Architecture](#-architecture) - How it works
 - [🚀 CLI Commands](#-npx-cli-commands---complete-reference) - All npx commands
 - [🤖 MCP Tools](#-mcp-tools-for-ai-agents---quick-reference) - AI agent integration
 - [🎯 Use Cases](#-ai-coding-agent-use-cases) - Real-world examples
@@ -87,16 +89,30 @@ npx agentic-jujutsu mcp-server
 ### Option 2: Global Install (For Frequent Use)
 
 ```bash
-# Install once
+# Step 1: Install jj binary (required for real operations)
+cargo install --git https://github.com/martinvonz/jj jj-cli
+
+# Step 2: Install agentic-jujutsu
 npm install -g agentic-jujutsu
 
 # Use shorter commands
-agentic-jujutsu status
+agentic-jujutsu status  # Real jj operations!
 agentic-jujutsu analyze
 jj-ai help  # Alternative command name
 ```
 
-### Option 3: Project Install (For Programmatic Use)
+**Note**: The npm package wraps the jj binary. Install jj first for real operations, or use our postinstall script with `AGENTIC_JUJUTSU_AUTO_INSTALL=true`.
+
+### Option 3: Automatic Installation (Cargo Required)
+
+```bash
+# Enable auto-install during npm install
+export AGENTIC_JUJUTSU_AUTO_INSTALL=true
+npm install -g agentic-jujutsu
+# Will automatically install jj via cargo if not found
+```
+
+### Option 4: Project Install (For Programmatic Use)
 
 ```bash
 # Add to your project
@@ -111,6 +127,130 @@ const ast = require('agentic-jujutsu/scripts/agentic-flow-integration');
 // Your agent can now use MCP tools
 const status = mcp.callTool('jj_status', {});
 console.log('Repository:', status);
+```
+
+---
+
+## 🔧 Installation
+
+### Prerequisites
+
+This package is a **wrapper** around jujutsu VCS. You need both:
+
+1. **agentic-jujutsu** (npm package) - Provides CLI, WASM bindings, MCP integration
+2. **jj** (binary) - The actual Jujutsu VCS
+
+### Installation Methods
+
+#### Method 1: Automatic (Recommended)
+
+```bash
+# Requires Cargo/Rust installed
+export AGENTIC_JUJUTSU_AUTO_INSTALL=true
+npm install -g agentic-jujutsu
+# Automatically installs jj if not found
+```
+
+#### Method 2: Manual (Two Steps)
+
+```bash
+# Step 1: Install jj binary
+cargo install --git https://github.com/martinvonz/jj jj-cli
+
+# Step 2: Install agentic-jujutsu
+npm install -g agentic-jujutsu
+```
+
+#### Method 3: Just Try It (npx)
+
+```bash
+# No installation - runs directly
+npx agentic-jujutsu help
+# Will show installation instructions if jj not found
+```
+
+### Installing jj Binary
+
+Choose the best method for your platform:
+
+```bash
+# Cargo (All Platforms - Recommended)
+cargo install --git https://github.com/martinvonz/jj jj-cli
+
+# Homebrew (macOS/Linux)
+brew install jj
+
+# Nix (Linux/macOS)
+nix-env -iA nixpkgs.jujutsu
+```
+
+**📖 Full installation guide**: [`docs/INSTALLATION.md`](./docs/INSTALLATION.md)
+
+### Verification
+
+```bash
+# Check jj is installed
+jj --version
+
+# Check agentic-jujutsu is installed
+agentic-jujutsu version
+
+# Try it out
+agentic-jujutsu status
+```
+
+---
+
+## 🏗️ Architecture
+
+### How It Works
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                   agentic-jujutsu                       │
+├─────────────────────────────────────────────────────────┤
+│                                                         │
+│  📦 npm Package (YOU INSTALL THIS)                     │
+│   ├─ CLI Wrapper (bin/cli.js)                          │
+│   ├─ WASM Bindings (Rust → JavaScript)                 │
+│   ├─ MCP Server (AI agent integration)                 │
+│   └─ AST Transform (AI-readable format)                │
+│         ↓ delegates to                                  │
+│  🦀 jj Binary (INSTALL SEPARATELY)                     │
+│   ├─ Real Jujutsu VCS                                  │
+│   ├─ Version control operations                        │
+│   └─ Lock-free multi-agent support                     │
+│                                                         │
+└─────────────────────────────────────────────────────────┘
+```
+
+### Three Execution Modes
+
+1. **Node.js CLI** (`bin/cli.js`)
+   - Executes real `jj` binary if installed
+   - Adds AI agent features (MCP, AST, hooks)
+   - Best for: Command-line usage, npx
+
+2. **Native Rust** (`src/native.rs`)
+   - Direct async-process execution
+   - Maximum performance
+   - Best for: Rust projects, native binaries
+
+3. **Browser WASM** (`src/wasm.rs`)
+   - Simulated operations for demos
+   - No jj binary needed
+   - Best for: Browser demos, testing
+
+### What Gets Installed Where
+
+```
+npm install -g agentic-jujutsu
+  → ~/.npm/lib/node_modules/agentic-jujutsu/
+  → Creates bin: agentic-jujutsu, jj-ai
+
+cargo install jj-cli
+  → ~/.cargo/bin/jj
+  → Real VCS binary
 ```
 
 ---

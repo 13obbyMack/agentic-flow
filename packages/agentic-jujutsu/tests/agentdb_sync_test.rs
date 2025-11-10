@@ -99,28 +99,24 @@ async fn test_batch_sync() -> Result<()> {
 
     let ops = vec![
         (
-            JJOperation {
-                id: "op-1".to_string(),
-                operation_type: OperationType::Describe,
-                description: "Op 1".to_string(),
-                timestamp: 1234567890,
-                user: Some("agent".to_string()),
-                args: vec![],
-                metadata: HashMap::new(),
-            },
+            JJOperation::builder()
+                .operation_id("op-1".to_string())
+                .operation_type(OperationType::Describe)
+                .command("Op 1".to_string())
+                .user("agent".to_string())
+                .hostname("localhost".to_string())
+                .build(),
             "session-001".to_string(),
             "agent-001".to_string(),
         ),
         (
-            JJOperation {
-                id: "op-2".to_string(),
-                operation_type: OperationType::Describe,
-                description: "Op 2".to_string(),
-                timestamp: 1234567891,
-                user: Some("agent".to_string()),
-                args: vec![],
-                metadata: HashMap::new(),
-            },
+            JJOperation::builder()
+                .operation_id("op-2".to_string())
+                .operation_type(OperationType::Describe)
+                .command("Op 2".to_string())
+                .user("agent".to_string())
+                .hostname("localhost".to_string())
+                .build(),
             "session-001".to_string(),
             "agent-001".to_string(),
         ),

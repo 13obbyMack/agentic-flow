@@ -1,14 +1,13 @@
 //! Integration tests for hooks system
 
 use agentic_jujutsu::{
-    HookContext, HookEventType, JJConfig, JJHooksIntegration, JJWrapper, Result,
+    HookContext, HookEventType, JJHooksIntegration, JJWrapper, Result,
 };
 
 #[tokio::test]
 async fn test_full_hooks_lifecycle() -> Result<()> {
     // Create integration
-    let config = JJConfig::default();
-    let wrapper = JJWrapper::new(config)?;
+    let wrapper = JJWrapper::new()?;
     let mut integration = JJHooksIntegration::new(wrapper, false);
 
     // Create context
@@ -28,8 +27,8 @@ async fn test_full_hooks_lifecycle() -> Result<()> {
 
     // Post-edit
     let op = integration.on_post_edit("test.rs", ctx.clone()).await?;
-    assert!(op.description.contains("test.rs"));
-    assert_eq!(op.user.as_deref(), Some("test-agent"));
+    assert!(op.command.contains("test.rs"));
+    assert_eq!(op.user, "test-agent");
 
     // Post-task
     let operations = integration.on_post_task(ctx).await?;
@@ -43,8 +42,7 @@ async fn test_full_hooks_lifecycle() -> Result<()> {
 
 #[tokio::test]
 async fn test_multiple_edits() -> Result<()> {
-    let config = JJConfig::default();
-    let wrapper = JJWrapper::new(config)?;
+    let wrapper = JJWrapper::new()?;
     let mut integration = JJHooksIntegration::new(wrapper, false);
 
     let ctx = HookContext::new(
@@ -73,8 +71,7 @@ async fn test_multiple_edits() -> Result<()> {
 
 #[tokio::test]
 async fn test_conflict_detection() -> Result<()> {
-    let config = JJConfig::default();
-    let wrapper = JJWrapper::new(config)?;
+    let wrapper = JJWrapper::new()?;
     let integration = JJHooksIntegration::new(wrapper, false);
 
     let ctx = HookContext::new(
@@ -96,8 +93,7 @@ async fn test_conflict_detection() -> Result<()> {
 
 #[tokio::test]
 async fn test_agentdb_sync_enabled() -> Result<()> {
-    let config = JJConfig::default().with_agentdb_sync(true);
-    let wrapper = JJWrapper::new(config)?;
+    let wrapper = JJWrapper::new()?;
     let integration = JJHooksIntegration::new(wrapper, true);
 
     assert!(integration.is_agentdb_enabled());
@@ -126,13 +122,11 @@ async fn test_hook_context_metadata() -> Result<()> {
 
 #[tokio::test]
 async fn test_concurrent_sessions() -> Result<()> {
-    let config = JJConfig::default();
-
     // Create two independent integrations
-    let wrapper1 = JJWrapper::new(config.clone())?;
+    let wrapper1 = JJWrapper::new()?;
     let mut integration1 = JJHooksIntegration::new(wrapper1, false);
 
-    let wrapper2 = JJWrapper::new(config)?;
+    let wrapper2 = JJWrapper::new()?;
     let mut integration2 = JJHooksIntegration::new(wrapper2, false);
 
     // Session 1
@@ -170,8 +164,7 @@ async fn test_concurrent_sessions() -> Result<()> {
 
 #[tokio::test]
 async fn test_error_handling_without_session() -> Result<()> {
-    let config = JJConfig::default();
-    let wrapper = JJWrapper::new(config)?;
+    let wrapper = JJWrapper::new()?;
     let mut integration = JJHooksIntegration::new(wrapper, false);
 
     // Try post-task without pre-task

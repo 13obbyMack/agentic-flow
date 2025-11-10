@@ -24,8 +24,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Get configuration
     println!("3. Retrieving configuration...");
     let retrieved_config = custom_wrapper.get_config();
-    println!("   jj_path: {}", retrieved_config.jj_path);
-    println!("   repo_path: {}", retrieved_config.repo_path);
+    println!("   jj_path: {}", retrieved_config.jj_path());
+    println!("   repo_path: {}", retrieved_config.repo_path());
     println!("   timeout_ms: {}", retrieved_config.timeout_ms);
     println!("   verbose: {}", retrieved_config.verbose);
     println!("   max_log_entries: {}\n", retrieved_config.max_log_entries);

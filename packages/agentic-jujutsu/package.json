@@ -69,6 +69,7 @@
     "bin/",
     "scripts/mcp-server.js",
     "scripts/agentic-flow-integration.js",
+    "scripts/install-jj.js",
     "examples/",
     "README.md",
     "CRATE_README.md",
@@ -86,6 +87,7 @@
     "verify": "./scripts/verify-build.sh",
     "clean": "rm -rf pkg/ target/",
     "prepublishOnly": "npm run build && npm run verify",
+    "postinstall": "node scripts/install-jj.js",
     "mcp-server": "node scripts/mcp-server.js",
     "example:node": "node examples/node/basic-usage.js"
   },

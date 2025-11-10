@@ -7,7 +7,7 @@ async fn test_wrapper_creation() {
     let wrapper = JJWrapper::new().expect("Failed to create wrapper");
     let config = wrapper.get_config();
 
-    assert_eq!(config.jj_path, "jj");
+    assert_eq!(config.jj_path(), "jj");
     assert_eq!(config.timeout_ms, 30000);
 }
 

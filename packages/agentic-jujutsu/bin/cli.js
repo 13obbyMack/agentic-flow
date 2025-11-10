@@ -214,6 +214,67 @@ function benchmark(type = 'all') {
   }
 }
 
+async function executeJJCommand(command, extraArgs = []) {
+  try {
+    // Try to load the native WASM bindings
+    const jj = require('../pkg/node/agentic_jujutsu.js');
+
+    // Build the full args array
+    const fullArgs = [command, ...extraArgs];
+
+    console.log(`${colors.cyan}Executing: jj ${fullArgs.join(' ')}${colors.reset}\n`);
+
+    // Create a wrapper instance
+    const { JJWrapper } = jj;
+
+    // Note: WASM bindings might not have the full wrapper exposed
+    // Try to execute the command directly
+    const { exec } = require('child_process');
+    const { promisify } = require('util');
+    const execAsync = promisify(exec);
+
+    try {
+      // Try to execute the real jj command
+      const { stdout, stderr } = await execAsync(`jj ${fullArgs.join(' ')}`);
+
+      if (stderr && stderr.trim()) {
+        console.error(`${colors.yellow}${stderr}${colors.reset}`);
+      }
+
+      if (stdout && stdout.trim()) {
+        console.log(stdout);
+      }
+    } catch (execError) {
+      // jj not installed, show helpful message
+      if (execError.code === 'ENOENT' || execError.message.includes('not found')) {
+        console.log(`${colors.red}✗ jj not found on your system${colors.reset}\n`);
+        console.log(`${colors.bright}Installation Options:${colors.reset}\n`);
+        console.log(`${colors.cyan}1. Cargo (Recommended):${colors.reset}`);
+        console.log(`   cargo install --git https://github.com/martinvonz/jj jj-cli\n`);
+        console.log(`${colors.cyan}2. Homebrew (macOS):${colors.reset}`);
+        console.log(`   brew install jj\n`);
+        console.log(`${colors.cyan}3. From source:${colors.reset}`);
+        console.log(`   git clone https://github.com/martinvonz/jj`);
+        console.log(`   cd jj && cargo build --release\n`);
+        console.log(`${colors.bright}Learn more:${colors.reset} https://github.com/martinvonz/jj#installation\n`);
+        console.log(`${colors.yellow}Note:${colors.reset} This package provides a wrapper around jj with AI agent features.`);
+        console.log(`      The jj binary must be installed separately.\n`);
+        process.exit(1);
+      } else {
+        // Some other error from jj itself
+        console.error(`${colors.red}Error executing jj:${colors.reset}`, execError.message);
+        if (execError.stderr) {
+          console.error(execError.stderr);
+        }
+        process.exit(1);
+      }
+    }
+  } catch (error) {
+    console.error(`${colors.red}Error:${colors.reset}`, error.message);
+    process.exit(1);
+  }
+}
+
 function compareGit() {
   logo();
   console.log(`${colors.bright}Performance Comparison: Jujutsu vs Git${colors.reset}\n`);
@@ -291,10 +352,9 @@ if (!command || command === 'help' || command === '--help' || command === '-h') 
   compareGit();
 } else if (command === 'examples') {
   examples();
-} else if (command === 'status' || command === 'log' || command === 'diff') {
-  console.log(`${colors.yellow}Simulated jj ${command}${colors.reset}`);
-  console.log(`This is a WASM simulation. Install jj for real operations:`);
-  console.log(`  https://github.com/martinvonz/jj\n`);
+} else if (command === 'status' || command === 'log' || command === 'diff' || command === 'new' || command === 'describe') {
+  // Use the real WASM bindings
+  executeJJCommand(command, args.slice(1));
 } else {
   console.error(`${colors.red}Unknown command: ${command}${colors.reset}`);
   console.log(`Run 'npx agentic-jujutsu help' for usage\n`);
