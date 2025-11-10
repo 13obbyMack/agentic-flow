@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [1.10.1] - 2025-01-10
+## [1.10.2] - 2025-01-10
 
 ### Fixed
 - **Critical Bug**: Fixed ANTHROPIC_API_KEY overriding `--provider` CLI argument ([#60](https://github.com/ruvnet/agentic-flow/issues/60))
