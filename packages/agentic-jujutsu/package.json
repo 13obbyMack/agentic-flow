@@ -1,7 +1,7 @@
 {
   "name": "@agentic-flow/jujutsu",
-  "version": "0.1.0",
-  "description": "AI-powered Jujutsu VCS wrapper - 10-100x faster than Git with MCP protocol support and WASM",
+  "version": "0.1.1",
+  "description": "AI-powered Jujutsu VCS wrapper - 10-100x faster than Git with MCP protocol support, WASM, and agentic-flow AST integration",
   "keywords": [
     "jujutsu",
     "vcs",
@@ -58,6 +58,9 @@
   },
   "files": [
     "pkg/",
+    "scripts/mcp-server.js",
+    "scripts/agentic-flow-integration.js",
+    "examples/",
     "README.md",
     "CRATE_README.md",
     "LICENSE"
@@ -65,13 +68,17 @@
   "scripts": {
     "build": "./scripts/wasm-pack-build.sh --release",
     "build:dev": "./scripts/wasm-pack-build.sh",
-    "test": "npm run build:dev && npm run test:node && npm run test:wasm",
-    "test:node": "node tests/wasm/basic.test.js",
-    "test:wasm": "wasm-pack test --node",
-    "bench": "cargo bench",
+    "test": "npm run verify && npm run test:wasm",
+    "test:wasm": "node tests/wasm/basic.test.js",
+    "test:integration": "node tests/benchmarks/performance.bench.js",
+    "test:docker": "./scripts/docker-test.sh",
+    "bench": "node tests/benchmarks/performance.bench.js",
     "size": "./scripts/analyze-size.sh",
     "verify": "./scripts/verify-build.sh",
-    "clean": "rm -rf pkg/ target/"
+    "clean": "rm -rf pkg/ target/",
+    "prepublishOnly": "npm run build && npm run verify",
+    "mcp-server": "node scripts/mcp-server.js",
+    "example:node": "node examples/node/basic-usage.js"
   },
   "devDependencies": {
     "@types/node": "^20.0.0"
