@@ -1,7 +1,7 @@
 //! Core type system for agentic-jujutsu
 //!
 //! This module defines the fundamental data structures used throughout the crate,
-//! with full WASM bindings for JavaScript/TypeScript interoperability.
+//! with full N-API bindings for JavaScript/TypeScript interoperability.
 //!
 //! # Examples
 //!
@@ -25,7 +25,7 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
-use wasm_bindgen::prelude::*;
+use napi_derive::napi;
 
 use crate::error::{JJError, Result};
 
@@ -43,46 +43,30 @@ use crate::error::{JJError, Result};
 /// assert!(result.success());
 /// ```
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[wasm_bindgen]
+#[napi(object)]
 pub struct JJResult {
     /// Standard output from the command
-    #[wasm_bindgen(skip)]
     pub stdout: String,
 
     /// Standard error from the command
-    #[wasm_bindgen(skip)]
     pub stderr: String,
 
     /// Exit code
     pub exit_code: i32,
 
     /// Command execution time in milliseconds
-    pub execution_time_ms: u64,
+    pub execution_time_ms: u32,
 }
 
-#[wasm_bindgen]
 impl JJResult {
     /// Create a new JJResult
-    #[wasm_bindgen(constructor)]
     pub fn new(stdout: String, stderr: String, exit_code: i32, execution_time_ms: u64) -> Self {
         Self {
             stdout,
             stderr,
             exit_code,
-            execution_time_ms,
+            execution_time_ms: execution_time_ms as u32,
         }
-    }
-
-    /// Get stdout (for WASM)
-    #[wasm_bindgen(getter)]
-    pub fn stdout(&self) -> String {
-        self.stdout.clone()
-    }
-
-    /// Get stderr (for WASM)
-    #[wasm_bindgen(getter)]
-    pub fn stderr(&self) -> String {
-        self.stderr.clone()
     }
 
     /// Check if the command was successful
@@ -130,46 +114,36 @@ impl JJResult {
 /// assert_eq!(commit.message, "Add new feature");
 /// ```
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[wasm_bindgen]
+#[napi(object)]
 pub struct JJCommit {
     /// Commit ID (revision hash)
-    #[wasm_bindgen(skip)]
     pub id: String,
 
     /// Change ID (unique identifier for the change)
-    #[wasm_bindgen(skip)]
     pub change_id: String,
 
     /// Commit message
-    #[wasm_bindgen(skip)]
     pub message: String,
 
     /// Author name
-    #[wasm_bindgen(skip)]
     pub author: String,
 
     /// Author email
-    #[wasm_bindgen(skip)]
     pub author_email: String,
 
-    /// Timestamp
-    #[wasm_bindgen(skip)]
-    pub timestamp: DateTime<Utc>,
+    /// Timestamp (ISO 8601 format)
+    pub timestamp: String,
 
     /// Parent commit IDs
-    #[wasm_bindgen(skip)]
     pub parents: Vec<String>,
 
     /// Child commit IDs
-    #[wasm_bindgen(skip)]
     pub children: Vec<String>,
 
     /// Branches pointing to this commit
-    #[wasm_bindgen(skip)]
     pub branches: Vec<String>,
 
     /// Tags associated with this commit
-    #[wasm_bindgen(skip)]
     pub tags: Vec<String>,
 
     /// Whether this is a merge commit
@@ -182,10 +156,8 @@ pub struct JJCommit {
     pub is_empty: bool,
 }
 
-#[wasm_bindgen]
 impl JJCommit {
     /// Create a new commit with minimal fields
-    #[wasm_bindgen(constructor)]
     pub fn new(
         id: String,
         change_id: String,
@@ -199,7 +171,7 @@ impl JJCommit {
             message,
             author,
             author_email,
-            timestamp: Utc::now(),
+            timestamp: Utc::now().to_rfc3339(),
             parents: Vec::new(),
             children: Vec::new(),
             branches: Vec::new(),
@@ -210,44 +182,19 @@ impl JJCommit {
         }
     }
 
-    /// Get ID (for WASM)
-    #[wasm_bindgen(getter)]
-    pub fn id(&self) -> String {
-        self.id.clone()
+    /// Create a builder for constructing commits
+    pub fn builder() -> JJCommitBuilder {
+        JJCommitBuilder::default()
     }
 
-    /// Get change ID (for WASM)
-    #[wasm_bindgen(getter)]
-    pub fn change_id(&self) -> String {
-        self.change_id.clone()
-    }
-
-    /// Get message (for WASM)
-    #[wasm_bindgen(getter)]
-    pub fn message(&self) -> String {
-        self.message.clone()
-    }
-
-    /// Get author (for WASM)
-    #[wasm_bindgen(getter)]
-    pub fn author(&self) -> String {
-        self.author.clone()
-    }
-
-    /// Get author email (for WASM)
-    #[wasm_bindgen(getter)]
-    pub fn author_email(&self) -> String {
-        self.author_email.clone()
-    }
-
-    /// Get timestamp as ISO 8601 string (for WASM)
+    /// Get timestamp as ISO 8601 string
     pub fn timestamp_iso(&self) -> String {
-        self.timestamp.to_rfc3339()
+        self.timestamp.clone()
     }
 
     /// Get parent count
-    pub fn parent_count(&self) -> usize {
-        self.parents.len()
+    pub fn parent_count(&self) -> u32 {
+        self.parents.len() as u32
     }
 
     /// Short commit ID (first 12 characters)
@@ -260,25 +207,6 @@ impl JJCommit {
     #[inline]
     pub fn short_change_id(&self) -> String {
         self.change_id.chars().take(12).collect()
-    }
-
-    /// Get parents as JSON string (for WASM)
-    #[wasm_bindgen(getter)]
-    pub fn parents_json(&self) -> String {
-        serde_json::to_string(&self.parents).unwrap_or_else(|_| "[]".to_string())
-    }
-
-    /// Get branches as JSON string (for WASM)
-    #[wasm_bindgen(getter)]
-    pub fn branches_json(&self) -> String {
-        serde_json::to_string(&self.branches).unwrap_or_else(|_| "[]".to_string())
-    }
-}
-
-impl JJCommit {
-    /// Create a builder for constructing commits
-    pub fn builder() -> JJCommitBuilder {
-        JJCommitBuilder::default()
     }
 
     /// Add a parent commit ID
@@ -429,7 +357,7 @@ impl JJCommitBuilder {
             message: self.message.unwrap_or_default(),
             author: self.author.unwrap_or_default(),
             author_email: self.author_email.unwrap_or_default(),
-            timestamp: self.timestamp.unwrap_or_else(Utc::now),
+            timestamp: self.timestamp.map(|t| t.to_rfc3339()).unwrap_or_else(|| Utc::now().to_rfc3339()),
             parents: self.parents,
             children: self.children,
             branches: self.branches,
@@ -454,21 +382,18 @@ impl JJCommitBuilder {
 /// assert_eq!(branch.name, "feature/new-api");
 /// ```
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[wasm_bindgen]
+#[napi(object)]
 pub struct JJBranch {
     /// Branch name
-    #[wasm_bindgen(skip)]
     pub name: String,
 
     /// Commit ID this branch points to
-    #[wasm_bindgen(skip)]
     pub target: String,
 
     /// Whether this is a remote branch
     pub is_remote: bool,
 
     /// Remote name (if remote branch)
-    #[wasm_bindgen(skip)]
     pub remote: Option<String>,
 
     /// Whether this branch is tracking a remote
@@ -477,15 +402,12 @@ pub struct JJBranch {
     /// Whether this is the current branch
     pub is_current: bool,
 
-    /// Creation timestamp
-    #[wasm_bindgen(skip)]
-    pub created_at: DateTime<Utc>,
+    /// Creation timestamp (ISO 8601 format)
+    pub created_at: String,
 }
 
-#[wasm_bindgen]
 impl JJBranch {
     /// Create a new branch
-    #[wasm_bindgen(constructor)]
     pub fn new(name: String, target: String, is_remote: bool) -> Self {
         Self {
             name,
@@ -494,26 +416,8 @@ impl JJBranch {
             remote: None,
             is_tracking: false,
             is_current: false,
-            created_at: Utc::now(),
+            created_at: Utc::now().to_rfc3339(),
         }
-    }
-
-    /// Get name (for WASM)
-    #[wasm_bindgen(getter)]
-    pub fn name(&self) -> String {
-        self.name.clone()
-    }
-
-    /// Get target (for WASM)
-    #[wasm_bindgen(getter)]
-    pub fn target(&self) -> String {
-        self.target.clone()
-    }
-
-    /// Get remote (for WASM)
-    #[wasm_bindgen(getter)]
-    pub fn remote(&self) -> Option<String> {
-        self.remote.clone()
     }
 
     /// Set remote name
@@ -535,10 +439,9 @@ impl JJBranch {
         self.target.chars().take(12).collect()
     }
 
-    /// Get creation timestamp as ISO 8601 string (for WASM)
-    #[wasm_bindgen(getter)]
+    /// Get creation timestamp as ISO 8601 string
     pub fn created_at_iso(&self) -> String {
-        self.created_at.to_rfc3339()
+        self.created_at.clone()
     }
 }
 
@@ -558,25 +461,21 @@ impl JJBranch {
 ///     .build();
 /// ```
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[wasm_bindgen]
+#[napi(object)]
 pub struct JJConflict {
     /// Unique conflict identifier
-    #[wasm_bindgen(skip)]
     pub id: String,
 
     /// Path to the conflicted file
-    #[wasm_bindgen(skip)]
     pub path: String,
 
     /// Number of conflict markers
-    pub num_conflicts: usize,
+    pub num_conflicts: u32,
 
     /// Sides involved in the conflict
-    #[wasm_bindgen(skip)]
     pub sides: Vec<String>,
 
     /// Conflict type (e.g., "content", "modify/delete")
-    #[wasm_bindgen(skip)]
     pub conflict_type: String,
 
     /// Whether conflict is binary (non-text)
@@ -586,15 +485,12 @@ pub struct JJConflict {
     pub is_resolved: bool,
 
     /// Resolution strategy used (if resolved)
-    #[wasm_bindgen(skip)]
     pub resolution_strategy: Option<String>,
 }
 
-#[wasm_bindgen]
 impl JJConflict {
     /// Create a new conflict
-    #[wasm_bindgen(constructor)]
-    pub fn new(path: String, num_conflicts: usize, conflict_type: String) -> Self {
+    pub fn new(path: String, num_conflicts: u32, conflict_type: String) -> Self {
         Self {
             id: Uuid::new_v4().to_string(),
             path,
@@ -607,44 +503,14 @@ impl JJConflict {
         }
     }
 
-    /// Get ID (for WASM)
-    #[wasm_bindgen(getter)]
-    pub fn id(&self) -> String {
-        self.id.clone()
-    }
-
-    /// Get path (for WASM)
-    #[wasm_bindgen(getter)]
-    pub fn path(&self) -> String {
-        self.path.clone()
-    }
-
-    /// Get conflict type (for WASM)
-    #[wasm_bindgen(getter)]
-    pub fn conflict_type(&self) -> String {
-        self.conflict_type.clone()
-    }
-
-    /// Get resolution strategy (for WASM)
-    #[wasm_bindgen(getter)]
-    pub fn resolution_strategy(&self) -> Option<String> {
-        self.resolution_strategy.clone()
-    }
-
     /// Add a side to the conflict
     pub fn add_side(&mut self, side: String) {
         self.sides.push(side);
     }
 
     /// Get the number of sides
-    pub fn num_sides(&self) -> usize {
-        self.sides.len()
-    }
-
-    /// Get sides as JSON string (for WASM)
-    #[wasm_bindgen(getter)]
-    pub fn sides_json(&self) -> String {
-        serde_json::to_string(&self.sides).unwrap_or_else(|_| "[]".to_string())
+    pub fn num_sides(&self) -> u32 {
+        self.sides.len() as u32
     }
 }
 
@@ -659,7 +525,7 @@ impl JJConflict {
 #[derive(Default)]
 pub struct JJConflictBuilder {
     path: Option<String>,
-    num_conflicts: usize,
+    num_conflicts: u32,
     sides: Vec<String>,
     conflict_type: Option<String>,
     is_binary: bool,
@@ -675,7 +541,7 @@ impl JJConflictBuilder {
     }
 
     /// Set number of conflicts
-    pub fn num_conflicts(mut self, num: usize) -> Self {
+    pub fn num_conflicts(mut self, num: u32) -> Self {
         self.num_conflicts = num;
         self
     }
@@ -727,6 +593,7 @@ impl JJConflictBuilder {
 
 /// Represents a diff between two commits
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[napi(object)]
 pub struct JJDiff {
     /// Files added
     pub added: Vec<String>,
@@ -737,14 +604,14 @@ pub struct JJDiff {
     /// Files deleted
     pub deleted: Vec<String>,
 
-    /// Files renamed (old_path -> new_path)
-    pub renamed: Vec<(String, String)>,
+    /// Files renamed (serialized as "old_path:new_path")
+    pub renamed: Vec<String>,
 
     /// Total number of additions
-    pub additions: usize,
+    pub additions: u32,
 
     /// Total number of deletions
-    pub deletions: usize,
+    pub deletions: u32,
 
     /// Diff content (unified diff format)
     pub content: String,
@@ -766,8 +633,8 @@ impl JJDiff {
 
     /// Total number of files changed
     #[inline]
-    pub fn total_files_changed(&self) -> usize {
-        self.added.len() + self.modified.len() + self.deleted.len() + self.renamed.len()
+    pub fn total_files_changed(&self) -> u32 {
+        (self.added.len() + self.modified.len() + self.deleted.len() + self.renamed.len()) as u32
     }
 
     /// Check if diff is empty
@@ -795,6 +662,7 @@ impl Default for JJDiff {
 /// let change = JJChange::new("src/main.rs".to_string());
 /// ```
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[napi(object)]
 pub struct JJChange {
     /// File path
     pub file_path: String,
@@ -805,8 +673,8 @@ pub struct JJChange {
     /// Whether file is staged
     pub is_staged: bool,
 
-    /// Size in bytes (if applicable)
-    pub size_bytes: Option<u64>,
+    /// Size in bytes (if applicable) - using f64 for N-API compatibility with large numbers
+    pub size_bytes: Option<f64>,
 }
 
 impl JJChange {
@@ -827,7 +695,8 @@ impl JJChange {
 }
 
 /// Status of a file change
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
+#[napi(string_enum)]
 pub enum ChangeStatus {
     /// File added
     Added,
@@ -835,8 +704,8 @@ pub enum ChangeStatus {
     Modified,
     /// File deleted
     Deleted,
-    /// File renamed
-    Renamed { old_path: String },
+    /// File renamed (old path stored separately in JJChange)
+    Renamed,
     /// File conflicted
     Conflicted,
     /// File type changed

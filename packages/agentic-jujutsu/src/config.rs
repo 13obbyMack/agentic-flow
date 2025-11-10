@@ -1,7 +1,7 @@
 //! Configuration for agentic-jujutsu
 
 use serde::{Deserialize, Serialize};
-use wasm_bindgen::prelude::*;
+use napi_derive::napi;
 
 /// Validate repository path to prevent directory traversal attacks
 fn validate_repo_path(path: &str) -> Result<String, String> {
@@ -23,31 +23,29 @@ fn validate_repo_path(path: &str) -> Result<String, String> {
 
 /// Configuration for JJWrapper
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[wasm_bindgen]
+#[napi(object)]
 pub struct JJConfig {
     /// Path to jj executable (default: "jj")
-    jj_path: String,
+    pub jj_path: String,
 
     /// Repository path (default: current directory)
-    repo_path: String,
+    pub repo_path: String,
 
     /// Timeout for operations in milliseconds
-    pub timeout_ms: u64,
+    pub timeout_ms: u32,
 
     /// Enable verbose logging
     pub verbose: bool,
 
     /// Maximum operation log entries to keep in memory
-    pub max_log_entries: usize,
+    pub max_log_entries: u32,
 
     /// Enable AgentDB sync
     pub enable_agentdb_sync: bool,
 }
 
-#[wasm_bindgen]
 impl JJConfig {
     /// Create new configuration with defaults
-    #[wasm_bindgen(constructor)]
     pub fn new() -> Self {
         Self::default()
     }
@@ -57,26 +55,12 @@ impl JJConfig {
         Self::default()
     }
 
-    /// Get jj executable path
-    #[wasm_bindgen(getter)]
-    pub fn jj_path(&self) -> String {
-        self.jj_path.clone()
-    }
-
     /// Set jj executable path
-    #[wasm_bindgen(setter)]
     pub fn set_jj_path(&mut self, path: String) {
         self.jj_path = path;
     }
 
-    /// Get repository path
-    #[wasm_bindgen(getter)]
-    pub fn repo_path(&self) -> String {
-        self.repo_path.clone()
-    }
-
     /// Set repository path
-    #[wasm_bindgen(setter)]
     pub fn set_repo_path(&mut self, path: String) {
         // Validate path for security
         if let Ok(validated) = validate_repo_path(&path) {
@@ -104,7 +88,7 @@ impl JJConfig {
     }
 
     /// Set operation timeout
-    pub fn with_timeout(mut self, timeout_ms: u64) -> Self {
+    pub fn with_timeout(mut self, timeout_ms: u32) -> Self {
         self.timeout_ms = timeout_ms;
         self
     }
@@ -116,7 +100,7 @@ impl JJConfig {
     }
 
     /// Set max log entries
-    pub fn with_max_log_entries(mut self, max: usize) -> Self {
+    pub fn with_max_log_entries(mut self, max: u32) -> Self {
         self.max_log_entries = max;
         self
     }
@@ -130,8 +114,11 @@ impl JJConfig {
 
 impl Default for JJConfig {
     fn default() -> Self {
+        // Try to get the embedded binary path, fallback to "jj" in PATH
+        let jj_path = get_default_jj_path().unwrap_or_else(|_| "jj".to_string());
+
         Self {
-            jj_path: "jj".to_string(),
+            jj_path,
             repo_path: ".".to_string(),
             timeout_ms: 30000, // 30 seconds
             verbose: false,
@@ -139,6 +126,32 @@ impl Default for JJConfig {
             enable_agentdb_sync: false,
         }
     }
+}
+
+/// Get the default jj binary path (checks for embedded binary first)
+fn get_default_jj_path() -> Result<String, String> {
+    // Check cache directory for extracted binary
+    let home = std::env::var("HOME")
+        .or_else(|_| std::env::var("USERPROFILE"))
+        .unwrap_or_else(|_| ".".to_string());
+
+    let cache_dir = std::path::PathBuf::from(home)
+        .join(".cache")
+        .join("agentic-jujutsu");
+
+    let binary_path = cache_dir.join("jj");
+
+    // Check if embedded binary exists
+    if binary_path.exists() {
+        if let Ok(content) = std::fs::read(&binary_path) {
+            if content.len() > 100 && content != b"SYSTEM_JJ" {
+                return Ok(binary_path.to_string_lossy().to_string());
+            }
+        }
+    }
+
+    // Fallback to system jj in PATH
+    Ok("jj".to_string())
 }
 
 #[cfg(test)]

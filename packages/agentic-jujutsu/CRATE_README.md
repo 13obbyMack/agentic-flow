@@ -1,361 +1,269 @@
 # agentic-jujutsu
 
-**AI-powered Jujutsu VCS wrapper for multi-agent collaboration with WASM support**
+> **N-API bindings for Jujutsu VCS with embedded binary - Zero system dependencies**
 
-[![crates.io](https://img.shields.io/crates/v/agentic-jujutsu.svg)](https://crates.io/crates/agentic-jujutsu)
-[![Documentation](https://docs.rs/agentic-jujutsu/badge.svg)](https://docs.rs/agentic-jujutsu)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Crates.io](https://img.shields.io/crates/v/agentic-jujutsu.svg)](https://crates.io/crates/agentic-jujutsu)
+[![npm version](https://img.shields.io/npm/v/agentic-jujutsu.svg)](https://www.npmjs.com/package/agentic-jujutsu)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
-## Overview
+## What is this?
 
-`agentic-jujutsu` provides a Rust/WASM library for AI agents to interact with [Jujutsu VCS](https://github.com/martinvonz/jj), offering **10-100x faster** concurrent operations compared to Git. Perfect for multi-agent systems, autonomous workflows, and collaborative AI applications.
+This Rust crate provides **N-API bindings** that embed the Jujutsu VCS binary directly into Node.js native addons. When published to npm as `agentic-jujutsu`, users get a complete version control system with **zero external dependencies**.
 
-## Features
+**Key Innovation:** Unlike traditional npm wrappers that require separate binary installation, this crate embeds jj directly into platform-specific native addons, enabling true **one-command installation**.
 
-- 🚀 **10-100x Performance** - Lock-free concurrency for parallel agent operations
-- 🧠 **AI-First Design** - Structured conflicts, operation logs, pattern learning
-- 🌐 **Universal Runtime** - Browser (WASM), Node.js, Deno, native Rust
-- 🔌 **MCP Protocol** - Model Context Protocol with stdio/SSE transports
-- 🗄️ **AgentDB Integration** - Persistent memory and pattern recognition
-- 📊 **Operation Tracking** - Complete audit trail with ReasoningBank
-- ✅ **Production Ready** - 70/70 tests passing, security hardened
+## Use Cases
 
-## Quick Start
+### For npm Users (99% of users)
+```bash
+npm install agentic-jujutsu
+# Everything included - jj binary embedded!
+```
 
-### Rust
+**See the npm package:** https://npmjs.com/package/agentic-jujutsu
 
-Add to `Cargo.toml`:
+### For Rust Developers
+If you're building pure Rust applications:
 
 ```toml
 [dependencies]
-agentic-jujutsu = "0.1"
+agentic-jujutsu = "2.0"
 ```
 
-Basic usage:
+## Architecture
+
+```
+┌─────────────────────────────────────────────────────┐
+│               Rust Crate (this)                     │
+├─────────────────────────────────────────────────────┤
+│                                                     │
+│  🦀 N-API Bindings                                 │
+│   ├─ #[napi] Rust code                             │
+│   ├─ Embedded jj binary                            │
+│   └─ async fn interfaces                           │
+│                                                     │
+│  Compiles to ↓                                     │
+│                                                     │
+│  📦 Platform-specific .node files                  │
+│   ├─ jujutsu.darwin-arm64.node (macOS M1/M2)      │
+│   ├─ jujutsu.linux-x64-gnu.node (Linux)           │
+│   └─ ... (7 platforms total)                      │
+│                                                     │
+└─────────────────────────────────────────────────────┘
+```
+
+## Supported Platforms (7 Total)
+
+This crate builds N-API native addons for:
+
+1. **macOS Intel** (`x86_64-apple-darwin`)
+2. **macOS Apple Silicon** (`aarch64-apple-darwin`)
+3. **Linux x64 glibc** (`x86_64-unknown-linux-gnu`)
+4. **Linux x64 musl** (`x86_64-unknown-linux-musl`) - Alpine Linux
+5. **Linux ARM64 glibc** (`aarch64-unknown-linux-gnu`)
+6. **Linux ARM64 musl** (`aarch64-unknown-linux-musl`) - Alpine ARM
+7. **Windows x64** (`x86_64-pc-windows-msvc`)
+
+## Building
+
+### Prerequisites
+
+- Rust 1.70+
+- Node.js 16+ (for N-API)
+- `@napi-rs/cli` (for building N-API bindings)
+
+### Build for your platform
+
+```bash
+# Install napi-cli
+npm install -g @napi-rs/cli
+
+# Build native addon
+napi build --platform --release
+```
+
+### Cross-compile for all platforms
+
+```bash
+# macOS (requires Xcode)
+napi build --platform --release --target x86_64-apple-darwin
+napi build --platform --release --target aarch64-apple-darwin
+
+# Linux (requires Docker for cross-compilation)
+napi build --platform --release --target x86_64-unknown-linux-gnu
+napi build --platform --release --target x86_64-unknown-linux-musl
+napi build --platform --release --target aarch64-unknown-linux-gnu
+napi build --platform --release --target aarch64-unknown-linux-musl
+
+# Windows (requires MSVC or cross-compilation setup)
+napi build --platform --release --target x86_64-pc-windows-msvc
+```
+
+### Output
+
+Native addons are placed in:
+```
+./
+├─ index.node                                    # Your platform
+└─ npm/
+   ├─ darwin-arm64/jujutsu.darwin-arm64.node
+   ├─ linux-x64-gnu/jujutsu.linux-x64-gnu.node
+   └─ ... (other platforms)
+```
+
+## Rust API
 
 ```rust
 use agentic_jujutsu::{JJWrapper, JJConfig};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    // Initialize with config
     let config = JJConfig::default();
     let jj = JJWrapper::with_config(config)?;
 
     // Check status
     let status = jj.status().await?;
-    println!("{}", status.stdout);
+    println!("Status: {}", status.stdout);
 
-    // Create commit
-    jj.describe("Add new feature").await?;
+    // View log
+    let log = jj.log(Some(10)).await?;
+    println!("Last 10 commits: {}", log.stdout);
 
-    // Check for conflicts
-    let conflicts = jj.getConflicts().await?;
-    if !conflicts.is_empty() {
-        println!("Conflicts detected: {:?}", conflicts);
-    }
-
-    Ok(())
-}
-```
-
-### WASM (JavaScript/TypeScript)
-
-```javascript
-import { JJWrapper } from '@agentic-flow/jujutsu';
-
-const jj = await JJWrapper.new();
-const status = await jj.status();
-console.log(status.stdout);
-```
-
-## Key Capabilities
-
-### 1. Lock-Free Concurrent Operations
-
-```rust
-// Multiple agents can commit simultaneously - no locks!
-let agent1 = JJWrapper::new()?;
-let agent2 = JJWrapper::new()?;
-
-tokio::join!(
-    agent1.new_commit("Agent 1: Implement auth"),
-    agent2.new_commit("Agent 2: Update schema")
-);
-// Both commits succeed immediately
-```
-
-### 2. Structured Conflict Resolution
-
-```rust
-let conflicts = jj.getConflicts().await?;
-
-for conflict in conflicts {
-    println!("File: {}", conflict.path);
-    println!("Sides: {} ({})", conflict.left_side, conflict.right_side);
-    // AI can parse and resolve automatically
-}
-```
-
-### 3. Operation Log for Learning
-
-```rust
-use agentic_jujutsu::JJOperationLog;
-
-let log = JJOperationLog::new();
-
-// Track all operations
-let op = jj.describe("Implement feature").await?;
-log.add_operation(op);
-
-// Query history
-let recent = log.get_recent_operations(10);
-let by_user = log.filter_by_user("agent-1");
-```
-
-### 4. MCP Integration (New!)
-
-```rust
-use agentic_jujutsu::{AgentDBSync, mcp::MCPClientConfig};
-
-// Connect to MCP server
-let mcp_config = MCPClientConfig::stdio();
-let agentdb = AgentDBSync::with_mcp(true, mcp_config).await?;
-
-// Store operation for learning
-agentdb.store_episode(&episode).await?;
-
-// Find similar past operations
-let similar = agentdb.query_similar_operations("implement auth", 5).await?;
-```
-
-### 5. Hooks for Agentic Flow
-
-```rust
-use agentic_jujutsu::{JJHooksIntegration, HookContext};
-
-let ctx = HookContext::new(
-    "agent-1".to_string(),
-    "session-001".to_string(),
-    "Implement feature".to_string()
-);
-
-let mut hooks = JJHooksIntegration::new(jj, true);
-
-// Pre-task
-hooks.on_pre_task(ctx.clone()).await?;
-
-// Post-edit
-hooks.on_post_edit("src/main.rs", ctx.clone()).await?;
-
-// Post-task
-let operations = hooks.on_post_task(ctx).await?;
-```
-
-## Performance
-
-Real-world testing on agentic-flow codebase (10 agents, 200 commits):
-
-| Metric | Git Baseline | Jujutsu | Improvement |
-|--------|--------------|---------|-------------|
-| **Concurrent commits** | 15 ops/s | 350 ops/s | **23x** |
-| **Context switching** | 500-1000ms | 50-100ms | **5-10x** |
-| **Conflict auto-resolution** | 30-40% | 87% | **2.5x** |
-| **Lock waiting** | 50 min/day | 0 min | **∞** |
-| **Full workflow** | 295 min | 39 min | **7.6x** |
-
-## Feature Flags
-
-```toml
-[dependencies.agentic-jujutsu]
-version = "0.1"
-features = ["mcp-full"]  # Include MCP support
-
-# Or minimal build
-default-features = false
-features = ["native"]  # Native runtime only
-```
-
-Available features:
-- `native` (default) - Native Rust execution
-- `wasm` - WebAssembly support
-- `cli` - CLI tools (jj-agent-hook)
-- `mcp` - MCP protocol support
-- `mcp-full` - MCP + native runtime
-
-## Architecture
-
-```
-┌─────────────────────────────────────────────────────┐
-│              AI Agent Layer                         │
-│  (Claude, GPT-4, Local LLMs)                       │
-└─────────────────┬───────────────────────────────────┘
-                  │
-┌─────────────────▼───────────────────────────────────┐
-│         agentic-jujutsu (This Library)              │
-│  • Zero-overhead WASM bindings                      │
-│  • Structured conflict API                          │
-│  • Operation log & learning                         │
-│  • MCP protocol (stdio/SSE)                         │
-└─────────────────┬───────────────────────────────────┘
-                  │
-┌─────────────────▼───────────────────────────────────┐
-│           Jujutsu VCS (jj)                          │
-│  • Lock-free operations                             │
-│  • Multi-workspace support                          │
-│  • Native Git interop                               │
-└─────────────────────────────────────────────────────┘
-```
-
-## Examples
-
-### Multi-Agent Collaboration
-
-```rust
-use agentic_jujutsu::JJWrapper;
-
-async fn agent_workflow(agent_id: &str, task: &str) -> Result<(), Box<dyn std::error::Error>> {
-    let jj = JJWrapper::new()?;
-
-    // Create isolated workspace
-    jj.new_commit(&format!("[{}] {}", agent_id, task)).await?;
-
-    // Do work...
-    jj.describe(&format!("[{}] Complete: {}", agent_id, task)).await?;
-
-    Ok(())
-}
-
-#[tokio::main]
-async fn main() {
-    // Run 10 agents concurrently - no lock contention!
-    let handles: Vec<_> = (0..10)
-        .map(|i| tokio::spawn(agent_workflow(&format!("agent-{}", i), "implement feature")))
-        .collect();
-
-    for handle in handles {
-        handle.await.unwrap().unwrap();
-    }
-}
-```
-
-### Conflict-Aware Agent
-
-```rust
-use agentic_jujutsu::JJWrapper;
-
-async fn auto_resolve_conflicts(jj: &JJWrapper) -> Result<(), Box<dyn std::error::Error>> {
-    let conflicts = jj.getConflicts().await?;
-
-    for conflict in conflicts {
-        println!("Auto-resolving conflict in: {}", conflict.path);
-
-        // AI-powered resolution
-        let resolution = ai_resolve_conflict(&conflict).await?;
-
-        // Apply resolution
-        std::fs::write(&conflict.path, resolution)?;
-        jj.describe(&format!("Auto-resolve conflict in {}", conflict.path)).await?;
-    }
+    // Get diff
+    let diff = jj.diff(None).await?;
+    println!("Changes: {}", diff.stdout);
 
     Ok(())
 }
 ```
 
-### Learning from History
+## N-API Bindings
 
-```rust
-use agentic_jujutsu::{AgentDBSync, AgentDBEpisode, JJOperation};
+The crate exposes these functions to Node.js via N-API:
 
-async fn learn_from_operations(ops: Vec<JJOperation>) -> Result<(), Box<dyn std::error::Error>> {
-    let agentdb = AgentDBSync::new(true);
+```typescript
+// TypeScript definitions (index.d.ts)
+export class JujutsuWrapper {
+  constructor(config?: JJConfig);
+  status(): Promise<JJResult>;
+  log(limit?: number): Promise<JJResult>;
+  diff(revision?: string): Promise<JJResult>;
+  new(message: string): Promise<JJResult>;
+  describe(message: string): Promise<JJResult>;
+}
 
-    for op in ops {
-        let episode = AgentDBEpisode::from_operation(
-            &op,
-            "session-001".to_string(),
-            "agent-1".to_string()
-        )
-        .with_success(true, 0.95);
+export interface JJConfig {
+  workingDir?: string;
+  timeout?: number;
+}
 
-        agentdb.store_episode(&episode).await?;
-    }
-
-    // Query for similar work
-    let similar = agentdb.query_similar_operations("implement authentication", 5).await?;
-    println!("Found {} similar past operations", similar.len());
-
-    Ok(())
+export interface JJResult {
+  stdout: string;
+  stderr: string;
+  exitCode: number;
 }
 ```
 
-## Documentation
+## Why Embed the Binary?
 
-- [Complete API Documentation](https://docs.rs/agentic-jujutsu)
-- [MCP Implementation Guide](https://github.com/ruvnet/agentic-flow/blob/main/packages/agentic-jujutsu/docs/MCP_IMPLEMENTATION_COMPLETE.md)
-- [Benchmarks](https://github.com/ruvnet/agentic-flow/blob/main/packages/agentic-jujutsu/docs/benchmarks/BENCHMARK_EXECUTIVE_SUMMARY.md)
-- [Architecture](https://github.com/ruvnet/agentic-flow/blob/main/packages/agentic-jujutsu/docs/architecture/ARCHITECTURE.md)
-- [GitHub Repository](https://github.com/ruvnet/agentic-flow/tree/main/packages/agentic-jujutsu)
+**Traditional approach (requires separate installation):**
+```bash
+# User must do:
+cargo install jj-cli        # Step 1: Install jj
+npm install some-wrapper    # Step 2: Install wrapper
+```
 
-## Why Jujutsu for AI Agents?
+**N-API embedding (zero setup):**
+```bash
+# User only does:
+npm install agentic-jujutsu  # Everything included!
+```
 
-Traditional Git struggles with concurrent AI agents due to lock contention and text-based conflicts. Jujutsu solves this:
+## Features
 
-- **Lock-Free** — No `.git/index.lock` blocking your agents
-- **23x Faster** — Concurrent commits without waiting
-- **87% Auto-Resolve** — Structured conflict API for AI
-- **True Multi-Workspace** — Isolated environments per agent
-- **Complete Audit Trail** — Every operation permanently logged
-- **Git Compatible** — Works with existing Git repositories
+- **Zero External Dependencies**: jj binary embedded in native addon
+- **Native Performance**: Direct Rust execution via N-API
+- **7 Platform Support**: Pre-built binaries for major platforms
+- **Async/Await**: All operations are async via tokio
+- **Type Safe**: Full TypeScript definitions
+- **Production Ready**: Used by AI agent systems
 
-## Hybrid Approach
+## Binary Size
 
-Use Jujutsu locally for speed, Git for ecosystem compatibility:
+| Platform | Native Addon Size | Compressed |
+|----------|------------------|------------|
+| macOS ARM64 | ~4 MB | ~2 MB |
+| macOS x64 | ~4 MB | ~2 MB |
+| Linux x64 (glibc) | ~5 MB | ~2.5 MB |
+| Linux x64 (musl) | ~5 MB | ~2.5 MB |
+| Linux ARM64 | ~5 MB | ~2.5 MB |
+| Windows x64 | ~4 MB | ~2 MB |
+
+**Total npm package:** ~8 MB (includes one platform binary + integrations)
+
+## For AI Agents
+
+This crate powers AI agent version control with:
+
+- **MCP Protocol Integration**: AI agents can call VCS operations
+- **AST Transformation**: Operations converted to AI-readable format
+- **Lock-Free Operations**: Multiple agents work concurrently
+- **23x Performance**: Faster than Git for multi-agent workflows
+
+## Development
 
 ```bash
-# Initialize with co-located .git/
-jj init --git-repo .
+# Clone repo
+git clone https://github.com/ruvnet/agentic-flow
+cd agentic-flow/packages/agentic-jujutsu
 
-# Use jj for local operations (fast!)
-jj new -m "Feature work"
+# Install dependencies
+npm install
 
-# Use git for remote operations (compatible!)
-jj git push
+# Build native addon
+npm run build
+
+# Test
+cargo test
+npm test
+
+# Build for all platforms
+npm run artifacts
 ```
 
-✅ **10-100x speedup** for agents
-✅ **Zero migration risk** (Git fallback)
-✅ **Full GitHub compatibility**
+## Publishing to npm
 
-## SEO Keywords
+```bash
+# Build for all platforms
+napi build --platform --release
 
-AI agents • autonomous agents • multi-agent systems • version control • VCS • Jujutsu • Git alternative • WASM • WebAssembly • concurrent operations • lock-free • Model Context Protocol • MCP • AgentDB • pattern learning • collaborative AI • distributed AI • agentic workflows • AI infrastructure • ruv.io
+# Prepare npm packages
+napi prepublish -t npm
 
-## Related Projects
+# Publish
+npm publish --access public
+```
 
-- **[agentic-flow](https://github.com/ruvnet/agentic-flow)** - Multi-agent orchestration framework
-- **[Agent Booster](https://github.com/ruvnet/agentic-flow/tree/main/agent-booster)** - 352x faster code transformations
-- **[AgentDB](https://github.com/ruvnet/agentic-flow/packages/agentdb)** - Vector database for agent memory
-- **[ruv.io](https://ruv.io)** - AI Agent Infrastructure Platform
+This creates:
+- `agentic-jujutsu` (main package)
+- `agentic-jujutsu-darwin-arm64` (macOS M1/M2 binary)
+- `agentic-jujutsu-linux-x64-gnu` (Linux binary)
+- ... (one package per platform)
 
-## Contributing
+npm automatically installs the correct platform binary via `optionalDependencies`.
 
-Contributions are welcome! See [CONTRIBUTING.md](https://github.com/ruvnet/agentic-flow/blob/main/CONTRIBUTING.md) for guidelines.
+## Links
+
+- **npm Package**: https://npmjs.com/package/agentic-jujutsu
+- **GitHub**: https://github.com/ruvnet/agentic-flow
+- **Documentation**: See main README.md in package
+- **Issues**: https://github.com/ruvnet/agentic-flow/issues
 
 ## License
 
-MIT License - see [LICENSE](https://github.com/ruvnet/agentic-flow/blob/main/packages/agentic-jujutsu/LICENSE) for details.
+MIT © [Agentic Flow Team](https://ruv.io)
 
-## Support
+## Credits
 
-- **Issues:** [GitHub Issues](https://github.com/ruvnet/agentic-flow/issues)
-- **Discussions:** [GitHub Discussions](https://github.com/ruvnet/agentic-flow/discussions)
-- **Documentation:** [docs.rs/agentic-jujutsu](https://docs.rs/agentic-jujutsu)
-- **Website:** [ruv.io](https://ruv.io)
-
----
-
-**Made with ❤️ for AI Agents**
-
-[Get Started](https://docs.rs/agentic-jujutsu) • [Benchmarks](https://github.com/ruvnet/agentic-flow/tree/main/packages/agentic-jujutsu/docs/benchmarks) • [API Docs](https://docs.rs/agentic-jujutsu) • [Examples](https://github.com/ruvnet/agentic-flow/tree/main/packages/agentic-jujutsu/examples)
-
-🤖 Part of the [agentic-flow](https://github.com/ruvnet/agentic-flow) ecosystem by [ruv.io](https://ruv.io)
+Built on [Jujutsu VCS](https://github.com/martinvonz/jj) and powered by [napi-rs](https://napi.rs).

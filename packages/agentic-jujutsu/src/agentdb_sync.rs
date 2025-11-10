@@ -52,7 +52,10 @@ impl AgentDBEpisode {
             latency_ms: None,
             tokens_used: None,
             operation: Some(op.clone()),
-            timestamp: op.timestamp.timestamp(),
+            timestamp: chrono::DateTime::parse_from_rfc3339(&op.timestamp)
+                .ok()
+                .map(|dt| dt.timestamp())
+                .unwrap_or_else(|| chrono::Utc::now().timestamp()),
         }
     }
 

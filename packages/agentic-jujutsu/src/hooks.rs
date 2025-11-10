@@ -398,7 +398,7 @@ mod tests {
         // Execute post-edit
         let operation = integration.on_post_edit("test.rs", ctx).await.unwrap();
 
-        assert_eq!(operation.operation_type, OperationType::Describe);
+        assert_eq!(operation.operation_type, "Describe");
         assert!(operation.command.contains("test.rs"));
     }
 }
