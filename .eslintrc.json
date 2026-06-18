@@ -16,7 +16,9 @@
       "parserOptions": {
         "project": [
           "./tsconfig.json",
+          "./tests/tsconfig.json",
           "./agentic-flow/config/tsconfig.json",
+          "./agentic-flow/tests/tsconfig.json",
           "./packages/agent-booster/tsconfig.json",
           "./packages/agentdb-onnx/tsconfig.json"
         ]

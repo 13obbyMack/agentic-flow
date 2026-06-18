@@ -1,8 +1,13 @@
 #!/usr/bin/env node
+/* eslint-disable @typescript-eslint/no-explicit-any -- pre-existing catch(error: any) handlers; outside scope of CWE-78 fix */
 // POC: FastMCP server with stdio transport and 2 basic tools
 import { FastMCP } from 'fastmcp';
 import { z } from 'zod';
-import { execSync } from 'child_process';
+import { execFileSync } from 'child_process';
+
+// Security: All shell-outs use execFileSync with argv arrays (shell: false) to
+// prevent OS command injection via tool parameters (CWE-78).
+const NPX_EXEC_OPTS = { shell: false as const };
 
 console.error('🚀 Starting FastMCP POC Server (stdio transport)...');
 
@@ -24,15 +29,10 @@ server.addTool({
   }),
   execute: async ({ key, value, namespace, ttl }) => {
     try {
-      const cmd = [
-        'npx claude-flow@alpha memory store',
-        `"${key}"`,
-        `"${value}"`,
-        `--namespace "${namespace}"`,
-        ttl ? `--ttl ${ttl}` : ''
-      ].filter(Boolean).join(' ');
+      const args = ['claude-flow@alpha', 'memory', 'store', key, value, '--namespace', namespace];
+      if (ttl) args.push('--ttl', String(ttl));
 
-      const result = execSync(cmd, { encoding: 'utf-8', maxBuffer: 10 * 1024 * 1024 });
+      execFileSync('npx', args, { ...NPX_EXEC_OPTS, encoding: 'utf-8', maxBuffer: 10 * 1024 * 1024 });
 
       // Return as text content (fastmcp requirement)
       return JSON.stringify({
@@ -60,8 +60,11 @@ server.addTool({
   }),
   execute: async ({ key, namespace }) => {
     try {
-      const cmd = `npx claude-flow@alpha memory retrieve "${key}" --namespace "${namespace}"`;
-      const result = execSync(cmd, { encoding: 'utf-8', maxBuffer: 10 * 1024 * 1024 });
+      const result = execFileSync(
+        'npx',
+        ['claude-flow@alpha', 'memory', 'retrieve', key, '--namespace', namespace],
+        { ...NPX_EXEC_OPTS, encoding: 'utf-8', maxBuffer: 10 * 1024 * 1024 }
+      );
 
       // Return as text content (fastmcp requirement)
       return JSON.stringify({

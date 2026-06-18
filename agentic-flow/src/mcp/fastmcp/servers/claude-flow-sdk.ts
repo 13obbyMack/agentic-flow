@@ -1,9 +1,15 @@
 #!/usr/bin/env node
+/* eslint-disable @typescript-eslint/no-explicit-any -- pre-existing catch(error: any) handlers; outside scope of CWE-78 fix */
 // FastMCP implementation of claude-flow-sdk server (in-process, 6 tools)
 // Phase 1: Migration from claudeFlowSdkServer.ts to fastmcp
 import { FastMCP } from 'fastmcp';
 import { z } from 'zod';
-import { execSync } from 'child_process';
+import { execFileSync } from 'child_process';
+
+// Security: All shell-outs use execFileSync with argv arrays (shell: false) to
+// prevent OS command injection via tool parameters (CWE-78). Do NOT reintroduce
+// execSync with template-string interpolation here.
+const NPX_EXEC_OPTS = { shell: false as const };
 import { logger } from '../../../utils/logger.js';
 
 console.error('🚀 Starting FastMCP claude-flow-sdk Server...');
@@ -28,15 +34,10 @@ server.addTool({
     try {
       logger.info('Storing memory', { key, namespace });
 
-      const cmd = [
-        'npx claude-flow@alpha memory store',
-        `"${key}"`,
-        `"${value}"`,
-        `--namespace "${namespace}"`,
-        ttl ? `--ttl ${ttl}` : ''
-      ].filter(Boolean).join(' ');
+      const args = ['claude-flow@alpha', 'memory', 'store', key, value, '--namespace', namespace];
+      if (ttl) args.push('--ttl', String(ttl));
 
-      const result = execSync(cmd, { encoding: 'utf-8', maxBuffer: 10 * 1024 * 1024 });
+      execFileSync('npx', args, { ...NPX_EXEC_OPTS, encoding: 'utf-8', maxBuffer: 10 * 1024 * 1024 });
 
       logger.info('Memory stored successfully', { key });
 
@@ -66,8 +67,11 @@ server.addTool({
   }),
   execute: async ({ key, namespace }) => {
     try {
-      const cmd = `npx claude-flow@alpha memory retrieve "${key}" --namespace "${namespace}"`;
-      const result = execSync(cmd, { encoding: 'utf-8', maxBuffer: 10 * 1024 * 1024 });
+      const result = execFileSync(
+        'npx',
+        ['claude-flow@alpha', 'memory', 'retrieve', key, '--namespace', namespace],
+        { ...NPX_EXEC_OPTS, encoding: 'utf-8', maxBuffer: 10 * 1024 * 1024 }
+      );
 
       return JSON.stringify({
         success: true,
@@ -93,8 +97,10 @@ server.addTool({
   }),
   execute: async ({ pattern, namespace, limit }) => {
     try {
-      const cmd = `npx claude-flow@alpha memory search "${pattern}"${namespace ? ` --namespace "${namespace}"` : ''} --limit ${limit}`;
-      const result = execSync(cmd, { encoding: 'utf-8', maxBuffer: 10 * 1024 * 1024 });
+      const args = ['claude-flow@alpha', 'memory', 'search', pattern];
+      if (namespace) args.push('--namespace', namespace);
+      args.push('--limit', String(limit));
+      const result = execFileSync('npx', args, { ...NPX_EXEC_OPTS, encoding: 'utf-8', maxBuffer: 10 * 1024 * 1024 });
 
       return JSON.stringify({
         success: true,
@@ -121,8 +127,11 @@ server.addTool({
   }),
   execute: async ({ topology, maxAgents, strategy }) => {
     try {
-      const cmd = `npx claude-flow@alpha swarm init --topology ${topology} --max-agents ${maxAgents} --strategy ${strategy}`;
-      const result = execSync(cmd, { encoding: 'utf-8', maxBuffer: 10 * 1024 * 1024 });
+      const result = execFileSync(
+        'npx',
+        ['claude-flow@alpha', 'swarm', 'init', '--topology', topology, '--max-agents', String(maxAgents), '--strategy', strategy],
+        { ...NPX_EXEC_OPTS, encoding: 'utf-8', maxBuffer: 10 * 1024 * 1024 }
+      );
 
       return JSON.stringify({
         success: true,
@@ -149,10 +158,10 @@ server.addTool({
   }),
   execute: async ({ type, capabilities, name }) => {
     try {
-      const capStr = capabilities ? ` --capabilities "${capabilities.join(',')}"` : '';
-      const nameStr = name ? ` --name "${name}"` : '';
-      const cmd = `npx claude-flow@alpha agent spawn --type ${type}${capStr}${nameStr}`;
-      const result = execSync(cmd, { encoding: 'utf-8', maxBuffer: 10 * 1024 * 1024 });
+      const args = ['claude-flow@alpha', 'agent', 'spawn', '--type', type];
+      if (capabilities && capabilities.length > 0) args.push('--capabilities', capabilities.join(','));
+      if (name) args.push('--name', name);
+      const result = execFileSync('npx', args, { ...NPX_EXEC_OPTS, encoding: 'utf-8', maxBuffer: 10 * 1024 * 1024 });
 
       return JSON.stringify({
         success: true,
@@ -180,9 +189,9 @@ server.addTool({
   }),
   execute: async ({ task, strategy, priority, maxAgents }) => {
     try {
-      const maxStr = maxAgents ? ` --max-agents ${maxAgents}` : '';
-      const cmd = `npx claude-flow@alpha task orchestrate "${task}" --strategy ${strategy} --priority ${priority}${maxStr}`;
-      const result = execSync(cmd, { encoding: 'utf-8', maxBuffer: 10 * 1024 * 1024 });
+      const args = ['claude-flow@alpha', 'task', 'orchestrate', task, '--strategy', strategy, '--priority', priority];
+      if (maxAgents) args.push('--max-agents', String(maxAgents));
+      const result = execFileSync('npx', args, { ...NPX_EXEC_OPTS, encoding: 'utf-8', maxBuffer: 10 * 1024 * 1024 });
 
       return JSON.stringify({
         success: true,

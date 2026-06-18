@@ -1,6 +1,7 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- pre-existing catch(error: any) handlers; outside scope of CWE-78 fix */
 import { z } from 'zod';
 import { ToolDefinition, ToolContext } from '../../types/index.js';
-import { execSync } from 'child_process';
+import { execFileSync } from 'child_process';
 
 const parallelModeSchema = z.object({
   topic: z.string().optional().describe('Research topic for parallel mode'),
@@ -30,7 +31,8 @@ export const parallelModeTool: ToolDefinition = {
       onProgress?.({ progress: 0.3, message: 'Executing 3 agents in parallel...' });
 
       // Execute parallel mode
-      const result = execSync('npx agentic-flow', {
+      const result = execFileSync('npx', ['agentic-flow'], {
+        shell: false,
         encoding: 'utf8',
         maxBuffer: 10 * 1024 * 1024,
         timeout: 300000,

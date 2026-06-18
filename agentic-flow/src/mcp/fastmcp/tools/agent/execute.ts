@@ -1,6 +1,7 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- pre-existing catch(error: any) handlers; outside scope of CWE-78 fix */
 import { z } from 'zod';
 import { ToolDefinition, ToolContext } from '../../types/index.js';
-import { execSync } from 'child_process';
+import { execFileSync } from 'child_process';
 
 const executeAgentSchema = z.object({
   agent: z.string().describe('Agent name to execute (e.g., coder, researcher, reviewer)'),
@@ -17,14 +18,15 @@ export const executeAgentTool: ToolDefinition = {
     try {
       onProgress?.({ progress: 0.1, message: `Starting agent: ${agent}` });
 
-      // Build command
-      const streamFlag = stream ? '--stream' : '';
-      const cmd = `npx agentic-flow --agent "${agent}" --task "${task}" ${streamFlag}`.trim();
+      // Security (CWE-78): use execFileSync with argv; `agent` and `task` are attacker-influenceable.
+      const args = ['agentic-flow', '--agent', agent, '--task', task];
+      if (stream) args.push('--stream');
 
       onProgress?.({ progress: 0.3, message: 'Executing agent...' });
 
       // Execute with timeout and capture output
-      const result = execSync(cmd, {
+      const result = execFileSync('npx', args, {
+        shell: false,
         encoding: 'utf8',
         maxBuffer: 10 * 1024 * 1024, // 10MB buffer
         timeout: 300000, // 5 minute timeout

@@ -6,14 +6,13 @@
 import { z } from 'zod';
 import * as path from 'path';
 import * as fs from 'fs';
-import { execSync } from 'child_process';
+import { execSync, execFileSync } from 'child_process';
 import type { ToolDefinition } from '../../types/index.js';
 import {
   loadIntelligence,
   saveIntelligence,
   getAgentForFile,
-  simpleEmbed,
-  agentMapping
+  simpleEmbed
 } from './shared.js';
 
 export const hookPretrainTool: ToolDefinition = {
@@ -26,7 +25,7 @@ export const hookPretrainTool: ToolDefinition = {
     skipFiles: z.boolean().optional().default(false).describe('Skip file structure analysis'),
     verbose: z.boolean().optional().default(false).describe('Show detailed progress')
   }),
-  execute: async ({ depth, incremental, skipGit, skipFiles, verbose }, { onProgress }) => {
+  execute: async ({ depth, incremental: _incremental, skipGit, skipFiles, verbose }, { onProgress }) => {
     const startTime = Date.now();
     const intel = loadIntelligence();
     const stats = { files: 0, patterns: 0, memories: 0, coedits: 0 };
@@ -38,6 +37,8 @@ export const hookPretrainTool: ToolDefinition = {
       onProgress?.({ progress: 0.1, message: 'Analyzing file structure...' });
 
       try {
+        // Static command, no user input — shell is required for the `||` fallback
+        // and `2>/dev/null` redirection. NOT a CWE-78 sink.
         const filesOutput = execSync(
           'git ls-files 2>/dev/null || find . -type f -not -path "./.git/*" -not -path "./node_modules/*" -not -path "./target/*" 2>/dev/null',
           { encoding: 'utf-8', maxBuffer: 50 * 1024 * 1024 }
@@ -79,9 +80,14 @@ export const hookPretrainTool: ToolDefinition = {
       onProgress?.({ progress: 0.4, message: 'Analyzing git history...' });
 
       try {
-        const gitLog = execSync(
-          `git log --name-only --pretty=format:"COMMIT:%H" -n ${depth} 2>/dev/null`,
-          { encoding: 'utf-8', maxBuffer: 50 * 1024 * 1024 }
+        // Security (CWE-78): depth is z.number() validated, but use execFileSync
+        // with argv to hard-prevent any future schema relaxation from becoming
+        // an injection sink. Coerce to a positive integer explicitly.
+        const safeDepth = Math.max(1, Math.floor(Number(depth) || 100));
+        const gitLog = execFileSync(
+          'git',
+          ['log', '--name-only', '--pretty=format:COMMIT:%H', '-n', String(safeDepth)],
+          { shell: false, encoding: 'utf-8', maxBuffer: 50 * 1024 * 1024, stdio: ['pipe', 'pipe', 'ignore'] }
         );
 
         const commits = gitLog.split('COMMIT:').filter(c => c.trim());
@@ -158,6 +164,8 @@ export const hookPretrainTool: ToolDefinition = {
     onProgress?.({ progress: 0.85, message: 'Building directory mappings...' });
 
     try {
+      // Static command, no user input — shell required for `2>/dev/null || echo`.
+      // NOT a CWE-78 sink.
       const dirs = execSync(
         'find . -type d -maxdepth 2 -not -path "./.git*" -not -path "./node_modules*" 2>/dev/null || echo "."',
         { encoding: 'utf-8' }
