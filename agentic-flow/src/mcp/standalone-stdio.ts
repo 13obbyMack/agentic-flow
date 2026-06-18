@@ -1,9 +1,15 @@
 #!/usr/bin/env node
+/* eslint-disable @typescript-eslint/no-explicit-any -- pre-existing catch(error: any) handlers; outside scope of CWE-78 fix */
 // Standalone agentic-flow MCP server - runs directly via stdio without spawning subprocesses
 import { FastMCP } from 'fastmcp';
 import { z } from 'zod';
-import { execSync } from 'child_process';
-import { resolve } from 'path';
+import { execFileSync } from 'child_process';
+
+// Security: All shell-outs use execFileSync with argv arrays (shell: false) to
+// prevent OS command injection via tool parameters (CWE-78). Do NOT reintroduce
+// execSync with template-string interpolation here — every prior occurrence in
+// this file was an injection sink reachable through MCP tool arguments.
+const NPX_EXEC_OPTS = { shell: false as const };
 
 // Suppress FastMCP internal warnings for cleaner output
 const originalConsoleWarn = console.warn;
@@ -75,12 +81,13 @@ server.addTool({
     retryOnError
   }) => {
     try {
-      // Build command with all parameters
-      let cmd = `npx --yes agentic-flow --agent "${agent}" --task "${task}"`;
+      // Build argv (NOT a shell string) — every user-supplied value stays a
+      // separate argv element and cannot be reinterpreted by the shell.
+      const args: string[] = ['--yes', 'agentic-flow', '--agent', agent, '--task', task];
 
       // Provider & Model
-      if (model) cmd += ` --model "${model}"`;
-      if (provider) cmd += ` --provider ${provider}`;
+      if (model) args.push('--model', model);
+      if (provider) args.push('--provider', provider);
 
       // API Keys (set as env vars)
       const env = { ...process.env };
@@ -88,21 +95,22 @@ server.addTool({
       if (openrouterApiKey) env.OPENROUTER_API_KEY = openrouterApiKey;
 
       // Agent Behavior
-      if (stream) cmd += ' --stream';
-      if (temperature !== undefined) cmd += ` --temperature ${temperature}`;
-      if (maxTokens) cmd += ` --max-tokens ${maxTokens}`;
+      if (stream) args.push('--stream');
+      if (temperature !== undefined) args.push('--temperature', String(temperature));
+      if (maxTokens) args.push('--max-tokens', String(maxTokens));
 
       // Directories
-      if (agentsDir) cmd += ` --agents-dir "${agentsDir}"`;
+      if (agentsDir) args.push('--agents-dir', agentsDir);
 
       // Output
-      if (outputFormat) cmd += ` --output ${outputFormat}`;
-      if (verbose) cmd += ' --verbose';
+      if (outputFormat) args.push('--output', outputFormat);
+      if (verbose) args.push('--verbose');
 
       // Execution
-      if (retryOnError) cmd += ' --retry';
+      if (retryOnError) args.push('--retry');
 
-      const result = execSync(cmd, {
+      const result = execFileSync('npx', args, {
+        ...NPX_EXEC_OPTS,
         encoding: 'utf-8',
         maxBuffer: 10 * 1024 * 1024,
         timeout: timeout || 300000,
@@ -130,9 +138,8 @@ server.addTool({
   parameters: z.object({}),
   execute: async () => {
     try {
-      // Use npx to run agentic-flow from npm registry
-      const cmd = `npx --yes agentic-flow --list`;
-      const result = execSync(cmd, {
+      const result = execFileSync('npx', ['--yes', 'agentic-flow', '--list'], {
+        ...NPX_EXEC_OPTS,
         encoding: 'utf-8',
         maxBuffer: 5 * 1024 * 1024,
         timeout: 30000
@@ -161,11 +168,17 @@ server.addTool({
   }),
   execute: async ({ name, description, systemPrompt, category, tools }) => {
     try {
-      let cmd = `npx --yes agentic-flow agent create --name "${name}" --description "${description}" --prompt "${systemPrompt}"`;
-      if (category && category !== 'custom') cmd += ` --category "${category}"`;
-      if (tools && tools.length > 0) cmd += ` --tools "${tools.join(',')}"`;
+      const args: string[] = [
+        '--yes', 'agentic-flow', 'agent', 'create',
+        '--name', name,
+        '--description', description,
+        '--prompt', systemPrompt
+      ];
+      if (category && category !== 'custom') args.push('--category', category);
+      if (tools && tools.length > 0) args.push('--tools', tools.join(','));
 
-      const result = execSync(cmd, {
+      const result = execFileSync('npx', args, {
+        ...NPX_EXEC_OPTS,
         encoding: 'utf-8',
         maxBuffer: 10 * 1024 * 1024,
         timeout: 60000,
@@ -195,8 +208,8 @@ server.addTool({
   }),
   execute: async ({ format, filterSource }) => {
     try {
-      const cmd = `npx --yes agentic-flow agent list ${format || 'summary'}`;
-      const result = execSync(cmd, {
+      const result = execFileSync('npx', ['--yes', 'agentic-flow', 'agent', 'list', format || 'summary'], {
+        ...NPX_EXEC_OPTS,
         encoding: 'utf-8',
         maxBuffer: 10 * 1024 * 1024,
         timeout: 30000
@@ -236,8 +249,8 @@ server.addTool({
   }),
   execute: async ({ name }) => {
     try {
-      const cmd = `npx --yes agentic-flow agent info "${name}"`;
-      const result = execSync(cmd, {
+      const result = execFileSync('npx', ['--yes', 'agentic-flow', 'agent', 'info', name], {
+        ...NPX_EXEC_OPTS,
         encoding: 'utf-8',
         maxBuffer: 10 * 1024 * 1024,
         timeout: 30000
@@ -261,8 +274,8 @@ server.addTool({
   parameters: z.object({}),
   execute: async () => {
     try {
-      const cmd = `npx --yes agentic-flow agent conflicts`;
-      const result = execSync(cmd, {
+      const result = execFileSync('npx', ['--yes', 'agentic-flow', 'agent', 'conflicts'], {
+        ...NPX_EXEC_OPTS,
         encoding: 'utf-8',
         maxBuffer: 10 * 1024 * 1024,
         timeout: 30000
@@ -290,20 +303,21 @@ server.addTool({
   }),
   execute: async ({ agent, task, priority, max_cost }) => {
     try {
-      let cmd = `npx --yes agentic-flow --agent "${agent}" --task "${task}" --optimize`;
+      const args: string[] = ['--yes', 'agentic-flow', '--agent', agent, '--task', task, '--optimize'];
 
       if (priority && priority !== 'balanced') {
-        cmd += ` --priority ${priority}`;
+        args.push('--priority', priority);
       }
 
       if (max_cost) {
-        cmd += ` --max-cost ${max_cost}`;
+        args.push('--max-cost', String(max_cost));
       }
 
       // Add dry-run to just get recommendation without execution
-      cmd += ' --help'; // This will show the optimization without running
+      args.push('--help'); // This will show the optimization without running
 
-      const result = execSync(cmd, {
+      execFileSync('npx', args, {
+        ...NPX_EXEC_OPTS,
         encoding: 'utf-8',
         maxBuffer: 10 * 1024 * 1024,
         timeout: 10000
@@ -362,8 +376,8 @@ server.addTool({
       }
 
       // Apply edit using agent-booster@0.2.2 CLI (automatically installs from npm if not available)
-      const cmd = `npx --yes agent-booster@0.2.2 apply --language ${language}`;
-      const result = execSync(cmd, {
+      const result = execFileSync('npx', ['--yes', 'agent-booster@0.2.2', 'apply', '--language', language], {
+        ...NPX_EXEC_OPTS,
         encoding: 'utf-8',
         input: JSON.stringify({ code: originalCode, edit: code_edit }),
         maxBuffer: 10 * 1024 * 1024,
@@ -449,8 +463,8 @@ server.addTool({
         }
 
         // Apply edit
-        const cmd = `npx --yes agent-booster@0.2.2 apply --language ${language}`;
-        const result = execSync(cmd, {
+        const result = execFileSync('npx', ['--yes', 'agent-booster@0.2.2', 'apply', '--language', language], {
+          ...NPX_EXEC_OPTS,
           encoding: 'utf-8',
           input: JSON.stringify({ code: originalCode, edit: edit.code_edit }),
           maxBuffer: 10 * 1024 * 1024,
@@ -514,7 +528,7 @@ server.addTool({
       let match;
 
       while ((match = regex.exec(markdown)) !== null) {
-        const [_, language, filepath, instruction, code_edit] = match;
+        const [, language, filepath, instruction, code_edit] = match;
         edits.push({
           target_filepath: filepath.trim(),
           instructions: instruction.trim(),
@@ -547,8 +561,8 @@ server.addTool({
           language = langMap[ext] || 'javascript';
         }
 
-        const cmd = `npx --yes agent-booster@0.2.2 apply --language ${language}`;
-        const result = execSync(cmd, {
+        const result = execFileSync('npx', ['--yes', 'agent-booster@0.2.2', 'apply', '--language', language], {
+          ...NPX_EXEC_OPTS,
           encoding: 'utf-8',
           input: JSON.stringify({ code: originalCode, edit: edit.code_edit }),
           maxBuffer: 10 * 1024 * 1024,
@@ -602,8 +616,8 @@ server.addTool({
   parameters: z.object({}),
   execute: async () => {
     try {
-      const cmd = `npx agentdb db stats`;
-      const result = execSync(cmd, {
+      const result = execFileSync('npx', ['agentdb', 'db', 'stats'], {
+        ...NPX_EXEC_OPTS,
         encoding: 'utf-8',
         maxBuffer: 5 * 1024 * 1024,
         timeout: 10000
@@ -637,21 +651,22 @@ server.addTool({
   }),
   execute: async ({ sessionId, task, reward, success, critique, input, output, latencyMs, tokensUsed }) => {
     try {
-      const args = [
+      const cliArgs: string[] = [
+        'agentdb', 'reflexion', 'store',
         sessionId,
-        `"${task}"`,
+        task,
         reward.toString(),
         success.toString()
       ];
 
-      if (critique) args.push(`"${critique}"`);
-      if (input) args.push(`"${input}"`);
-      if (output) args.push(`"${output}"`);
-      if (latencyMs !== undefined) args.push(latencyMs.toString());
-      if (tokensUsed !== undefined) args.push(tokensUsed.toString());
+      if (critique) cliArgs.push(critique);
+      if (input) cliArgs.push(input);
+      if (output) cliArgs.push(output);
+      if (latencyMs !== undefined) cliArgs.push(latencyMs.toString());
+      if (tokensUsed !== undefined) cliArgs.push(tokensUsed.toString());
 
-      const cmd = `npx agentdb reflexion store ${args.join(' ')}`;
-      const result = execSync(cmd, {
+      const result = execFileSync('npx', cliArgs, {
+        ...NPX_EXEC_OPTS,
         encoding: 'utf-8',
         maxBuffer: 10 * 1024 * 1024,
         timeout: 30000
@@ -685,14 +700,14 @@ server.addTool({
   }),
   execute: async ({ task, k, minReward, onlySuccesses, onlyFailures }) => {
     try {
-      const args = [`"${task}"`, (k || 5).toString()];
+      const cliArgs: string[] = ['agentdb', 'reflexion', 'retrieve', task, (k || 5).toString()];
 
-      if (minReward !== undefined) args.push(minReward.toString());
-      if (onlyFailures) args.push('true', 'false');
-      else if (onlySuccesses) args.push('false', 'true');
+      if (minReward !== undefined) cliArgs.push(minReward.toString());
+      if (onlyFailures) cliArgs.push('true', 'false');
+      else if (onlySuccesses) cliArgs.push('false', 'true');
 
-      const cmd = `npx agentdb reflexion retrieve ${args.join(' ')}`;
-      const result = execSync(cmd, {
+      const result = execFileSync('npx', cliArgs, {
+        ...NPX_EXEC_OPTS,
         encoding: 'utf-8',
         maxBuffer: 10 * 1024 * 1024,
         timeout: 30000
@@ -726,8 +741,8 @@ server.addTool({
   }),
   execute: async ({ task, k }) => {
     try {
-      const cmd = `npx agentdb reflexion critique-summary "${task}" ${k || 5}`;
-      const result = execSync(cmd, {
+      const result = execFileSync('npx', ['agentdb', 'reflexion', 'critique-summary', task, String(k || 5)], {
+        ...NPX_EXEC_OPTS,
         encoding: 'utf-8',
         maxBuffer: 10 * 1024 * 1024,
         timeout: 30000

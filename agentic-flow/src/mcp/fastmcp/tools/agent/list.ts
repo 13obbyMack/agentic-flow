@@ -1,6 +1,7 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- pre-existing catch(error: any) handlers; outside scope of CWE-78 fix */
 import { z } from 'zod';
 import { ToolDefinition, ToolContext } from '../../types/index.js';
-import { execSync } from 'child_process';
+import { execFileSync } from 'child_process';
 
 const listAgentsSchema = z.object({
   format: z.enum(['summary', 'detailed', 'json']).optional().default('summary')
@@ -17,7 +18,8 @@ export const listAgentsTool: ToolDefinition = {
       onProgress?.({ progress: 0.3, message: 'Loading available agents...' });
 
       // Execute list command
-      const result = execSync('npx agentic-flow --list', {
+      const result = execFileSync('npx', ['agentic-flow', '--list'], {
+        shell: false,
         encoding: 'utf8',
         maxBuffer: 5 * 1024 * 1024,
         timeout: 30000

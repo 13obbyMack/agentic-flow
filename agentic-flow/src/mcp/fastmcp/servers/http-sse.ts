@@ -1,10 +1,16 @@
 #!/usr/bin/env node
+/* eslint-disable @typescript-eslint/no-explicit-any -- pre-existing catch(error: any) handlers; outside scope of CWE-78 fix */
 // FastMCP server with HTTP/SSE transport - All agentic-flow tools
 // Accessible via HTTP at http://localhost:8080/mcp
 // SSE endpoint at http://localhost:8080/sse
 import { FastMCP } from 'fastmcp';
 import { z } from 'zod';
-import { execSync, execFileSync } from 'child_process';
+import { execFileSync } from 'child_process';
+
+// Security: All shell-outs use execFileSync with argv arrays (shell: false) to
+// prevent OS command injection via tool parameters (CWE-78). Do NOT reintroduce
+// execSync with template-string interpolation here.
+const NPX_EXEC_OPTS = { shell: false as const };
 
 console.error('🚀 Starting Agentic-Flow MCP Server (HTTP/SSE transport)...');
 console.error('📦 Loading agentic-flow tools');
@@ -63,12 +69,13 @@ server.addTool({
     retryOnError
   }) => {
     try {
-      // Build command with all parameters
-      let cmd = `npx --yes agentic-flow --agent "${agent}" --task "${task}"`;
+      // Build argv (NOT a shell string) — every user-supplied value stays a
+      // separate argv element and cannot be reinterpreted by the shell.
+      const args: string[] = ['--yes', 'agentic-flow', '--agent', agent, '--task', task];
 
       // Provider & Model
-      if (model) cmd += ` --model "${model}"`;
-      if (provider) cmd += ` --provider ${provider}`;
+      if (model) args.push('--model', model);
+      if (provider) args.push('--provider', provider);
 
       // API Keys (set as env vars)
       const env = { ...process.env };
@@ -76,22 +83,23 @@ server.addTool({
       if (openrouterApiKey) env.OPENROUTER_API_KEY = openrouterApiKey;
 
       // Agent Behavior
-      if (stream) cmd += ' --stream';
-      if (temperature !== undefined) cmd += ` --temperature ${temperature}`;
-      if (maxTokens) cmd += ` --max-tokens ${maxTokens}`;
+      if (stream) args.push('--stream');
+      if (temperature !== undefined) args.push('--temperature', String(temperature));
+      if (maxTokens) args.push('--max-tokens', String(maxTokens));
 
       // Directories
-      if (agentsDir) cmd += ` --agents-dir "${agentsDir}"`;
+      if (agentsDir) args.push('--agents-dir', agentsDir);
 
       // Output
-      if (outputFormat) cmd += ` --output ${outputFormat}`;
-      if (verbose) cmd += ' --verbose';
+      if (outputFormat) args.push('--output', outputFormat);
+      if (verbose) args.push('--verbose');
 
       // Execution
-      if (timeout) cmd += ` --timeout ${timeout}`;
-      if (retryOnError) cmd += ' --retry';
+      if (timeout) args.push('--timeout', String(timeout));
+      if (retryOnError) args.push('--retry');
 
-      const result = execSync(cmd, {
+      const result = execFileSync('npx', args, {
+        ...NPX_EXEC_OPTS,
         encoding: 'utf-8',
         maxBuffer: 10 * 1024 * 1024,
         timeout: timeout || 300000,
@@ -137,7 +145,8 @@ server.addTool({
   }),
   execute: async ({ format }) => {
     try {
-      const result = execSync('npx --yes agentic-flow --list', {
+      const result = execFileSync('npx', ['--yes', 'agentic-flow', '--list'], {
+        ...NPX_EXEC_OPTS,
         encoding: 'utf-8',
         maxBuffer: 5 * 1024 * 1024,
         timeout: 30000
@@ -323,7 +332,8 @@ server.addTool({
   parameters: z.object({}),
   execute: async () => {
     try {
-      const result = execSync('npx --yes agentic-flow agent conflicts', {
+      const result = execFileSync('npx', ['--yes', 'agentic-flow', 'agent', 'conflicts'], {
+        ...NPX_EXEC_OPTS,
         encoding: 'utf-8',
         maxBuffer: 5 * 1024 * 1024,
         timeout: 30000
@@ -364,10 +374,11 @@ server.addTool({
   }),
   execute: async ({ agent, task, priority, max_cost }) => {
     try {
-      let cmd = `npx --yes agentic-flow --agent ${agent} --task "${task}" --optimize --priority ${priority}`;
-      if (max_cost) cmd += ` --max-cost ${max_cost}`;
+      const args: string[] = ['--yes', 'agentic-flow', '--agent', agent, '--task', task, '--optimize', '--priority', priority];
+      if (max_cost) args.push('--max-cost', String(max_cost));
 
-      const result = execSync(cmd, {
+      const result = execFileSync('npx', args, {
+        ...NPX_EXEC_OPTS,
         encoding: 'utf-8',
         maxBuffer: 10 * 1024 * 1024,
         timeout: 60000

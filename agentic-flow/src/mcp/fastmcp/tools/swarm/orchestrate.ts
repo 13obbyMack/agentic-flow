@@ -1,6 +1,7 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- pre-existing catch(error: any) handlers; outside scope of CWE-78 fix */
 // Task orchestration tool implementation using FastMCP
 import { z } from 'zod';
-import { execSync } from 'child_process';
+import { execFileSync } from 'child_process';
 import type { ToolDefinition } from '../../types/index.js';
 
 export const taskOrchestrateTool: ToolDefinition = {
@@ -23,12 +24,14 @@ export const taskOrchestrateTool: ToolDefinition = {
       .optional()
       .describe('Maximum agents to use for this task')
   }),
-  execute: async ({ task, strategy, priority, maxAgents }, { onProgress, auth }) => {
+  execute: async ({ task, strategy, priority, maxAgents }, { onProgress: _onProgress, auth }) => {
     try {
-      const maxStr = maxAgents ? ` --max-agents ${maxAgents}` : '';
-      const cmd = `npx claude-flow@alpha task orchestrate "${task}" --strategy ${strategy} --priority ${priority}${maxStr}`;
+      // Security (CWE-78): use execFileSync with argv array; `task` is attacker-influenceable.
+      const args: string[] = ['claude-flow@alpha', 'task', 'orchestrate', task, '--strategy', strategy, '--priority', priority];
+      if (maxAgents) args.push('--max-agents', String(maxAgents));
 
-      const result = execSync(cmd, {
+      const result = execFileSync('npx', args, {
+        shell: false,
         encoding: 'utf-8',
         maxBuffer: 10 * 1024 * 1024
       });
