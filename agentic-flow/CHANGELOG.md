@@ -2,6 +2,36 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.1.0] - 2026-06-23
+
+### Added
+- **Cost-optimal model routing (ADR-073).** New `CostOptimalRouter`
+  (`src/router/cost-optimal-router.ts`) wrapping
+  [`@metaharness/router`](https://www.npmjs.com/package/@metaharness/router):
+  routes each query to the *cheapest model predicted to clear a quality bar*,
+  learned from eval logs via k-NN / kernel-ridge (optional native FastGRNN via
+  the already-bundled `@ruvector/tiny-dancer`). Build from a flat
+  `(embedding → per-model quality)` dataset or explicit candidates; resolves
+  `"<provider>/<model>"` ids to concrete provider/model bindings.
+- **`ModelRouter.enableCostOptimalRouting({ router, embed })`** adds a new
+  `'cost-optimal'` routing mode that embeds the query, picks the cost-optimal
+  model, and steers `params.model` — with a graceful fallback to the existing
+  cost heuristic when unconfigured or on error (routing never hard-fails). The
+  previous rule-based `'cost-optimized'` mode is unchanged.
+- Bounded LRU embedding cache on the cost-optimal hot path (embedding dominates
+  latency vs the µs-scale k-NN; recurring prompts are common).
+- Benchmark (`benchmarks/cost-optimal-router-benchmark.mjs`) and tests
+  (`tests/router/cost-optimal-router.test.ts`). Measured on a 3-tier lineup
+  (1000-query held-out test, bar=0.8): **28.5% cheaper than always-opus** while
+  holding **98.1%** of queries at/above the bar; routing latency **p50 73µs /
+  p99 125µs**.
+- ADR-073/074/075 documenting the metaharness integration (074/075 proposed,
+  not yet implemented).
+
+### Dependencies
+- Added `@metaharness/router` (dependency-free; optional `@ruvector/tiny-dancer`
+  peer already present).
+
 ## [2.0.15] - 2026-06-23
 
 ### Fixed

@@ -123,7 +123,9 @@ export interface RouterConfig {
 }
 
 export interface RoutingConfig {
-  mode: 'manual' | 'cost-optimized' | 'performance-optimized' | 'quality-optimized' | 'rule-based';
+  // 'cost-optimized' = legacy heuristic provider ordering;
+  // 'cost-optimal'   = learned predicted-quality-per-cost routing (ADR-073)
+  mode: 'manual' | 'cost-optimized' | 'cost-optimal' | 'performance-optimized' | 'quality-optimized' | 'rule-based';
   rules?: RoutingRule[];
   costOptimization?: {
     enabled: boolean;

@@ -105,6 +105,44 @@ Agentic-Flow v2 now includes **ALL** advanced vector/graph, GNN, and attention c
 
 **Performance Grade: A+ (100% Pass Rate)**
 
+### **Cost-Optimal Model Routing (ADR-073)** 💰
+
+Route each query to the **cheapest model predicted to clear a quality bar**, learned
+from your own eval logs — the productized [DRACO](https://github.com/ruvnet/agent-harness-generator)
+finding, powered by [`@metaharness/router`](https://www.npmjs.com/package/@metaharness/router)
+(dependency-free k-NN / kernel-ridge, optional native FastGRNN via the already-bundled
+`@ruvector/tiny-dancer`). This is **additive** to the existing config-rule routing — it
+selects a *model* by predicted cost-quality rather than a provider by static rule, and
+degrades gracefully to best-predicted on a cold start.
+
+```ts
+import { ModelRouter } from 'agentic-flow';
+import { CostOptimalRouter } from 'agentic-flow/dist/router/cost-optimal-router.js';
+
+// Build from your eval logs: rows of (query embedding → quality each model achieved)
+const router = CostOptimalRouter.fromDataset(rows, {
+  'anthropic/claude-haiku-4.5': 1,    // $/Mtok
+  'anthropic/claude-sonnet-4.5': 3,
+  'anthropic/claude-opus-4': 15,
+}, { qualityBar: 0.8 });
+
+const model = new ModelRouter();
+model.enableCostOptimalRouting({ router, embed: yourEmbedder });
+// chat() now routes each query to the cheapest model predicted to clear 0.8.
+```
+
+**Measured** (`node benchmarks/cost-optimal-router-benchmark.mjs`, 3-tier lineup,
+1000-query held-out test, bar=0.8):
+
+| Strategy | avg $/query | mean quality | % ≥ bar |
+|---|---|---|---|
+| always-haiku | 1.00 | 0.412 | 14.1% |
+| always-opus | 15.00 | 0.930 | 100% |
+| **cost-optimal** | **10.73** | **0.895** | **98.1%** |
+
+→ **28.5% cheaper than always-opus** while holding **98.1%** of queries at/above the bar.
+Routing decision latency: **p50 73µs · p99 125µs**.
+
 ---
 
 ## 📖 Table of Contents
