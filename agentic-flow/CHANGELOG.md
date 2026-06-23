@@ -36,8 +36,16 @@ All notable changes to this project will be documented in this file.
   `'mock'` is a deterministic, Docker-free substrate for hermetic tests. The full
   SWE-bench-Lite TDR product (Docker grading) is run via Darwin's own CLI — see
   ADR-074. New exports `agentic-flow/repair` and `agentic-flow/router/cost-optimal`.
-- ADR-073/074/075 documenting the metaharness integration (073/074 implemented;
-  075 proposed).
+- **Harness evolution MCP tools + provenance (ADR-075).** New `harness_repair`,
+  `harness_manifest`, and `harness_verify` MCP tools (`src/mcp/tools/harness-tools.ts`,
+  registered in the stdio server), mirroring claude-flow's `metaharness_*`. Plus an
+  Ed25519 **witness manifest** module (`src/harness/provenance.ts`, exported as
+  `agentic-flow/harness/provenance`): sign a sha256 manifest over harness/agent
+  config files and verify it + on-disk drift — built on Node's `crypto`, no deps.
+- **Repositioned as the agentic meta-harness (ADR-076)** — README hero +
+  four-pillar framing (route / evolve / orchestrate / verify), `package.json`
+  description and keywords. Docs/positioning only; no behavior change.
+- ADR-073/074/075/076 documenting the metaharness integration (all implemented).
 
 ### Dependencies
 

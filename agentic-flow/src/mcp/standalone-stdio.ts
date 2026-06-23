@@ -4,6 +4,7 @@
 import { FastMCP } from 'fastmcp';
 import { z } from 'zod';
 import { execFileSync } from 'child_process';
+import { registerHarnessTools } from './tools/harness-tools.js';
 
 // Security: All shell-outs use execFileSync with argv arrays (shell: false) to
 // prevent OS command injection via tool parameters (CWE-78). Do NOT reintroduce
@@ -31,6 +32,10 @@ const server = new FastMCP({
   name: 'agentic-flow',
   version: '1.0.8'
 });
+
+// ADR-075: harness evolution/repair + provenance tools (harness_repair,
+// harness_manifest, harness_verify).
+registerHarnessTools(server as unknown as Parameters<typeof registerHarnessTools>[0]);
 
 // Tool: Run agentic-flow agent
 server.addTool({

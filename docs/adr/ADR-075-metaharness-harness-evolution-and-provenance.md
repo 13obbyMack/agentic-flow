@@ -1,16 +1,17 @@
 # ADR-075: Harness Self-Evolution (Darwin) and Agent-Config Provenance (Witness Manifest)
 
-**Status**: Proposed
+**Status**: Accepted — implemented in 2.1.0. Track A (harness MCP tools: `harness_repair` / `harness_manifest` / `harness_verify`) and Track B (Ed25519 provenance) shipped; the `metaharness` scaffolder/host-adapters remain out of scope as stated below.
 **Date**: 2026-06-23
 **Decision Makers**: RUV, Claude Flow Team
-**Related**: ADR-073 (Cost-Optimal Router), ADR-074 (Darwin TDR)
-**Affected packages**: `agentic-flow` (`src/mcp/`, `src/agents/`, `src/config/`)
+**Related**: ADR-073 (Cost-Optimal Router), ADR-074 (Darwin TDR), ADR-076 (Meta-Harness Repositioning)
+**Affected packages**: `agentic-flow` (`src/harness/`, `src/mcp/tools/`)
+**Implementation**: `src/harness/provenance.ts`, `src/mcp/tools/harness-tools.ts` (registered in `src/mcp/standalone-stdio.ts`), `tests/harness/provenance.test.ts`
 
 ## Context
 
 Two lower-frequency but strategically useful capabilities from the `metaharness` ecosystem are not yet present in `agentic-flow`:
 
-1. **Harness self-evolution** — `@metaharness/darwin`'s core loop ("freeze the model, evolve the harness") mutates one of **seven policy surfaces** (`planner`, `contextBuilder`, `reviewer`, `retryPolicy`, `toolPolicy`, `memoryPolicy`, `scorePolicy`), tests each in a sandbox, and keeps only what *measurably* improves — building an archive (a tree, not a single best branch). Reported lifts on a frozen model (e.g. `finalScore 0.765 → 0.985`, ADR-103) come from evolving policy, not swapping models.
+1. **Harness self-evolution** — `@metaharness/darwin`'s core loop ("freeze the model, evolve the harness") mutates one of **seven policy surfaces** (`planner`, `contextBuilder`, `reviewer`, `retryPolicy`, `toolPolicy`, `memoryPolicy`, `scorePolicy`), tests each in a sandbox, and keeps only what _measurably_ improves — building an archive (a tree, not a single best branch). Reported lifts on a frozen model (e.g. `finalScore 0.765 → 0.985`, ADR-103) come from evolving policy, not swapping models.
 
 2. **Provenance / integrity** — the `metaharness` scaffolder ships `harness sign / verify / doctor`: an Ed25519 **witness manifest** over a harness's agent/skill/command files.
 
@@ -25,24 +26,29 @@ Two lower-frequency but strategically useful capabilities from the `metaharness`
 Adopt both, in two tracks:
 
 ### Track A — Harness self-evolution as MCP tools (mirror claude-flow)
+
 Expose Darwin's `evolve()` and scoring through `agentic-flow`'s MCP server in `src/mcp/`, mirroring claude-flow's `metaharness_*` naming. Evolve agent harness policy against the existing benchmark suite, persisting the archive under `.metaharness/` per Darwin's convention. All evolutionary mechanisms stay **opt-in and additive** (Darwin's default-path runs are byte-reproducible).
 
 ### Track B — Agent-config provenance
+
 Adopt `harness sign / verify` to produce a signed witness manifest over agent/skill/command configs. Run `verify` in CI and optionally as a pre-publish gate, complementing the security work in PR #170 (CWE-78). `harness doctor` becomes a smoke-check for generated/edited harness configs.
 
 ## Consequences
 
 **Positive**
+
 - Self-improving harness: measurable gains without changing the model or paying for a bigger one.
 - Provenance/integrity for agent configs — tamper-evidence and supply-chain assurance.
 - Reuses a proven MCP integration pattern (claude-flow) and Darwin's reproducible, sandboxed core.
 
 **Negative / risks**
+
 - Evolution requires a trustworthy benchmark to score against; a weak benchmark evolves toward the wrong objective. Gate promotions on the frozen kernel scorer + safety clauses Darwin already enforces.
 - MCP surface area grows; keep tools opt-in and documented.
 - Signing introduces key management (Ed25519) — must define where keys live and CI verification policy.
 
 **Neutral**
+
 - Both tracks are opt-in; no change to default agent behavior.
 
 ## Scope note
