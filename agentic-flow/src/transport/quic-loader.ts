@@ -25,7 +25,6 @@ import WebSocket, { WebSocketServer, type RawData } from 'ws';
 import { createHash } from 'node:crypto';
 import { createServer as createHttpsServer } from 'node:https';
 import { readFileSync } from 'node:fs';
-import type { TLSSocket } from 'node:tls';
 
 /** TLS configuration for wss:// peers (ADR-107). */
 export interface TlsConfig {
@@ -179,6 +178,69 @@ class WebSocketFallbackTransport implements AgentTransport {
     handler: InboundMessageHandler;
     streamId?: string | number;
   }>();
+  /**
+   * Server-accepted (inbound) sockets indexed by peer host (#162). A
+   * peer that already dialed us has a live, full-duplex socket here;
+   * {@link getOrCreateConnection} reuses it for replies instead of
+   * opening a fresh outbound connection — which, on a direct
+   * point-to-point link, can hit a per-process stale scoped route
+   * (`EHOSTUNREACH`) even while the inbound direction is healthy.
+   */
+  private inboundByHost = new Map<string, WebSocket>();
+  /** Active liveness-probe intervals, cleared on close (#162). */
+  private heartbeats = new Set<ReturnType<typeof setInterval>>();
+
+  /**
+   * Liveness ping cadence, derived from `maxIdleTimeoutMs` (#162 — this
+   * config was previously accepted but never used). Pings at 1/6 of the
+   * idle timeout so a dead socket is caught within ~1/3 of it. Default
+   * 30000ms → 5000ms.
+   */
+  private get pingIntervalMs(): number {
+    return Math.max(1000, Math.floor(this.config.maxIdleTimeoutMs / 6));
+  }
+
+  /**
+   * Normalize an address or socket `remoteAddress` to a bare host key
+   * for {@link inboundByHost} lookups. Strips `ws(s)://` scheme, an
+   * IPv6-mapped IPv4 prefix (`::ffff:`), bracketed IPv6 (`[::1]:port`),
+   * and a trailing `:port` on plain `host:port` forms. Bare IPv6
+   * (multiple colons, no brackets) is returned unchanged.
+   */
+  private hostOf(addr: string): string {
+    let s = addr.replace(/^wss?:\/\//i, '');
+    const bracket = s.match(/^\[([^\]]+)\](?::\d+)?$/);
+    if (bracket) s = bracket[1];
+    else if (/^[^:]+:\d+$/.test(s)) s = s.slice(0, s.lastIndexOf(':'));
+    return s.replace(/^::ffff:/i, '');
+  }
+
+  /**
+   * Liveness probe for a socket (#162). Pings on {@link pingIntervalMs};
+   * a socket that misses a ping/pong window is terminated so a stale
+   * connection can't silently black-hole sends. The interval is unref'd
+   * (never keeps the process alive on its own) and cleared on close/error.
+   */
+  private startHeartbeat(ws: WebSocket): void {
+    let alive = true;
+    ws.on('pong', () => { alive = true; });
+    const interval = setInterval(() => {
+      if (!alive) {
+        try { ws.terminate(); } catch { /* already gone */ }
+        return; // 'close' fires → stop() clears this interval
+      }
+      alive = false;
+      try { ws.ping(); } catch { /* socket is closing */ }
+    }, this.pingIntervalMs);
+    (interval as { unref?: () => void }).unref?.();
+    this.heartbeats.add(interval);
+    const stop = () => {
+      clearInterval(interval);
+      this.heartbeats.delete(interval);
+    };
+    ws.on('close', stop);
+    ws.on('error', stop);
+  }
 
   /** Compose the per-(address, streamId) queue key. */
   private queueKey(address: string, streamId: string | number): string {
@@ -261,6 +323,18 @@ class WebSocketFallbackTransport implements AgentTransport {
   private attachServerHandlers(wss: WebSocketServer): void {
     wss.on('connection', (ws, req) => {
       const remoteAddr = `${req.socket.remoteAddress}:${req.socket.remotePort}`;
+      // #162: register this accepted socket for outbound reuse, and probe
+      // it for liveness. Reusing it for replies avoids a fresh (stale-route
+      // prone) outbound dial back to the same peer.
+      const host = this.hostOf(req.socket.remoteAddress ?? remoteAddr);
+      this.inboundByHost.set(host, ws);
+      this.startHeartbeat(ws);
+      const dropInbound = () => {
+        if (this.inboundByHost.get(host) === ws) this.inboundByHost.delete(host);
+      };
+      ws.on('close', dropInbound);
+      ws.on('error', dropInbound);
+
       ws.on('message', (raw: RawData) => {
         try {
           const message = JSON.parse(raw.toString()) as AgentMessage;
@@ -282,6 +356,16 @@ class WebSocketFallbackTransport implements AgentTransport {
       const existing = this.connections.get(address);
       if (existing && existing.readyState === WebSocket.OPEN) {
         resolve(existing);
+        return;
+      }
+
+      // #162: prefer an already-open INBOUND socket from the same peer host
+      // before dialing. WebSocket is full-duplex, so the server-accepted
+      // socket can carry our replies — and the inbound direction stays
+      // healthy when a fresh outbound dial would hit a stale scoped route.
+      const inbound = this.inboundByHost.get(this.hostOf(address));
+      if (inbound && inbound.readyState === WebSocket.OPEN) {
+        resolve(inbound);
         return;
       }
 
@@ -346,6 +430,7 @@ class WebSocketFallbackTransport implements AgentTransport {
       ws.on('open', () => {
         this.connections.set(address, ws);
         this.connectionsCreated++;
+        this.startHeartbeat(ws); // #162: keep the outbound link probed
         resolve(ws);
       });
 
@@ -462,6 +547,11 @@ class WebSocketFallbackTransport implements AgentTransport {
     }
     this.connections.clear();
     this.messageQueue.clear();
+
+    // Stop all liveness probes and drop the inbound index (#162).
+    for (const interval of this.heartbeats) clearInterval(interval);
+    this.heartbeats.clear();
+    this.inboundByHost.clear();
 
     // Inbound: WebSocketServer.close() blocks until every accepted
     // socket disconnects. Forcibly terminate them so the close

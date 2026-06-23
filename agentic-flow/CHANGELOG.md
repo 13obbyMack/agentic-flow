@@ -2,9 +2,37 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.0.15] - 2026-06-23
+
+### Fixed
+
+- **#167 — `agentic-flow/agent-booster` subpath export pointed at a missing file.**
+  The `./agent-booster` export resolved to `dist/agent-booster/index.js`, which
+  was never emitted (the booster code lives under `intelligence/` and
+  `optimizations/`), so `import 'agentic-flow/agent-booster'` failed with
+  `ERR_MODULE_NOT_FOUND`. Added the missing barrel entrypoint
+  (`src/agent-booster/index.ts`) which re-exports the booster API and provides
+  the documented `AgentBooster` name (alias of `EnhancedAgentBooster`).
+- **#162 — WebSocket fallback transport: stale-route `EHOSTUNREACH` after idle
+  on a direct point-to-point link.** `WebSocketFallbackTransport` now reuses an
+  already-open inbound (server-accepted) socket for replies before dialing a
+  fresh outbound connection — the full-duplex inbound direction stays healthy
+  when a new outbound dial would hit a per-process stale scoped route. Added a
+  liveness ping/pong heartbeat that terminates stale sockets, driven by
+  `maxIdleTimeoutMs` (previously accepted but unused — ping cadence is 1/6 of
+  it, default 30000ms → 5000ms).
+
+### Notes
+
+- **#146 (Ollama provider in config-wizard)** was already resolved in the 2.0.x
+  line: `OLLAMA_API_KEY`, `OLLAMA_BASE_URL`, and `'ollama'` are accepted by the
+  config wizard. The remaining asks in that issue (agentdb controller
+  prerequisites) are tracked in the `agentdb` package.
+
 ## [2.0.1-alpha.4] - 2025-12-03
 
 ### Added
+
 - **SONA v0.1.4 Federated Learning Integration**: Complete integration with AgentDB
   - Updated AgentDB dependency to 2.0.0-alpha.2.16
   - Full support for `EphemeralLearningAgent`, `FederatedLearningCoordinator`, and `FederatedLearningManager`
@@ -12,15 +40,18 @@ All notable changes to this project will be documented in this file.
   - Large-scale federation (50+ agents with configurable limits)
 
 ### Changed
+
 - **Dependencies Updated**:
   - `agentdb`: 2.0.0-alpha.2.15 → 2.0.0-alpha.2.16 (SONA v0.1.4 federated learning)
 
 ### Documentation
+
 - Comprehensive federated learning guide available in AgentDB package
 - 5 detailed use cases for distributed learning
 - API documentation and performance tuning recommendations
 
 ### Tested
+
 - ✅ Complete federated learning workflow with 50+ agents
 - ✅ Quality filtering and weighted consolidation
 - ✅ Multi-agent coordination and automatic aggregation
@@ -31,6 +62,7 @@ All notable changes to this project will be documented in this file.
 ## [1.10.2] - 2025-01-10
 
 ### Fixed
+
 - **Critical Bug**: Fixed ANTHROPIC_API_KEY overriding `--provider` CLI argument ([#60](https://github.com/ruvnet/agentic-flow/issues/60))
   - CLI arguments (`--provider`, `--openrouter-key`, `--anthropic-key`, `--model`) now properly propagate to environment variables
   - Removed silent fallback to `ANTHROPIC_API_KEY` for non-Anthropic providers (OpenRouter, Gemini, Requesty)
@@ -38,11 +70,13 @@ All notable changes to this project will be documented in this file.
   - CLI arguments now correctly override environment variables as expected
 
 ### Added
+
 - Comprehensive test suite for provider CLI argument handling
 - Clear error messages when provider-specific API keys are missing
 - Logging for provider selection from CLI arguments
 
 ### Changed
+
 - **Breaking Change**: Providers now require their specific API keys (no fallback to ANTHROPIC_API_KEY)
   - OpenRouter requires `OPENROUTER_API_KEY` or `--openrouter-key`
   - Gemini requires `GOOGLE_GEMINI_API_KEY`
@@ -50,7 +84,9 @@ All notable changes to this project will be documented in this file.
   - Anthropic continues to require `ANTHROPIC_API_KEY` or `--anthropic-key`
 
 ### Migration Guide
+
 If you were relying on the fallback behavior:
+
 ```bash
 # Before (relied on ANTHROPIC_API_KEY fallback)
 export ANTHROPIC_API_KEY=sk-ant-...
@@ -65,4 +101,5 @@ npx agentic-flow --provider openrouter --openrouter-key sk-or-... --task "test"
 ```
 
 ## [1.10.0] - Previous Release
+
 - See git history for previous changes
