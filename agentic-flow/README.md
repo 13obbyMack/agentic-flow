@@ -1,11 +1,22 @@
-# 🚀 Agentic-Flow v2
+# 🚀 Agentic-Flow v2 — the Agentic Meta-Harness
 
-> **Production-ready AI agent orchestration with 66 self-learning agents, 213 MCP tools, and autonomous multi-agent swarms.**
+> **Freeze the model, evolve the harness.** Agentic-Flow is an open _agentic meta-harness_: a runtime whose product is the **harness around a model**, not the model. It routes each query to the cost-optimal model, evolves its own harness and autonomously repairs code, then orchestrates 66 self-learning agents, 213 MCP tools, and multi-agent swarms on top.
 
 [![npm version](https://badge.fury.io/js/agentic-flow.svg)](https://www.npmjs.com/package/agentic-flow)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9-blue.svg)](https://www.typescriptlang.org/)
 [![Node.js](https://img.shields.io/badge/Node.js-18%2B-green.svg)](https://nodejs.org/)
+
+### The four pillars of the meta-harness
+
+| Pillar             | What it does                                                                                                                            | Powered by                                                                                           |
+| ------------------ | --------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| 🧭 **Route**       | Send each query to the _cheapest model predicted to clear a quality bar_, learned from eval logs                                        | `@metaharness/router` ([ADR-073](docs/adr/ADR-073-metaharness-router-cost-optimal-model-routing.md)) |
+| 🧬 **Evolve**      | Improve the harness itself (planner/context/reviewer/retry/tool/memory/score) and autonomously repair code — same model, better results | `@metaharness/darwin` ([ADR-074](docs/adr/ADR-074-metaharness-darwin-test-driven-repair.md))         |
+| 🤝 **Orchestrate** | Run 66 agents, 213 MCP tools, ReasoningBank memory, and multi-agent swarms                                                              | Claude Agent SDK + AgentDB                                                                           |
+| 🔏 **Verify**      | Frozen scorer + safety gate on every harness change; signed harness provenance                                                          | Darwin safety gate ([ADR-075](docs/adr/ADR-075-metaharness-harness-evolution-and-provenance.md))     |
+
+> **Why a meta-harness?** The measured lever in modern agentic systems is the _harness_, not a bigger model: a cheap model in a well-built, self-improving harness matches a frontier model at a fraction of the cost (see the [DRACO/Darwin](https://github.com/ruvnet/agent-harness-generator) findings). Agentic-Flow is the open runtime that operates that harness.
 
 ---
 

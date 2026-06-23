@@ -1,7 +1,7 @@
 {
   "name": "agentic-flow",
   "version": "2.1.0",
-  "description": "Production-ready AI agent orchestration platform with 66 specialized agents, 213 MCP tools, ReasoningBank learning memory, and autonomous multi-agent swarms. Built by @ruvnet with Claude Agent SDK, neural networks, memory persistence, GitHub integration, and distributed consensus protocols.",
+  "description": "The agentic meta-harness — freeze the model, evolve the harness. An open runtime that routes each query to the cost-optimal model, evolves its own harness (planner/context/reviewer/retry/tool/memory/score policy) and autonomously repairs code, then orchestrates 66 specialized agents, 213 MCP tools, ReasoningBank memory, and multi-agent swarms on top. Built by @ruvnet on the Claude Agent SDK.",
   "type": "module",
   "main": "dist/index.js",
   "bin": {
@@ -69,6 +69,14 @@
     "test:orchestration:smoke": "tsx tests/orchestration/orchestration-api.smoke.ts && tsx tests/orchestration/loop-policy.smoke.ts && tsx tests/orchestration/memory-plane.smoke.ts"
   },
   "keywords": [
+    "meta-harness",
+    "metaharness",
+    "agent-harness",
+    "harness-evolution",
+    "model-routing",
+    "cost-optimal-routing",
+    "self-improving",
+    "darwin",
     "ai",
     "ai-agents",
     "ai-orchestration",
