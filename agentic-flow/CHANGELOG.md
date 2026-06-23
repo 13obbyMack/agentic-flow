@@ -5,10 +5,11 @@ All notable changes to this project will be documented in this file.
 ## [2.1.0] - 2026-06-23
 
 ### Added
+
 - **Cost-optimal model routing (ADR-073).** New `CostOptimalRouter`
   (`src/router/cost-optimal-router.ts`) wrapping
   [`@metaharness/router`](https://www.npmjs.com/package/@metaharness/router):
-  routes each query to the *cheapest model predicted to clear a quality bar*,
+  routes each query to the _cheapest model predicted to clear a quality bar_,
   learned from eval logs via k-NN / kernel-ridge (optional native FastGRNN via
   the already-bundled `@ruvector/tiny-dancer`). Build from a flat
   `(embedding → per-model quality)` dataset or explicit candidates; resolves
@@ -25,12 +26,23 @@ All notable changes to this project will be documented in this file.
   (1000-query held-out test, bar=0.8): **28.5% cheaper than always-opus** while
   holding **98.1%** of queries at/above the bar; routing latency **p50 73µs /
   p99 125µs**.
-- ADR-073/074/075 documenting the metaharness integration (074/075 proposed,
-  not yet implemented).
+- **Autonomous repair via Darwin Mode (ADR-074).** New `repair()` wrapper
+  (`src/repair/darwin-repair.ts`) and `agentic-flow-repair` CLI over
+  [`@metaharness/darwin`](https://www.npmjs.com/package/@metaharness/darwin):
+  freeze the model and evolve the harness (planner/context/reviewer/retry/tool/
+  memory/score policy), keeping only variants that measurably improve under a
+  frozen scorer + safety gate. Defaults to Test-Driven Repair (`'real'` sandbox —
+  the repo's own tests gate promotion, run shell-free with a scrubbed env);
+  `'mock'` is a deterministic, Docker-free substrate for hermetic tests. The full
+  SWE-bench-Lite TDR product (Docker grading) is run via Darwin's own CLI — see
+  ADR-074. New exports `agentic-flow/repair` and `agentic-flow/router/cost-optimal`.
+- ADR-073/074/075 documenting the metaharness integration (073/074 implemented;
+  075 proposed).
 
 ### Dependencies
-- Added `@metaharness/router` (dependency-free; optional `@ruvector/tiny-dancer`
-  peer already present).
+
+- Added `@metaharness/router` and `@metaharness/darwin` (both dependency-free;
+  optional `@ruvector/tiny-dancer` peer already present).
 
 ## [2.0.15] - 2026-06-23
 

@@ -1,10 +1,11 @@
 # ADR-074: Autonomous Test-Driven Repair via @metaharness/darwin
 
-**Status**: Proposed
+**Status**: Accepted — core implemented in 2.1.0 (`repair()` + `agentic-flow-repair` CLI over Darwin `evolve()`); full SWE-bench Docker TDR product is the documented deployment path
 **Date**: 2026-06-23
 **Decision Makers**: RUV, Claude Flow Team
-**Related**: ADR-073 (Cost-Optimal Router), ADR-075 (Harness Self-Evolution), CWE-78 shell-injection hardening (PR #170)
-**Affected packages**: `agentic-flow` (`src/agents/`, `src/cli/`, `src/mcp/`)
+**Related**: ADR-073 (Cost-Optimal Router), ADR-075 (Harness Self-Evolution), ADR-076 (Meta-Harness Repositioning), CWE-78 shell-injection hardening (PR #170)
+**Affected packages**: `agentic-flow` (`src/repair/`, `src/cli/`, `src/mcp/`)
+**Implementation**: `src/repair/darwin-repair.ts`, `src/repair/cli.ts`, `tests/repair/darwin-repair.test.ts`
 
 ## Context
 
@@ -33,16 +34,19 @@ Reuse Darwin's programmatic API (`import { evolve } from '@metaharness/darwin'`)
 ## Consequences
 
 **Positive**
+
 - New product-grade capability (CI autofixer) at pennies-per-fix economics.
 - Composes with ADR-073: the cheap model that TDR depends on is exactly what the cost-optimal router selects.
 - Security model matches the repo's current hardening direction.
 
 **Negative / risks**
+
 - TDR's headline 68.3% is a **with-acceptance-test** claim; the no-test (Conformant) mode has a genuinely lower, honest ceiling — must be surfaced clearly so users do not over-trust it.
 - Darwin runs repo test commands in a sandbox; integration must ensure agentic-flow's invocation preserves the shell-free, env-scrubbed guarantees (do not wrap it in a shell).
 - Adds `@metaharness/darwin` as a dependency (Node ≥ 20 built-ins only, **zero runtime deps** — low footprint).
 
 **Neutral**
+
 - Opt-in command/agent; no change to existing agents.
 
 ## Implementation sketch
