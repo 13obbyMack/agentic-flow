@@ -1,12 +1,13 @@
 {
   "name": "agentic-flow",
-  "version": "2.0.11",
-  "description": "Production-ready AI agent orchestration platform with 66 specialized agents, 213 MCP tools, ReasoningBank learning memory, and autonomous multi-agent swarms. Built by @ruvnet with Claude Agent SDK, neural networks, memory persistence, GitHub integration, and distributed consensus protocols.",
+  "version": "2.1.0",
+  "description": "The agentic meta-harness — freeze the model, evolve the harness. An open runtime that routes each query to the cost-optimal model, evolves its own harness (planner/context/reviewer/retry/tool/memory/score policy) and autonomously repairs code, then orchestrates 66 specialized agents, 213 MCP tools, ReasoningBank memory, and multi-agent swarms on top. Built by @ruvnet on the Claude Agent SDK.",
   "type": "module",
   "main": "dist/index.js",
   "bin": {
     "agentic-flow": "dist/cli-proxy.js",
-    "agentdb": "dist/agentdb/cli/agentdb-cli.js"
+    "agentdb": "dist/agentdb/cli/agentdb-cli.js",
+    "agentic-flow-repair": "dist/repair/cli.js"
   },
   "exports": {
     ".": "./dist/index.js",
@@ -21,6 +22,9 @@
     "./reasoningbank/backend-selector": "./dist/reasoningbank/backend-selector.js",
     "./reasoningbank/wasm-adapter": "./dist/reasoningbank/wasm-adapter.js",
     "./router": "./dist/router/index.js",
+    "./router/cost-optimal": "./dist/router/cost-optimal-router.js",
+    "./repair": "./dist/repair/darwin-repair.js",
+    "./harness/provenance": "./dist/harness/provenance.js",
     "./agent-booster": "./dist/agent-booster/index.js",
     "./transport/quic": "./dist/transport/quic.js",
     "./embeddings": "./dist/embeddings/index.js",
@@ -66,6 +70,14 @@
     "test:orchestration:smoke": "tsx tests/orchestration/orchestration-api.smoke.ts && tsx tests/orchestration/loop-policy.smoke.ts && tsx tests/orchestration/memory-plane.smoke.ts"
   },
   "keywords": [
+    "meta-harness",
+    "metaharness",
+    "agent-harness",
+    "harness-evolution",
+    "model-routing",
+    "cost-optimal-routing",
+    "self-improving",
+    "darwin",
     "ai",
     "ai-agents",
     "ai-orchestration",
@@ -152,6 +164,8 @@
     "@anthropic-ai/claude-agent-sdk": "^0.1.5",
     "@anthropic-ai/sdk": "^0.65.0",
     "@google/genai": "^1.22.0",
+    "@metaharness/darwin": "^0.7.0",
+    "@metaharness/router": "^0.3.2",
     "@ruvector/core": "^0.1.29",
     "@ruvector/edge-full": "^0.1.0",
     "@ruvector/router": "^0.1.25",

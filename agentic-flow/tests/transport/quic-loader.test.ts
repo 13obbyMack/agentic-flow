@@ -339,3 +339,70 @@ describe('loadQuicTransport — selection contract', () => {
     await t.close();
   });
 });
+
+// #162: on a direct point-to-point link, dialing a fresh outbound socket
+// back to a peer can hit a stale scoped route (EHOSTUNREACH) while the
+// inbound direction stays healthy. The transport now reuses the inbound
+// (server-accepted) socket for replies instead of dialing.
+describe('WebSocketFallbackTransport — inbound socket reuse (#162)', () => {
+  let a: WebSocketFallbackTransport | undefined;
+  let b: WebSocketFallbackTransport | undefined;
+
+  afterEach(async () => {
+    await closeAll(b, a);
+    a = undefined;
+    b = undefined;
+  });
+
+  it('reuses the inbound socket for replies instead of dialing a new outbound', async () => {
+    const portA = TEST_PORT + 20;
+    const portB = TEST_PORT + 21;
+    a = await WebSocketFallbackTransport.create({ serverName: 'A' });
+    b = await WebSocketFallbackTransport.create({ serverName: 'B' });
+    await a.listen(portA, '127.0.0.1');
+    await b.listen(portB, '127.0.0.1');
+
+    const aSeen: AgentMessage[] = [];
+    const bSeen: AgentMessage[] = [];
+    a.onMessage((_addr, m) => aSeen.push(m));
+    b.onMessage((_addr, m) => bSeen.push(m));
+
+    // B dials A. A now holds a live inbound socket from host 127.0.0.1.
+    await b.send(`127.0.0.1:${portA}`, { id: 'b->a', type: 'task', payload: {} });
+    await new Promise((r) => setTimeout(r, 120));
+    expect(aSeen.map((m) => m.id)).toEqual(['b->a']);
+
+    // A replies to B's host. It must ride the existing inbound socket, so A
+    // never opens an outbound connection of its own.
+    await a.send(`127.0.0.1:${portB}`, { id: 'a->b', type: 'task', payload: {} });
+    await new Promise((r) => setTimeout(r, 120));
+
+    expect(bSeen.map((m) => m.id)).toEqual(['a->b']);
+    const aStats = await a.getStats();
+    expect(aStats.created).toBe(0); // reuse, not a fresh dial
+  });
+
+  it('keeps a live socket alive across a heartbeat interval and closes cleanly', async () => {
+    const portA = TEST_PORT + 22;
+    // maxIdleTimeoutMs=6000 → ping cadence 1000ms (1/6). A healthy socket
+    // ponging in time must NOT be terminated.
+    a = await WebSocketFallbackTransport.create({ serverName: 'A', maxIdleTimeoutMs: 6000 });
+    b = await WebSocketFallbackTransport.create({ serverName: 'B', maxIdleTimeoutMs: 6000 });
+    await a.listen(portA, '127.0.0.1');
+
+    const aSeen: AgentMessage[] = [];
+    a.onMessage((_addr, m) => aSeen.push(m));
+
+    await b.send(`127.0.0.1:${portA}`, { id: 'h1', type: 'task', payload: {} });
+    // Wait past one ping/pong cycle, then send again over the same socket.
+    await new Promise((r) => setTimeout(r, 1300));
+    await b.send(`127.0.0.1:${portA}`, { id: 'h2', type: 'task', payload: {} });
+    await new Promise((r) => setTimeout(r, 120));
+
+    expect(aSeen.map((m) => m.id)).toEqual(['h1', 'h2']);
+    // B reused its single outbound connection for both sends (heartbeat
+    // kept it open rather than forcing a reconnect).
+    const bStats = await b.getStats();
+    expect(bStats.created).toBe(1);
+  });
+});

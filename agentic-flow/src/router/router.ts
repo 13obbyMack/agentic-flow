@@ -11,7 +11,9 @@ import {
   ProviderType,
   RouterMetrics,
   ProviderError,
+  Message,
 } from './types.js';
+import { CostOptimalRouter } from './cost-optimal-router.js';
 import { OpenRouterProvider } from './providers/openrouter.js';
 import { AnthropicProvider } from './providers/anthropic.js';
 import { ONNXLocalProvider } from './providers/onnx-local.js';
@@ -22,6 +24,13 @@ export class ModelRouter {
   private config: RouterConfig;
   private providers: Map<ProviderType, LLMProvider> = new Map();
   private metrics: RouterMetrics;
+  // ADR-073: learned cost-optimal routing (opt-in via enableCostOptimalRouting).
+  private costOptimalRouter?: CostOptimalRouter;
+  private embedQuery?: (text: string) => Promise<number[]> | number[];
+  // Bounded LRU embedding cache — embedding dominates the cost-optimal hot path
+  // (≈ms) vs the µs-scale k-NN, and recurring prompts are common.
+  private embedCache = new Map<string, number[]>();
+  private static readonly EMBED_CACHE_MAX = 512;
 
   constructor(configPath?: string) {
     this.config = this.loadConfig(configPath);
@@ -262,6 +271,9 @@ export class ModelRouter {
       case 'cost-optimized':
         return this.selectByCost(params);
 
+      case 'cost-optimal':
+        return this.selectByCostOptimal(params);
+
       case 'performance-optimized':
         return this.selectByPerformance(params);
 
@@ -326,6 +338,88 @@ export class ModelRouter {
     }
 
     return this.getDefaultProvider();
+  }
+
+  /**
+   * Enable learned cost-optimal routing (ADR-073). Attaches a
+   * {@link CostOptimalRouter} plus an embedder and switches the routing mode to
+   * `'cost-optimal'`. Opt-in: until called, routing behaves exactly as before.
+   */
+  enableCostOptimalRouting(opts: {
+    router: CostOptimalRouter;
+    embed: (text: string) => Promise<number[]> | number[];
+  }): void {
+    this.costOptimalRouter = opts.router;
+    this.embedQuery = opts.embed;
+    this.config.routing = { ...(this.config.routing ?? { mode: 'cost-optimal' }), mode: 'cost-optimal' };
+  }
+
+  /**
+   * Embed `text`, caching the result. Bounded LRU: a cache hit refreshes
+   * recency; the oldest entry is evicted past {@link EMBED_CACHE_MAX}.
+   */
+  private async embedCached(text: string): Promise<number[]> {
+    const hit = this.embedCache.get(text);
+    if (hit) {
+      this.embedCache.delete(text); // move to most-recently-used
+      this.embedCache.set(text, hit);
+      return hit;
+    }
+    const embedding = await this.embedQuery!(text);
+    this.embedCache.set(text, embedding);
+    if (this.embedCache.size > ModelRouter.EMBED_CACHE_MAX) {
+      const oldest = this.embedCache.keys().next().value;
+      if (oldest !== undefined) this.embedCache.delete(oldest);
+    }
+    return embedding;
+  }
+
+  /** Extract the most recent user-message text to embed for routing. */
+  private lastUserText(messages: Message[]): string {
+    for (let i = messages.length - 1; i >= 0; i--) {
+      const m = messages[i];
+      if (m.role !== 'user') continue;
+      return typeof m.content === 'string'
+        ? m.content
+        : m.content.map((b) => b.text ?? '').join(' ');
+    }
+    // No user turn — fall back to all text content.
+    return messages
+      .map((m) => (typeof m.content === 'string' ? m.content : ''))
+      .join(' ')
+      .trim();
+  }
+
+  /**
+   * Learned cost-optimal selection (ADR-073): embed the query, route to the
+   * cheapest model predicted to clear the quality bar, steer params.model to it,
+   * and return the matching provider. Falls back to the {@link selectByCost}
+   * heuristic when the learned router/embedder isn't configured or errors —
+   * routing never hard-fails on the cost-optimal path.
+   */
+  private async selectByCostOptimal(params: ChatParams): Promise<LLMProvider> {
+    if (this.costOptimalRouter && this.embedQuery) {
+      try {
+        const text = this.lastUserText(params.messages);
+        const embedding = await this.embedCached(text);
+        const decision = this.costOptimalRouter.route(embedding);
+        const provider = this.providers.get(decision.provider);
+        if (provider) {
+          params.model = decision.model; // steer model, not just provider
+          console.log(
+            `💡 Cost-optimal routing → ${decision.id} ` +
+              `(q̂=${decision.predictedQuality.toFixed(2)}, $${decision.costPerMTok}/Mtok, metBar=${decision.metBar})`,
+          );
+          return provider;
+        }
+        console.warn(
+          `⚠️  Cost-optimal pick '${decision.provider}' not initialized; falling back to heuristic`,
+        );
+      } catch (err) {
+        console.warn('⚠️  Cost-optimal routing failed; falling back to heuristic', err);
+      }
+    }
+    return this.selectByCost(params);
   }
 
   private selectByPerformance(params: ChatParams): LLMProvider {
